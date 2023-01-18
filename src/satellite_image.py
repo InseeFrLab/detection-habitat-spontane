@@ -15,8 +15,8 @@ class SatelliteImage:
         self,
         array: np.array,
         crs: str,
-        resolution: int,
-        coordinates: Tuple[float, int],
+        bounds,
+        transform,
         date: Optional[date] = None,
         normalized: bool = False,
     ):
@@ -26,9 +26,10 @@ class SatelliteImage:
         Args:
             array (np.array): _description_
             crs (str): _description_
-            resolution (int): _description_
-            coordinates (Tuple[float, int]): _description_
+            bounds (): _description_
+            transform (): _description_
             date (Optional[date], optional): _description_. Defaults to None.
+            normalized (bool): _description_. Defaults to False.
         """
         raise NotImplementedError()
 
