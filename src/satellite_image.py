@@ -64,15 +64,12 @@ class SatelliteImage:
         """
 
     @staticmethod
-    def from_raster(
-        file_path: str, s3: bool = True, date: Optional[date] = None
-    ) -> SatelliteImage:
+    def from_raster(file_path: str, date: Optional[date] = None) -> SatelliteImage:
         """
         Factory method to create a Satellite image from a raster file.
 
         Args:
             file_path (str): _description_
-            s3 (bool, optional): _description_. Defaults to True.
             date (Optional[date], optional): _description_. Defaults to None.
 
 
