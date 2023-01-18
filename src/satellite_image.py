@@ -80,32 +80,21 @@ class SatelliteImage:
             SatelliteImage: _description_
         """
         with rasterio.open(file_path) as raster:
-            oviews = raster.overviews(1)  # list of overviews from biggest to smallest
-            print(oviews)
-            oview = 1  # let's look at the smallest thumbnail
-
-            # NOTE this is using a 'decimated read' (http://rasterio.readthedocs.io/en/latest/topics/resampling.html)
-            B1 = raster.read(
-                1,
-                out_shape=(1, int(raster.height // oview), int(raster.width // oview)),
+            bands = (
+                raster.read(
+                    i,
+                    out_shape=(
+                        1,
+                        int(raster.height // oview),
+                        int(raster.width // oview),
+                    ),
+                )
+                for i in range(1, 5)
             )
-            B2 = raster.read(
-                2,
-                out_shape=(1, int(raster.height // oview), int(raster.width // oview)),
-            )
-            B3 = raster.read(
-                3,
-                out_shape=(1, int(raster.height // oview), int(raster.width // oview)),
-            )
-            B4 = raster.read(
-                4,
-                out_shape=(1, int(raster.height // oview), int(raster.width // oview)),
-            )
-
             crs = raster.crs
             bounds = raster.bounds
             transform = raster.transform
             normalized = False
+            array = np.dstack(bands)
 
-        array = np.dstack((B1, B2, B3, B4))
         return SatelliteImage(array, crs, bounds, transform, date, normalized)
