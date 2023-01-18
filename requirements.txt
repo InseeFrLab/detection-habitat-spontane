@@ -1,2 +1,4 @@
 sentinelhub
 eo-learn
+pre-commit
+black
