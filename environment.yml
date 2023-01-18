@@ -1,0 +1,7 @@
+bucket: "projet-slums-detection"
+
+sources:
+  cayenne: Donnees/Cayenne_200722.7z
+
+local-path:
+  cayenne: ../data/Cayenne.7z
