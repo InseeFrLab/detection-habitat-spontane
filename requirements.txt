@@ -2,3 +2,4 @@ sentinelhub
 eo-learn
 pre-commit
 black
+s3fs
