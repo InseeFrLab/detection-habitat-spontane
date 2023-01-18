@@ -77,6 +77,7 @@ class SatelliteImage:
             SatelliteImage: _description_
         """
         with rasterio.open(file_path) as raster:
+            oview = 1
             bands = (
                 raster.read(
                     i,
