@@ -8,6 +8,7 @@ import numpy as np
 import rasterio
 import rasterio.plot as rp
 import torch
+from utils import *
 
 
 class SatelliteImage:
@@ -48,11 +49,33 @@ class SatelliteImage:
         Split the SatelliteImage into `nfolds` folds.
 
         Args:
-            nfolds (int): _description_
+            tile_length (int): Dimension of tiles
 
         Returns:
             List[SatelliteImage]: _description_
         """
+        if tile_length % 2:
+            raise ValueError("Tile length has to be an even number.")
+
+        m = self.array.shape[0]
+        n = self.array.shape[1]
+
+        indices = get_indices_from_tile_length(m, n, tile_length)
+
+        splitted_images = [
+            SatelliteImage(
+                self.array[rows[0] : rows[1], cols[0] : cols[1]],
+                self.crs,
+                get_bounds_for_tiles(self.transform, rows, col),
+                get_transform_for_tiles(self.transform, rows[0], col[0]),
+                self.n_bands,
+                self.date,
+                self.normalized,
+            )
+            for rows, cols in indices
+        ]
+        return splitted_images
+
         raise NotImplementedError()
 
     def to_tensor(self) -> torch.Tensor:
@@ -105,21 +128,13 @@ class SatelliteImage:
             SatelliteImage: _description_
         """
         with rasterio.open(file_path) as raster:
-            bands = (
-                raster.read(
-                    i,
-                    out_shape=(
-                        1,
-                        raster.height,
-                        raster.width,
-                    ),
-                )
-                for i in range(1, n_bands + 1)
+            array = raster.read(
+                [i for i in range(1, n_bands + 1)],
+                out_shape=(n_bands, raster.height, raster.width),
             )
             crs = raster.crs
             bounds = raster.bounds
             transform = raster.transform
             normalized = False
-            array = np.dstack(bands)
 
         return SatelliteImage(array, crs, bounds, transform, n_bands, date, normalized)
