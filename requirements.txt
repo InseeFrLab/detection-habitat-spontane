@@ -5,3 +5,4 @@ black
 s3fs
 py7zr
 rasterio
+torch
