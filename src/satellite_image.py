@@ -57,8 +57,8 @@ class SatelliteImage:
         if tile_length % 2:
             raise ValueError("Tile length has to be an even number.")
 
-        m = self.array.shape[0]
-        n = self.array.shape[1]
+        m = self.array.shape[1]
+        n = self.array.shape[2]
 
         indices = get_indices_from_tile_length(m, n, tile_length)
 
@@ -66,8 +66,8 @@ class SatelliteImage:
             SatelliteImage(
                 self.array[:, rows[0] : rows[1], cols[0] : cols[1]],
                 self.crs,
-                get_bounds_for_tiles(self.transform, rows, col),
-                get_transform_for_tiles(self.transform, rows[0], col[0]),
+                get_bounds_for_tiles(self.transform, rows, cols),
+                get_transform_for_tiles(self.transform, rows[0], cols[0]),
                 self.n_bands,
                 self.date,
                 self.normalized,

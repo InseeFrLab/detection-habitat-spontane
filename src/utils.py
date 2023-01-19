@@ -4,6 +4,7 @@ import os
 from s3fs import S3FileSystem
 from pathlib import Path
 from affine import Affine
+from typing import List, Optional
 
 
 def get_root_path() -> Path:
@@ -42,7 +43,7 @@ def get_transform_for_tiles(transform: Affine, row_off: int, col_off: int) -> Af
     return Affine.translation(x - transform.c, y - transform.f) * transform
 
 
-def get_bounds_for_tiles(transform: Affine, row_idx: Tupple, col_idx: Tupple) -> Tupple:
+def get_bounds_for_tiles(transform: Affine, row_idx: tuple, col_idx: tuple) -> tuple:
 
     row_min = row_idx[0]
     row_max = row_idx[1]
