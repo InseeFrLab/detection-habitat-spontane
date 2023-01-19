@@ -64,7 +64,7 @@ class SatelliteImage:
 
         splitted_images = [
             SatelliteImage(
-                self.array[rows[0] : rows[1], cols[0] : cols[1]],
+                self.array[:, rows[0] : rows[1], cols[0] : cols[1]],
                 self.crs,
                 get_bounds_for_tiles(self.transform, rows, col),
                 get_transform_for_tiles(self.transform, rows[0], col[0]),
