@@ -129,4 +129,5 @@ dmypy.json
 .pyre/
 
 # Data folder
-data/
+*.7z
+data/Cayenne
