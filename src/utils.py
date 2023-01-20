@@ -138,7 +138,23 @@ def load_bdtopo(datetime: datetime) -> gpd.GeoDataFrame:
     Returns:
         gpd.GeoDataFrame: BDTOPO GeoDataFrame.
     """
-    raise NotImplementedError()
+    root_path = get_root_path()
+    environment = get_environment()
+
+    dir_path = os.path.join(
+        root_path, "data", environment["sources"]["bdtopo"][2022]["guyane"]
+    )
+
+    file_path = None
+    for root, dirs, files in os.walk(dir_path):
+        if "BATIMENT.shp" in files:
+            file_path = os.path.join(root, "BATIMENT.shp")
+    if not file_path:
+        raise ValueError("No valid `BATIMENT.shp` file found.")
+
+    df = gpd.read_file(file_path)
+
+    return df
 
 
 def get_environment() -> Dict:
