@@ -55,7 +55,7 @@ class Labeler(ABC):
         raise NotImplementedError()
 
 
-class RILLabeler:
+class RILLabeler(Labeler):
     """
     RIL Labeler class.
     """
@@ -89,18 +89,21 @@ class RILLabeler:
             np.array: Segmentation mask.
         """
         if self.labeling_data.crs != satellite_image.crs:
-            self.labeling_data.geometry.to_crs(satellite_image.crs)
+            self.labeling_data.geometry = self.labeling_data.geometry.to_crs(
+                satellite_image.crs
+            )
 
         # Filtering geometries from RIL
         xmin, ymin, xmax, ymax = satellite_image.bounds
         patch = self.labeling_data.cx[xmin:xmax, ymin:ymax]
+
         patch.geometry = patch.geometry.buffer(
             self.buffer_size, cap_style=self.cap_style
         )
 
         rasterized = rasterize(
             patch.geometry,
-            out_shape=satellite_image.array.shape,
+            out_shape=satellite_image.array.shape[1:],
             fill=0,
             out=None,
             transform=satellite_image.transform,
@@ -138,7 +141,7 @@ class RILLabeler:
         return [polygon.bounds for polygon in clipped_g]
 
 
-class BDTOPOLabeler:
+class BDTOPOLabeler(Labeler):
     """ """
 
     def __init__(self, labeling_date: datetime):
