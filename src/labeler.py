@@ -39,7 +39,6 @@ class Labeler(ABC):
         """
         raise NotImplementedError()
 
-    @abstractmethod
     def create_detection_label(
         self, satellite_image: SatelliteImage
     ) -> List[Tuple[int]]:
