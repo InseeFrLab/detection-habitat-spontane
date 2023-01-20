@@ -46,6 +46,7 @@ sources:
       reunion: BDTOPO_2-1_TOUSTHEMES_SHP_RGR92UTM40S_D974_2016-04-01.7z
       guyane: BDTOPO_2-1_TOUSTHEMES_SHP_UTM22RGFG95_D973_2016-04-01.7z
       mayotte: BDTOPO_2-1_TOUSTHEMES_SHP_RGM04UTM38S_D976_2016-04-01.7z
+  ril: Donnees/ril_cayenne.gpkg
 
 local-path:
-  cayenne: ../data/Cayenne.7z
+  cayenne: data/Cayenne.7z
