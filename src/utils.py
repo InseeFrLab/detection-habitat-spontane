@@ -4,7 +4,10 @@ import os
 from s3fs import S3FileSystem
 from pathlib import Path
 from affine import Affine
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Dict
+from datetime import datetime
+import geopandas as gpd
+import yaml
 
 
 def get_root_path() -> Path:
@@ -101,3 +104,51 @@ def get_indices_from_tile_length(m: int, n: int, tile_length: int) -> List:
         for y in range(0, n, tile_length)
     ]
     return indices
+
+
+def load_ril(datetime: datetime) -> gpd.GeoDataFrame:
+    """
+    Load RIL for a given datetime.
+
+    Args:
+        datetime (datetime): Date of labeling data.
+
+    Returns:
+        gpd.GeoDataFrame: RIL GeoDataFrame.
+    """
+    environment = get_environment()
+    fs = get_file_system()
+
+    # For now only one version of RIL.
+    with fs.open(
+        os.path.join(environment["bucket"], environment["sources"]["ril"])
+    ) as f:
+        df = gpd.read_file(f)
+
+    return df
+
+
+def load_bdtopo(datetime: datetime) -> gpd.GeoDataFrame:
+    """
+    Load BDTOPO for a given datetime.
+
+    Args:
+        datetime (datetime): Date of labeling data.
+
+    Returns:
+        gpd.GeoDataFrame: BDTOPO GeoDataFrame.
+    """
+    raise NotImplementedError()
+
+
+def get_environment() -> Dict:
+    """
+    Get environment dictionary from `environment.yml` file.
+
+    Returns:
+        Dict: Environment dictionary.
+    """
+    root_path = get_root_path()
+    with open(os.path.join(root_path, "environment.yml"), "r") as stream:
+        environment = yaml.safe_load(stream)
+    return environment
