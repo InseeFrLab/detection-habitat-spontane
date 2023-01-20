@@ -101,15 +101,15 @@ class SatelliteImage:
                 "Value of the `quantile` parameter must be set between 0.5 and 1."
             )
 
-        normalized_bands = (
+        normalized_bands = [
             rp.adjust_band(
                 np.clip(
-                    self.array[:, :, i], 0, np.quantile(self.array[:, :, i], quantile)
+                    self.array[i, :, :], 0, np.quantile(self.array[i, :, :], quantile)
                 )
             )
             for i in range(self.n_bands)
-        )
-        self.array = np.dstack(normalized_bands)
+        ]
+        self.array = np.stack(normalized_bands)
         self.normalized = True
 
     @staticmethod
