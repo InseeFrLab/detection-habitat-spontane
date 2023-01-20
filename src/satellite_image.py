@@ -9,6 +9,7 @@ import rasterio
 import rasterio.plot as rp
 import torch
 from utils import *
+import matplotlib.pyplot as plt
 
 
 class SatelliteImage:
@@ -111,6 +112,24 @@ class SatelliteImage:
         ]
         self.array = np.stack(normalized_bands)
         self.normalized = True
+
+    def plot(self, bands_indices: List):
+        """Plot a subset of bands from a 3D array as an image.
+
+        Args:
+            bands_indices (List): List of indices of bands to plot.
+                The indices should be integers between 0 and the number of bands - 1.
+        """
+
+        if not self.normalized:
+            self.normalize()
+
+        fig, ax = plt.subplots(figsize=(5, 5))
+        ax.imshow(np.transpose(self.array, (1, 2, 0))[:, :, bands_indices])
+        plt.xticks([])
+        plt.yticks([])
+        plt.title(f"Dimension of image {self.array.shape[1:]}")
+        plt.show()
 
     @staticmethod
     def from_raster(
