@@ -52,7 +52,21 @@ class Labeler(ABC):
         Returns:
             List[Tuple[int]]: Object detection label.
         """
-        raise NotImplementedError()
+        image_height = satellite_image.array.shape[1]
+        image_width = satellite_image.array.shape[2]
+        segmentation_mask = self.create_segmentation_label(satellite_image)
+
+        polygon_list = []
+        for shape in list(shapes(segmentation_mask)):
+            polygon = Polygon(shape[0]["coordinates"][0])
+            if polygon.area > 0.85 * image_height * image_width:
+                continue
+            polygon_list.append(polygon)
+
+        g = gpd.GeoSeries(polygon_list)
+        clipped_g = gpd.clip(g, (0, 0, image_height, image_width))
+
+        return [polygon.bounds for polygon in clipped_g]
 
 
 class RILLabeler(Labeler):
@@ -114,32 +128,6 @@ class RILLabeler(Labeler):
 
         return rasterized
 
-    def create_detection_label(self, satellite_image: SatelliteImage):
-        """
-        Create an object detection label from RIL for a SatelliteImage.
-
-        Args:
-            satellite_image (SatelliteImage): Satellite image.
-
-        Returns:
-            List[Tuple[int]]: Object detection label.
-        """
-        image_height = satellite_image.array.shape[1]
-        image_width = satellite_image.array.shape[2]
-        segmentation_mask = self.create_segmentation_label(satellite_image)
-
-        polygon_list = []
-        for shape in list(shapes(segmentation_mask)):
-            polygon = Polygon(shape[0]["coordinates"][0])
-            if polygon.area > 0.85 * image_height * image_width:
-                continue
-            polygon_list.append(polygon)
-
-        g = gpd.GeoSeries(polygon_list)
-        clipped_g = gpd.clip(g, (0, 0, image_height, image_width))
-
-        return [polygon.bounds for polygon in clipped_g]
-
 
 class BDTOPOLabeler(Labeler):
     """ """
@@ -151,7 +139,7 @@ class BDTOPOLabeler(Labeler):
         Args:
             labeling_date (datetime): Date of labeling data.
         """
-        super(RILLabeler, self).__init__(labeling_date)
+        super(BDTOPOLabeler, self).__init__(labeling_date)
         self.labeling_data = load_bdtopo(self.labeling_date)
 
     def create_segmentation_label(self, satellite_image: SatelliteImage) -> np.array:
@@ -164,16 +152,24 @@ class BDTOPOLabeler(Labeler):
         Returns:
             np.array: Segmentation mask.
         """
-        raise NotImplementedError()
+        if self.labeling_data.crs != satellite_image.crs:
+            self.labeling_data.geometry = self.labeling_data.geometry.to_crs(
+                satellite_image.crs
+            )
 
-    def create_detection_label(self, satellite_image: SatelliteImage):
-        """
-        Create an object detection label from BDTOPO for a SatelliteImage.
+        # Filtering geometries from RIL
+        xmin, ymin, xmax, ymax = satellite_image.bounds
+        patch = self.labeling_data.cx[xmin:xmax, ymin:ymax]
 
-        Args:
-            satellite_image (SatelliteImage): Satellite image.
+        rasterized = rasterize(
+            patch.geometry,
+            out_shape=satellite_image.array.shape[1:],
+            fill=0,
+            out=None,
+            transform=satellite_image.transform,
+            all_touched=True,
+            default_value=1,
+            dtype=None,
+        )
 
-        Returns:
-            List[Tuple[int]]: Object detection label.
-        """
-        raise NotImplementedError()
+        return rasterized
