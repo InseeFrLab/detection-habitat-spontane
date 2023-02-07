@@ -7,7 +7,6 @@ from datetime import date
 import numpy as np
 import rasterio
 import rasterio.plot as rp
-import torch
 from utils import *
 import matplotlib.pyplot as plt
 
@@ -22,6 +21,7 @@ class SatelliteImage:
         bounds,
         transform,
         n_bands: int,
+        filename: str,
         date: Optional[date] = None,
         normalized: bool = False,
     ):
@@ -42,6 +42,7 @@ class SatelliteImage:
         self.bounds = bounds
         self.transform = transform
         self.n_bands = n_bands
+        self.filename = filename
         self.date = date
         self.normalized = normalized
 
@@ -70,6 +71,7 @@ class SatelliteImage:
                 get_bounds_for_tiles(self.transform, rows, cols),
                 get_transform_for_tiles(self.transform, rows[0], cols[0]),
                 self.n_bands,
+                self.filename,
                 self.date,
                 self.normalized,
             )
@@ -156,7 +158,9 @@ class SatelliteImage:
             transform = raster.transform
             normalized = False
 
-        return SatelliteImage(array, crs, bounds, transform, n_bands, date, normalized)
+        return SatelliteImage(
+            array, crs, bounds, transform, n_bands, file_path, date, normalized
+        )
 
     @staticmethod
     def filter_images(
