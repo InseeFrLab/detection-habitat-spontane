@@ -122,7 +122,7 @@ def load_ril(datetime: datetime) -> gpd.GeoDataFrame:
 
     # For now only one version of RIL.
     with fs.open(
-        os.path.join(environment["bucket"], environment["sources"]["ril"])
+        os.path.join(environment["bucket"], environment["sources"]["RIL"])
     ) as f:
         df = gpd.read_file(f)
 
@@ -144,7 +144,7 @@ def load_bdtopo(datetime: datetime) -> gpd.GeoDataFrame:
 
     dir_path = os.path.join(
         root_path,
-        os.path.splitext(environment["local-path"]["bdtopo"][2022]["guyane"])[0],
+        environment["local-path"]["BDTOPO"][2022]["guyane"],
     )
 
     file_path = None
