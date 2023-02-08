@@ -44,7 +44,7 @@ class SegmentationLabeledSatelliteImage:
         """
         raise NotImplementedError()
 
-    def plot(self, bands_indices: List):
+    def plot(self, bands_indices: List, alpha=0.3):
         """Plot a subset of bands from a 3D array as an image.
 
         Args:
@@ -59,7 +59,7 @@ class SegmentationLabeledSatelliteImage:
         ax.imshow(
             np.transpose(self.satellite_image.array, (1, 2, 0))[:, :, bands_indices]
         )
-        ax.imshow(self.label, alpha=0.3)
+        ax.imshow(self.label, alpha=alpha)
         plt.xticks([])
         plt.yticks([])
         plt.title(f"Dimension of image {self.satellite_image.array.shape[1:]}")
