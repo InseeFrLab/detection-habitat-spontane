@@ -9,6 +9,7 @@ import rasterio
 import rasterio.plot as rp
 from utils import *
 import matplotlib.pyplot as plt
+import os
 
 
 class SatelliteImage:
@@ -159,7 +160,14 @@ class SatelliteImage:
             normalized = False
 
         return SatelliteImage(
-            array, crs, bounds, transform, n_bands, file_path, date, normalized
+            array,
+            crs,
+            bounds,
+            transform,
+            n_bands,
+            os.path.basename(file_path),
+            date,
+            normalized,
         )
 
     @staticmethod
