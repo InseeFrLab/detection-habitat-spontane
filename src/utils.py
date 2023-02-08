@@ -9,6 +9,7 @@ from datetime import datetime
 import geopandas as gpd
 import yaml
 import rasterio
+import hvac
 
 
 def get_root_path() -> Path:
@@ -170,3 +171,30 @@ def get_environment() -> Dict:
     with open(os.path.join(root_path, "environment.yml"), "r") as stream:
         environment = yaml.safe_load(stream)
     return environment
+
+
+def update_storage_access():
+    """
+    This function updates the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables with values obtained from a HashiCorp Vault server.
+    The Vault server URL, token, and secret path are taken from the VAULT_TOKEN and VAULT_MOUNT+VAULT_TOP_DIR/s3 environment variables.
+    If AWS_SESSION_TOKEN is present, it will be deleted.
+    """
+
+    client = hvac.Client(
+        url="https://vault.lab.sspcloud.fr", token=os.environ["VAULT_TOKEN"]
+    )
+
+    secret = os.environ["VAULT_MOUNT"] + os.environ["VAULT_TOP_DIR"] + "/s3"
+    mount_point, secret_path = secret.split("/", 1)
+    secret_dict = client.secrets.kv.read_secret_version(
+        path=secret_path, mount_point=mount_point
+    )
+
+    os.environ["AWS_ACCESS_KEY_ID"] = secret_dict["data"]["data"]["ACCESS_KEY_ID"]
+    os.environ["AWS_SECRET_ACCESS_KEY"] = secret_dict["data"]["data"][
+        "SECRET_ACCESS_KEY"
+    ]
+    try:
+        del os.environ["AWS_SESSION_TOKEN"]
+    except KeyError:
+        pass
