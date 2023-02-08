@@ -130,4 +130,5 @@ dmypy.json
 
 # Data folder
 *.7z
-data/Cayenne
+data/PLEIADES/
+data/BDTOPO/
