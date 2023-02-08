@@ -143,7 +143,8 @@ def load_bdtopo(datetime: datetime) -> gpd.GeoDataFrame:
     environment = get_environment()
 
     dir_path = os.path.join(
-        root_path, "data", environment["sources"]["bdtopo"][2022]["guyane"]
+        root_path,
+        os.path.splitext(environment["local-path"]["bdtopo"][2022]["guyane"])[0],
     )
 
     file_path = None
