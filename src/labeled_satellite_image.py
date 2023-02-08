@@ -45,11 +45,13 @@ class SegmentationLabeledSatelliteImage:
         raise NotImplementedError()
 
     def plot(self, bands_indices: List, alpha=0.3):
-        """Plot a subset of bands from a 3D array as an image.
+        """
+        Plot a subset of bands from a satellite image and its corresponding labels as an image.
 
         Args:
-            bands_indices (List): List of indices of bands to plot.
-                The indices should be integers between 0 and the number of bands - 1.
+        bands_indices (List): List of indices of bands to plot from the satellite image. The indices should be integers between 0 and the number of bands - 1.
+        alpha (float, optional): The transparency of the label image when overlaid on the satellite image. A value of 0 means fully transparent and a value of 1 means fully opaque. The default value is 0.3.
+
         """
 
         if not self.satellite_image.normalized:
