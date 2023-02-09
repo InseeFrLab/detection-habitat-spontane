@@ -5,6 +5,7 @@ from typing import List, Literal, Tuple
 from satellite_image import SatelliteImage
 import numpy as np
 from datetime import datetime
+import matplotlib.pyplot as plt
 
 
 class SegmentationLabeledSatelliteImage:
@@ -42,6 +43,29 @@ class SegmentationLabeledSatelliteImage:
             List[SegmentationLabeledSatelliteImage]: _description_
         """
         raise NotImplementedError()
+
+    def plot(self, bands_indices: List, alpha=0.3):
+        """
+        Plot a subset of bands from a satellite image and its corresponding labels as an image.
+
+        Args:
+        bands_indices (List): List of indices of bands to plot from the satellite image. The indices should be integers between 0 and the number of bands - 1.
+        alpha (float, optional): The transparency of the label image when overlaid on the satellite image. A value of 0 means fully transparent and a value of 1 means fully opaque. The default value is 0.3.
+
+        """
+
+        if not self.satellite_image.normalized:
+            self.satellite_image.normalize()
+
+        fig, ax = plt.subplots(figsize=(5, 5))
+        ax.imshow(
+            np.transpose(self.satellite_image.array, (1, 2, 0))[:, :, bands_indices]
+        )
+        ax.imshow(self.label, alpha=alpha)
+        plt.xticks([])
+        plt.yticks([])
+        plt.title(f"Dimension of image {self.satellite_image.array.shape[1:]}")
+        plt.show()
 
 
 class DetectionLabeledSatelliteImage:
