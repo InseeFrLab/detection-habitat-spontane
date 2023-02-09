@@ -108,22 +108,25 @@ class RILLabeler(Labeler):
 
         # Filtering geometries from RIL
         xmin, ymin, xmax, ymax = satellite_image.bounds
-        patch = self.labeling_data.cx[xmin:xmax, ymin:ymax]
+        patch = self.labeling_data.cx[xmin:xmax, ymin:ymax].copy()
 
         patch.geometry = patch.geometry.buffer(
             self.buffer_size, cap_style=self.cap_style
         )
 
-        rasterized = rasterize(
-            patch.geometry,
-            out_shape=satellite_image.array.shape[1:],
-            fill=0,
-            out=None,
-            transform=satellite_image.transform,
-            all_touched=True,
-            default_value=1,
-            dtype=None,
-        )
+        if patch.empty:
+            rasterized = np.zeros(satellite_image.array.shape[1:])
+        else:
+            rasterized = rasterize(
+                patch.geometry,
+                out_shape=satellite_image.array.shape[1:],
+                fill=0,
+                out=None,
+                transform=satellite_image.transform,
+                all_touched=True,
+                default_value=1,
+                dtype=None,
+            )
 
         return rasterized
 
@@ -156,19 +159,22 @@ class BDTOPOLabeler(Labeler):
                 satellite_image.crs
             )
 
-        # Filtering geometries from RIL
+        # Filtering geometries from BDTOPO
         xmin, ymin, xmax, ymax = satellite_image.bounds
-        patch = self.labeling_data.cx[xmin:xmax, ymin:ymax]
+        patch = self.labeling_data.cx[xmin:xmax, ymin:ymax].copy()
 
-        rasterized = rasterize(
-            patch.geometry,
-            out_shape=satellite_image.array.shape[1:],
-            fill=0,
-            out=None,
-            transform=satellite_image.transform,
-            all_touched=True,
-            default_value=1,
-            dtype=None,
-        )
+        if patch.empty:
+            rasterized = np.zeros(satellite_image.array.shape[1:])
+        else:
+            rasterized = rasterize(
+                patch.geometry,
+                out_shape=satellite_image.array.shape[1:],
+                fill=0,
+                out=None,
+                transform=satellite_image.transform,
+                all_touched=True,
+                default_value=1,
+                dtype=None,
+            )
 
         return rasterized
