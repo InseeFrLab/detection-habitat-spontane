@@ -1,4 +1,4 @@
-FROM inseefrlab/onyxia-vscode-python:py3.10.4
+FROM inseefrlab/onyxia-jupyter-python:py3.10.8
 
 COPY requirements.txt .
 
