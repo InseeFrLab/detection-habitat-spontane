@@ -2,7 +2,7 @@
 Labeler classes.
 """
 import numpy as np
-from typing import List, Tuple
+from typing import List, Tuple, Literal
 from utils import load_ril, load_bdtopo
 from satellite_image import SatelliteImage
 from rasterio.features import rasterize, shapes
@@ -17,14 +17,20 @@ class Labeler(ABC):
     Labeler abstract base class.
     """
 
-    def __init__(self, labeling_date: datetime):
+    def __init__(
+        self,
+        labeling_date: datetime,
+        dep: Literal["971", "972", "973", "974", "976", "977", "978"]
+    ):
         """
         Constructor.
 
         Args:
             labeling_date (datetime): Labeling date.
+            dep (Literal): Departement.
         """
         self.labeling_date = labeling_date
+        self.dep = dep
 
     @abstractmethod
     def create_segmentation_label(self, satellite_image: SatelliteImage) -> np.array:
@@ -74,19 +80,26 @@ class RILLabeler(Labeler):
     """
 
     def __init__(
-        self, labeling_date: datetime, buffer_size: int = 6, cap_style: int = 3
+        self,
+        labeling_date: datetime,
+        dep: Literal["971", "972", "973", "974", "976", "977", "978"],
+        buffer_size: int = 6,
+        cap_style: int = 3
     ):
         """
         Constructor.
 
         Args:
             labeling_date (datetime): Date of labeling data.
+            dep (Literal): Departement.
             buffer_size (int): Buffer size for RIL points.
             cap_style (int): Buffer style. 1 for round buffers,
                 2 for flat buffers and 3 for square buffers.
         """
-        super(RILLabeler, self).__init__(labeling_date)
-        self.labeling_data = load_ril(self.labeling_date)
+        super(RILLabeler, self).__init__(labeling_date, dep)
+        self.labeling_data = load_ril(
+            millesime=self.labeling_date.year,
+            dep=self.dep)
 
         self.buffer_size = buffer_size
         self.cap_style = cap_style

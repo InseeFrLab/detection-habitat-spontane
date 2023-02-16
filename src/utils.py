@@ -4,12 +4,14 @@ import os
 from s3fs import S3FileSystem
 from pathlib import Path
 from affine import Affine
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Literal
 from datetime import datetime
+import pyarrow.parquet as pq
 import geopandas as gpd
 import yaml
 import rasterio
 import hvac
+from mappings import dep_to_crs
 
 
 def get_root_path() -> Path:
@@ -108,12 +110,16 @@ def get_indices_from_tile_length(m: int, n: int, tile_length: int) -> List:
     return indices
 
 
-def load_ril(datetime: datetime) -> gpd.GeoDataFrame:
+def load_ril(
+    millesime: Literal["2020", "2021", "2022", "2023"],
+    dep: Literal["971", "972", "973", "974", "976", "977", "978"]
+) -> gpd.GeoDataFrame:
     """
     Load RIL for a given datetime.
 
     Args:
-        datetime (datetime): Date of labeling data.
+        millesime (Literal): Year.
+        dep (Literal): Departement.
 
     Returns:
         gpd.GeoDataFrame: RIL GeoDataFrame.
@@ -121,13 +127,25 @@ def load_ril(datetime: datetime) -> gpd.GeoDataFrame:
     environment = get_environment()
     fs = get_file_system()
 
-    # For now only one version of RIL.
-    with fs.open(
-        os.path.join(environment["bucket"], environment["sources"]["RIL"])
-    ) as f:
-        df = gpd.read_file(f)
+    dataset = pq.ParquetDataset(
+        os.path.join(
+            environment["bucket"],
+            environment["sources"]["RIL"],
+            "dep=" + dep,
+            "millesime=" + millesime
+        ),
+        filesystem=fs
+    )
 
-    return df
+    df = dataset.read().to_pandas()
+    gdf = gpd.GeoDataFrame(
+        df,
+        geometry=gpd.points_from_xy(df.x, df.y)
+    )
+    crs = dep_to_crs[dep]
+    gdf = gdf.set_crs("epsg:" + crs)
+
+    return gdf
 
 
 def load_bdtopo(datetime: datetime) -> gpd.GeoDataFrame:
