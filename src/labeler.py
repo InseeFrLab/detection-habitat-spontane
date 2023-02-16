@@ -98,7 +98,7 @@ class RILLabeler(Labeler):
         """
         super(RILLabeler, self).__init__(labeling_date, dep)
         self.labeling_data = load_ril(
-            millesime=self.labeling_date.year,
+            millesime=str(self.labeling_date.year),
             dep=self.dep)
 
         self.buffer_size = buffer_size
