@@ -11,7 +11,7 @@ import rasterio.plot as rp
 from utils import (
     get_indices_from_tile_length,
     get_bounds_for_tiles,
-    get_transform_for_tiles
+    get_transform_for_tiles,
 )
 import matplotlib.pyplot as plt
 import os
@@ -74,14 +74,17 @@ class SatelliteImage:
 
         splitted_images = [
             SatelliteImage(
-                self.array[:, rows[0]: rows[1], cols[0]: cols[1]],
-                self.crs,
-                get_bounds_for_tiles(self.transform, rows, cols),
-                get_transform_for_tiles(self.transform, rows[0], cols[0]),
-                self.n_bands,
-                self.filename,
-                self.date,
-                self.normalized,
+                array=self.array[:, rows[0] : rows[1], cols[0] : cols[1]],
+                crs=self.crs,
+                bounds=get_bounds_for_tiles(self.transform, rows, cols),
+                transform=get_transform_for_tiles(
+                    self.transform, rows[0], cols[0]
+                ),
+                n_bands=self.n_bands,
+                filename=self.filename,
+                dep=self.dep,
+                date=self.date,
+                normalized=self.normalized,
             )
             for rows, cols in indices
         ]
@@ -117,7 +120,7 @@ class SatelliteImage:
                 np.clip(
                     self.array[i, :, :],
                     0,
-                    np.quantile(self.array[i, :, :], quantile)
+                    np.quantile(self.array[i, :, :], quantile),
                 )
             )
             for i in range(self.n_bands)
@@ -148,7 +151,7 @@ class SatelliteImage:
         file_path: str,
         dep: Literal["971", "972", "973", "974", "976", "977", "978"],
         date: Optional[date] = None,
-        n_bands: int = 4
+        n_bands: int = 4,
     ) -> SatelliteImage:
         """
         Factory method to create a Satellite image from a raster file.
