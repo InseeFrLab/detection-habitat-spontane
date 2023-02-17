@@ -47,6 +47,22 @@ sources:
       guyane: Donnees/BDTOPO/BDTOPO_2-1_TOUSTHEMES_SHP_UTM22RGFG95_D973_2016-04-01
       mayotte: Donnees/BDTOPO/BDTOPO_2-1_TOUSTHEMES_SHP_RGM04UTM38S_D976_2016-04-01
   RIL: Donnees/RIL/ril_data.parquet
+  old_gr:
+    "971": Donnees/RIL/old_gr/old_gr_971.shp
+    "972": Donnees/RIL/old_gr/old_gr_972.shp
+    "973": Donnees/RIL/old_gr/old_gr_973.shp
+    "974": Donnees/RIL/old_gr/old_gr_974.shp
+    "976": Donnees/RIL/old_gr/old_gr_976.shp
+    "977": Donnees/RIL/old_gr/old_gr_977.shp
+    "978": Donnees/RIL/old_gr/old_gr_978.shp
+  new_gr:
+    "971": Donnees/RIL/new_gr/new_gr_971.shp
+    "972": Donnees/RIL/new_gr/new_gr_972.shp
+    "973": Donnees/RIL/new_gr/new_gr_973.shp
+    "974": Donnees/RIL/new_gr/new_gr_974.shp
+    "976": Donnees/RIL/new_gr/new_gr_976.shp
+    "977": Donnees/RIL/new_gr/new_gr_977.shp
+    "978": Donnees/RIL/new_gr/new_gr_978.shp
 
 local-path:
   PLEIADES: data/PLEIADES/Cayenne
