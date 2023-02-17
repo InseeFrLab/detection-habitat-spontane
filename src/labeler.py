@@ -20,7 +20,7 @@ class Labeler(ABC):
     def __init__(
         self,
         labeling_date: datetime,
-        dep: Literal["971", "972", "973", "974", "976", "977", "978"]
+        dep: Literal["971", "972", "973", "974", "976", "977", "978"],
     ):
         """
         Constructor.
@@ -33,7 +33,9 @@ class Labeler(ABC):
         self.dep = dep
 
     @abstractmethod
-    def create_segmentation_label(self, satellite_image: SatelliteImage) -> np.array:
+    def create_segmentation_label(
+        self, satellite_image: SatelliteImage
+    ) -> np.array:
         """
         Create a segmentation label (mask) for a SatelliteImage.
 
@@ -84,7 +86,7 @@ class RILLabeler(Labeler):
         labeling_date: datetime,
         dep: Literal["971", "972", "973", "974", "976", "977", "978"],
         buffer_size: int = 6,
-        cap_style: int = 3
+        cap_style: int = 3,
     ):
         """
         Constructor.
@@ -98,13 +100,15 @@ class RILLabeler(Labeler):
         """
         super(RILLabeler, self).__init__(labeling_date, dep)
         self.labeling_data = load_ril(
-            millesime=str(self.labeling_date.year),
-            dep=self.dep)
+            millesime=str(self.labeling_date.year), dep=self.dep
+        )
 
         self.buffer_size = buffer_size
         self.cap_style = cap_style
 
-    def create_segmentation_label(self, satellite_image: SatelliteImage) -> np.array:
+    def create_segmentation_label(
+        self, satellite_image: SatelliteImage
+    ) -> np.array:
         """
         Create a segmentation label (mask) from RIL data for a SatelliteImage.
 
@@ -147,19 +151,27 @@ class RILLabeler(Labeler):
 class BDTOPOLabeler(Labeler):
     """ """
 
-    def __init__(self, labeling_date: datetime):
+    def __init__(
+        self,
+        labeling_date: datetime,
+        dep: Literal["971", "972", "973", "974", "976", "977", "978"],
+    ):
         """
         Constructor.
 
         Args:
             labeling_date (datetime): Date of labeling data.
+            dep (Literal): Departement.
         """
-        super(BDTOPOLabeler, self).__init__(labeling_date)
+        super(BDTOPOLabeler, self).__init__(labeling_date, dep)
         self.labeling_data = load_bdtopo(self.labeling_date)
 
-    def create_segmentation_label(self, satellite_image: SatelliteImage) -> np.array:
+    def create_segmentation_label(
+        self, satellite_image: SatelliteImage
+    ) -> np.array:
         """
-        Create a segmentation label (mask) from BDTOPO data for a SatelliteImage.
+        Create a segmentation label (mask) from BDTOPO data for a
+        SatelliteImage.
 
         Args:
             satellite_image (SatelliteImage): Satellite image.

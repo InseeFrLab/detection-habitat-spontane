@@ -1,4 +1,5 @@
 """
+Utils.
 """
 import os
 from s3fs import S3FileSystem
@@ -29,13 +30,17 @@ def get_file_system() -> S3FileSystem:
     Return the s3 file system.
     """
     return S3FileSystem(
-        client_kwargs={"endpoint_url": "https://" + os.environ["AWS_S3_ENDPOINT"]},
+        client_kwargs={
+            "endpoint_url": "https://" + os.environ["AWS_S3_ENDPOINT"]
+        },
         key=os.environ["AWS_ACCESS_KEY_ID"],
         secret=os.environ["AWS_SECRET_ACCESS_KEY"],
     )
 
 
-def get_transform_for_tiles(transform: Affine, row_off: int, col_off: int) -> Affine:
+def get_transform_for_tiles(
+    transform: Affine, row_off: int, col_off: int
+) -> Affine:
     """
     Compute the transform matrix of a tile
 
@@ -56,15 +61,19 @@ def get_bounds_for_tiles(
     transform: Affine, row_indices: Tuple, col_indices: Tuple
 ) -> Tuple:
     """
-    Given an Affine transformation, and indices for a tile's row and column, returns the bounding coordinates (left, bottom, right, top) of the tile.
+    Given an Affine transformation, and indices for a tile's row and column,
+    returns the bounding coordinates (left, bottom, right, top) of the tile.
 
     Args:
         transform: An Affine transformation
-        row_indices (Tuple): A tuple containing the minimum and maximum indices for the tile's row
-        col_indices (Tuple): A tuple containing the minimum and maximum indices for the tile's column
+        row_indices (Tuple): A tuple containing the minimum and maximum
+            indices for the tile's row
+        col_indices (Tuple): A tuple containing the minimum and maximum
+            indices for the tile's column
 
     Returns:
-        Tuple: A tuple containing the bounding coordinates (left, bottom, right, top) of the tile
+        Tuple: A tuple containing the bounding coordinates
+            (left, bottom, right, top) of the tile
     """
 
     row_min = row_indices[0]
@@ -79,8 +88,11 @@ def get_bounds_for_tiles(
 
 def get_indices_from_tile_length(m: int, n: int, tile_length: int) -> List:
     """
-    Given the dimensions of an original image and a desired tile length, this function returns a list of tuples, where each tuple contains the border indices of a tile that can be extracted from the original image.
-    The function raises a ValueError if the size of the tile is larger than the size of the original image.
+    Given the dimensions of an original image and a desired tile length,
+    this function returns a list of tuples, where each tuple contains the
+    border indices of a tile that can be extracted from the original image.
+    The function raises a ValueError if the size of the tile is larger than
+    the size of the original image.
 
     Args:
         m (int): Height of the original image
@@ -88,12 +100,14 @@ def get_indices_from_tile_length(m: int, n: int, tile_length: int) -> List:
         tile_length (int): Dimension of tiles
 
     Returns:
-        List: A list of tuples, where each tuple contains the border indices of a tile that can be extracted from the original image
+        List: A list of tuples, where each tuple contains the border indices
+            of a tile that can be extracted from the original image
     """
 
     if (tile_length > m) | (tile_length > n):
         raise ValueError(
-            "The size of the tile should be smaller than the size of the original image."
+            "The size of the tile should be smaller"
+            "than the size of the original image."
         )
 
     indices = [
@@ -112,7 +126,7 @@ def get_indices_from_tile_length(m: int, n: int, tile_length: int) -> List:
 
 def load_ril(
     millesime: Literal["2020", "2021", "2022", "2023"],
-    dep: Literal["971", "972", "973", "974", "976", "977", "978"]
+    dep: Literal["971", "972", "973", "974", "976", "977", "978"],
 ) -> gpd.GeoDataFrame:
     """
     Load RIL for a given datetime.
@@ -132,16 +146,13 @@ def load_ril(
             environment["bucket"],
             environment["sources"]["RIL"],
             "dep=" + dep,
-            "millesime=" + millesime
+            "millesime=" + millesime,
         ),
-        filesystem=fs
+        filesystem=fs,
     )
 
     df = dataset.read().to_pandas()
-    gdf = gpd.GeoDataFrame(
-        df,
-        geometry=gpd.points_from_xy(df.x, df.y)
-    )
+    gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.x, df.y))
     crs = dep_to_crs[dep]
     gdf = gdf.set_crs("epsg:" + crs)
 
@@ -193,8 +204,11 @@ def get_environment() -> Dict:
 
 def update_storage_access():
     """
-    This function updates the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables with values obtained from a HashiCorp Vault server.
-    The Vault server URL, token, and secret path are taken from the VAULT_TOKEN and VAULT_MOUNT+VAULT_TOP_DIR/s3 environment variables.
+    This function updates the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+    environment variables with values obtained from a HashiCorp Vault server.
+    The Vault server URL, token, and secret path are taken from the
+    VAULT_TOKEN and VAULT_MOUNT+VAULT_TOP_DIR/s3 environment variables.
+
     If AWS_SESSION_TOKEN is present, it will be deleted.
     """
 
@@ -208,7 +222,9 @@ def update_storage_access():
         path=secret_path, mount_point=mount_point
     )
 
-    os.environ["AWS_ACCESS_KEY_ID"] = secret_dict["data"]["data"]["ACCESS_KEY_ID"]
+    os.environ["AWS_ACCESS_KEY_ID"] = secret_dict["data"]["data"][
+        "ACCESS_KEY_ID"
+    ]
     os.environ["AWS_SECRET_ACCESS_KEY"] = secret_dict["data"]["data"][
         "SECRET_ACCESS_KEY"
     ]
