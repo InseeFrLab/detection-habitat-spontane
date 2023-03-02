@@ -2,12 +2,17 @@
 """
 from __future__ import annotations
 
-from typing import List, Optional
+import torch
+from typing import List, Optional, Literal
 from datetime import date
 import numpy as np
 import rasterio
 import rasterio.plot as rp
-from utils import *
+from utils import (
+    get_indices_from_tile_length,
+    get_bounds_for_tiles,
+    get_transform_for_tiles,
+)
 import matplotlib.pyplot as plt
 import os
 
@@ -23,6 +28,7 @@ class SatelliteImage:
         transform,
         n_bands: int,
         filename: str,
+        dep: Literal["971", "972", "973", "974", "976", "977", "978"],
         date: Optional[date] = None,
         normalized: bool = False,
     ):
@@ -44,6 +50,7 @@ class SatelliteImage:
         self.transform = transform
         self.n_bands = n_bands
         self.filename = filename
+        self.dep = dep
         self.date = date
         self.normalized = normalized
 
@@ -67,14 +74,17 @@ class SatelliteImage:
 
         splitted_images = [
             SatelliteImage(
-                self.array[:, rows[0] : rows[1], cols[0] : cols[1]],
-                self.crs,
-                get_bounds_for_tiles(self.transform, rows, cols),
-                get_transform_for_tiles(self.transform, rows[0], cols[0]),
-                self.n_bands,
-                self.filename,
-                self.date,
-                self.normalized,
+                array=self.array[:, rows[0] : rows[1], cols[0] : cols[1]],
+                crs=self.crs,
+                bounds=get_bounds_for_tiles(self.transform, rows, cols),
+                transform=get_transform_for_tiles(
+                    self.transform, rows[0], cols[0]
+                ),
+                n_bands=self.n_bands,
+                filename=self.filename,
+                dep=self.dep,
+                date=self.date,
+                normalized=self.normalized,
             )
             for rows, cols in indices
         ]
@@ -102,13 +112,15 @@ class SatelliteImage:
             raise ValueError("This SatelliteImage is already normalized.")
         if quantile < 0.5 or quantile > 1:
             raise ValueError(
-                "Value of the `quantile` parameter must be set between 0.5 and 1."
+                "Value of the `quantile` parameter must be between 0.5 and 1."
             )
 
         normalized_bands = [
             rp.adjust_band(
                 np.clip(
-                    self.array[i, :, :], 0, np.quantile(self.array[i, :, :], quantile)
+                    self.array[i, :, :],
+                    0,
+                    np.quantile(self.array[i, :, :], quantile),
                 )
             )
             for i in range(self.n_bands)
@@ -121,9 +133,9 @@ class SatelliteImage:
 
         Args:
             bands_indices (List): List of indices of bands to plot.
-                The indices should be integers between 0 and the number of bands - 1.
+                The indices should be integers between 0 and the
+                number of bands - 1.
         """
-
         if not self.normalized:
             self.normalize()
 
@@ -136,7 +148,10 @@ class SatelliteImage:
 
     @staticmethod
     def from_raster(
-        file_path: str, date: Optional[date] = None, n_bands: int = 4
+        file_path: str,
+        dep: Literal["971", "972", "973", "974", "976", "977", "978"],
+        date: Optional[date] = None,
+        n_bands: int = 4,
     ) -> SatelliteImage:
         """
         Factory method to create a Satellite image from a raster file.
@@ -166,6 +181,7 @@ class SatelliteImage:
             transform,
             n_bands,
             os.path.basename(file_path),
+            dep,
             date,
             normalized,
         )
