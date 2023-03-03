@@ -6,3 +6,6 @@ s3fs
 py7zr
 rasterio
 torch
+pytorch_lightning
+albumentations
+torchvision
