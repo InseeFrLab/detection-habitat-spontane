@@ -52,18 +52,18 @@ class SatelliteDataset(Dataset):
         satellite_image = labeled_image.satellite_image.array[
             self.bands_indices, :, :
         ].squeeze()
-        satellite_image = np.transpose(
-            satellite_image, (1, 2, 0)
-        )
-        label = labeled_image.label
+        mask = labeled_image.label
 
-        sample = {"image": satellite_image, "label": label}
+        sample = {"image": satellite_image, "mask": mask}
         if self.transforms:
-            sample = self.transforms(image=satellite_image, mask=label)
+            satellite_image = np.transpose(
+                satellite_image, (1, 2, 0)
+            )
+            sample = self.transforms(image=satellite_image, mask=mask)
         satellite_image = sample["image"]
-        label = sample["mask"]
+        mask = sample["mask"]
 
-        return satellite_image, label
+        return satellite_image, mask
 
     def __len__(self):
         return len(self.labeled_images)
