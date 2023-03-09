@@ -9,3 +9,4 @@ torch
 pytorch_lightning
 albumentations
 torchvision
+mlflow
