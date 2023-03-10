@@ -57,7 +57,7 @@ class SatelliteImage:
 
     def split(self, tile_length: int) -> List[SatelliteImage]:
         """
-        Split the SatelliteImage into `nfolds` folds.
+        Split the SatelliteImage into folds of size tile_length
 
         Args:
             tile_length (int): Dimension of tiles
