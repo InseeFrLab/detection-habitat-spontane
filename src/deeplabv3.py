@@ -7,31 +7,14 @@ from torch import optim, nn
 import pytorch_lightning as pl
 
 
-class DeepLabv3Module(pl.LightningModule):
+class DeepLabv3Module(nn.Module):
     """
-    Pytorch Lightning Module for DeepLabv3.
     """
 
-    def __init__(
-        self,
-        optimizer: Union[optim.SGD, optim.Adam],
-        optimizer_params: Dict,
-        scheduler: Union[optim.lr_scheduler.OneCycleLR, optim.lr_scheduler.ReduceLROnPlateau],
-        scheduler_params: Dict,
-        scheduler_interval: str,
-    ):
+    def __init__(self):
         """
-        Initialize TableNet Module.
-        Args:
-            optimizer
-            optimizer_params
-            scheduler
-            scheduler_params
-            scheduler_interval
         """
         super().__init__()
-        self.save_hyperparameters()
-
         self.model = torchvision.models.segmentation.deeplabv3_resnet101(
             weights='DeepLabV3_ResNet101_Weights.DEFAULT'
         )
@@ -42,6 +25,39 @@ class DeepLabv3Module(pl.LightningModule):
             kernel_size=(1, 1),
             stride=(1, 1))
 
+    def forward(self, x):
+        """
+        """
+        return self.model(x)
+
+
+class DeepLabv3LitModule(pl.LightningModule):
+    """
+    Pytorch Lightning Module for DeepLabv3.
+    """
+
+    def __init__(
+        self,
+        model: DeepLabv3Module,
+        optimizer: Union[optim.SGD, optim.Adam],
+        optimizer_params: Dict,
+        scheduler: Union[optim.lr_scheduler.OneCycleLR, optim.lr_scheduler.ReduceLROnPlateau],
+        scheduler_params: Dict,
+        scheduler_interval: str,
+    ):
+        """
+        Initialize TableNet Module.
+        Args:
+            model
+            optimizer
+            optimizer_params
+            scheduler
+            scheduler_params
+            scheduler_interval
+        """
+        super().__init__()
+
+        self.model = model
         self.loss = nn.CrossEntropyLoss()
 
         self.optimizer = optimizer
@@ -68,7 +84,9 @@ class DeepLabv3Module(pl.LightningModule):
         Returns: Tensor
         """
         samples, labels = batch
-        labels = labels.type(torch.LongTensor)
+
+        # TODO: Conversion to do before
+        labels = labels.type(torch.LongTensor).to(self.device)
         output = self.forward(samples)["out"]
 
         loss = self.loss(output, labels)
@@ -84,7 +102,8 @@ class DeepLabv3Module(pl.LightningModule):
         Returns: Tensor
         """
         samples, labels = batch
-        labels = labels.type(torch.LongTensor)
+
+        labels = labels.type(torch.LongTensor).to(self.device)
         output = self.forward(samples)["out"]
 
         loss = self.loss(output, labels)
@@ -100,7 +119,7 @@ class DeepLabv3Module(pl.LightningModule):
         Returns: Tensor
         """
         samples, labels = batch
-        labels = labels.type(torch.LongTensor)
+        labels = labels.type(torch.LongTensor).to(self.device)
         output = self.forward(samples)["out"]
 
         loss = self.loss(output, labels)

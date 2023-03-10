@@ -4,13 +4,14 @@ Script to train a DL model.
 import sys
 import os
 import re
+import gc
 from datetime import datetime
 from tqdm import tqdm
 import mlflow
 import torch
 from satellite_image import SatelliteImage
 from labeled_satellite_image import SegmentationLabeledSatelliteImage
-from deeplabv3 import DeepLabv3Module
+from deeplabv3 import DeepLabv3Module, DeepLabv3LitModule
 from dataset import SatelliteDataModule
 from utils import get_environment
 from filter import is_too_black
@@ -29,6 +30,9 @@ def main(remote_server_uri, experiment_name, run_name):
     """
     Main function.
     """
+    torch.cuda.empty_cache()
+    gc.collect()
+
     # Loading images
     environment = get_environment()
 
@@ -101,7 +105,9 @@ def main(remote_server_uri, experiment_name, run_name):
     scheduler_params = {}
     scheduler_interval = "epoch"
 
-    model = DeepLabv3Module(
+    model = DeepLabv3Module()
+    lightning_module = DeepLabv3LitModule(
+            model=model,
             optimizer=optimizer,
             optimizer_params=optimizer_params,
             scheduler=scheduler,
@@ -117,18 +123,31 @@ def main(remote_server_uri, experiment_name, run_name):
     )
     lr_monitor = LearningRateMonitor(logging_interval="step")
 
-    mlflow.set_tracking_uri(remote_server_uri)
-    mlflow.set_experiment(experiment_name)
-    mlflow.pytorch.autolog()
-    with mlflow.start_run(run_name=run_name):
+    mlflow_usage = False
+    gpus = 1
+    strategy = "ddp" if gpus > 1 else None
+    if mlflow_usage:
+        mlflow.set_tracking_uri(remote_server_uri)
+        mlflow.set_experiment(experiment_name)
+        mlflow.pytorch.autolog()
+        with mlflow.start_run(run_name=run_name):
+            trainer = pl.Trainer(
+                callbacks=[lr_monitor, checkpoint_callback, early_stop_callback],
+                max_epochs=2,
+                gpus=gpus,
+                num_sanity_val_steps=2,
+                strategy=strategy
+            )
+            trainer.fit(lightning_module, datamodule=data_module)
+    else:
         trainer = pl.Trainer(
             callbacks=[lr_monitor, checkpoint_callback, early_stop_callback],
             max_epochs=2,
-            gpus=0,
+            gpus=gpus,
             num_sanity_val_steps=2,
-            strategy=None
+            strategy=strategy
         )
-        trainer.fit(model, datamodule=data_module)
+        trainer.fit(lightning_module, datamodule=data_module)
 
 
 if __name__ == "__main__":
