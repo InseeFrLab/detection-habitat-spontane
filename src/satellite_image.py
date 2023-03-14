@@ -175,12 +175,15 @@ class SatelliteImage:
 
         n_col = len(np.unique(np.array([bb[0] for bb in list_bounding_box])))
         n_row = len(np.unique(np.array([bb[3] for bb in list_bounding_box])))
+        
+        print(n_row,n_col)
 
-        mat_list_images = np.transpose(list_images.reshape(n_col,n_row))
-
+        mat_list_images = np.transpose(list_images.reshape(n_row,n_col))
+        
+        print(mat_list_images.shape)
         # Create the grid of pictures and fill it
         images = np.empty((n_col,n_row), dtype = object)
-
+        
         for i in range(n_col):
             for j in range(n_row):
                 images[i,j] = mat_list_images[i,j].array_to_plot
@@ -188,16 +191,16 @@ class SatelliteImage:
         images =np.flip(np.transpose(images),axis=0)
 
         # Create a figure and axes
-        fig, axs = plt.subplots(nrows=n_col, ncols=n_row, figsize=(10, 10))
+        fig, axs = plt.subplots(nrows=n_row, ncols=n_col, figsize=(10, 10))
 
         # Iterate over the grid of  images and plot them
-        for i in range(n_col):
-            for j in range(n_row):
+        for i in range(n_row):
+            for j in range(n_col):
                 axs[i,j].imshow(np.transpose(images[i,j], (1, 2, 0))[:, :, bands_indices])
 
         # Remove any unused axes
-        for i in range(n_col):
-            for j in range(n_row):
+        for i in range(n_row):
+            for j in range(n_col):
                 axs[i,j].set_axis_off()
 
         # Show the plot
