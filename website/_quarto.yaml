@@ -1,0 +1,39 @@
+project:
+  type: book
+
+book:
+  repo-subdir: website
+  repo-url: https://github.com/InseeFrLab/detection-bidonvilles
+  title: Slum detection like a boss
+  author:
+  - name: Thomas Faria
+    email: thomas.faria@insee.fr
+ 
+  date: last-modified
+  chapters:
+    - index.qmd
+    - 1-Introduction.qmd
+    - text: "---"
+    - references.qmd
+  appendices: 
+    - A-Appendix1.qmd
+
+  downloads: [pdf]
+
+bibliography: bibliography.bib
+
+format:
+  html:
+    theme: cosmo
+    reference-location: margin
+    fig-align: center
+
+  pdf:
+    keep-tex: true
+    toc: true
+    toc-title: Contents
+    fig-pos: 'H'
+    fig-align: center
+
+
+editor: visual
