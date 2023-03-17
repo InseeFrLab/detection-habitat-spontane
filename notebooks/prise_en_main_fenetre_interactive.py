@@ -106,7 +106,6 @@ SatelliteImage.plot_list_satellite_images(image.split(250),[0,1,2])
 from labeler import BDTOPOLabeler
 labeler_bdtopo = BDTOPOLabeler(date, dep = "973")
 
-
 mask = labeler_bdtopo.create_segmentation_label(image)
 if image.normalize == False:
     image.normalize
@@ -116,4 +115,45 @@ ax.imshow(mask, alpha=0.3) # magnifique ! Faire une fonction  de représentatio
 
 
 
-# %%
+# %% Le mont Baduel
+
+filename = '../data/PLEIADES/Cayenne/16bits/ORT_2022072050325085_U22N/ORT_2022072050325085_0354_0545_U22N_16Bits.jp2'
+date = datetime.strptime(re.search(r'ORT_(\d{8})', filename).group(1), '%Y%m%d')
+date
+
+image = SatelliteImage.from_raster(
+        filename,
+        date = date, 
+        n_bands = 4,
+        dep = "973"
+    )
+
+image.plot([3,1,2])
+
+mask = labeler_bdtopo.create_segmentation_label(image)
+
+if image.normalize == False:
+    image.normalize
+fig, ax = plt.subplots(figsize=(5, 5))
+ax.imshow(np.transpose(image.array_to_plot, (1, 2, 0))[:,:,:3])
+ax.imshow(mask, alpha=0.3) # m
+
+# %% Les labelled satelliteimage
+from labeled_satellite_image import SegmentationLabeledSatelliteImage
+
+#image.normalize()
+image_labellisee = SegmentationLabeledSatelliteImage(image,label = mask, labeling_date = date, source = "BDTOPO")
+
+# 1) plot image et masque superposés
+image_labellisee.plot([0,1,2])
+
+# 2) plot image et masque associés côte à côte
+image_labellisee.plot_label_next_to_image([0,1,2])
+
+liste_image_labelisee = image_labellisee.split(250)
+
+# plot la liste d'images labellisées
+## Ici on recolle les morceaux en partant de la liste
+SegmentationLabeledSatelliteImage.plot_list_segmentation_labeled_satellite_image(liste_image_labelisee,[0,1,2])
+
+

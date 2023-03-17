@@ -255,4 +255,3 @@ class SatelliteImage:
             date,
             normalized,
         )
-gi
