@@ -189,7 +189,10 @@ class BDTOPOLabeler(Labeler):
         patch = self.labeling_data.cx[xmin:xmax, ymin:ymax].copy()
 
         if patch.empty:
-            rasterized = np.zeros(satellite_image.array.shape[1:])
+            rasterized = np.zeros(
+                satellite_image.array.shape[1:],
+                dtype=np.uint8
+            )
         else:
             rasterized = rasterize(
                 patch.geometry,

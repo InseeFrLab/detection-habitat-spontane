@@ -75,7 +75,7 @@ class SatelliteImage:
 
         splitted_images = [
             SatelliteImage(
-                array=self.array[:, rows[0] : rows[1], cols[0] : cols[1]],
+                array=self.array[:, rows[0]: rows[1], cols[0]: cols[1]],
                 crs=self.crs,
                 bounds=get_bounds_for_tiles(self.transform, rows, cols),
                 transform=get_transform_for_tiles(
@@ -95,16 +95,25 @@ class SatelliteImage:
             
         return splitted_images
 
-        raise NotImplementedError()
-
-    def to_tensor(self) -> torch.Tensor:
+    def to_tensor(
+        self,
+        bands_indices: Optional[List[int]] = None
+    ) -> torch.Tensor:
         """
         Return SatelliteImage array as a torch.Tensor.
+
+        Args:
+            bands_indices (List): List of indices of bands to plot.
+                The indices should be integers between 0 and the
+                number of bands - 1.
 
         Returns:
             torch.Tensor: _description_
         """
-        raise NotImplementedError()
+        if not bands_indices:
+            return torch.from_numpy(self.array)
+        else:
+            return torch.from_numpy(self.array[bands_indices, :, :])
 
     def normalize(self, quantile: float = 0.97):
         """
@@ -114,7 +123,9 @@ class SatelliteImage:
             params (Dict): _description_
         """
         if self.normalized:
-            raise ValueError("This SatelliteImage is already normalized.")
+            # TODO: clean up
+            print("Warning: this SatelliteImage is already normalized.")
+            return
         if quantile < 0.5 or quantile > 1:
             raise ValueError(
                 "Value of the `quantile` parameter must be between 0.5 and 1."
