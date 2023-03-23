@@ -105,7 +105,7 @@ mask = labeler_bdtopo.create_segmentation_label(image)
 if image.normalize == False:
     image.normalize
 fig, ax = plt.subplots(figsize=(5, 5))
-ax.imshow(np.transpose(image.array_to_plot, (1, 2, 0))[:,:,:3])
+ax.imshow(np.transpose(image.array, (1, 2, 0))[:,:,:3])
 ax.imshow(mask, alpha=0.3) # magnifique ! Faire une fonction  de représentatio
 
 
@@ -130,7 +130,7 @@ mask = labeler_bdtopo.create_segmentation_label(image)
 if image.normalize == False:
     image.normalize
 fig, ax = plt.subplots(figsize=(5, 5))
-ax.imshow(np.transpose(image.array_to_plot, (1, 2, 0))[:,:,:3])
+ax.imshow(np.transpose(image.array, (1, 2, 0))[:,:,:3])
 ax.imshow(mask, alpha=0.3) # m
 
 # %% Les labelled satelliteimage

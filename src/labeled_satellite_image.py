@@ -124,7 +124,7 @@ class SegmentationLabeledSatelliteImage:
                     The indices should be integers between 0 and the
                     number of bands - 1.
             """
-        tile_size = list_labeled_image[0].satellite_image.array_to_plot.shape[1]
+        tile_size = list_labeled_image[0].satellite_image.array.shape[1]
         stride = tile_size
 
         list_bounding_box = np.array([iml.satellite_image.bounds for iml in list_labeled_image])
@@ -170,7 +170,7 @@ class SegmentationLabeledSatelliteImage:
 
         for i in range(0, height - tile_size + 1, stride):
             for j in range(0, width - tile_size + 1, stride):
-                output_image[i:i+tile_size, j:j+tile_size, :] = np.transpose(mat_list_images[compteur_ligne,compteur_col].array_to_plot, (1, 2, 0))[:, :, bands_indices]
+                output_image[i:i+tile_size, j:j+tile_size, :] = np.transpose(mat_list_images[compteur_ligne,compteur_col].array, (1, 2, 0))[:, :, bands_indices]
 
                 label = mat_list_labels[compteur_ligne,compteur_col,:,:]
                 show_mask = np.zeros((label.shape[0],label.shape[1],3))
