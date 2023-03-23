@@ -45,7 +45,6 @@ class SatelliteImage:
             normalized (bool): _description_. Defaults to False.
         """
         self.array = array
-        self.array_to_plot = array
         self.crs = crs
         self.bounds = bounds
         self.transform = transform
@@ -89,10 +88,7 @@ class SatelliteImage:
             )
             for rows, cols in indices
         ]
-        
-        for im, indice in zip(splitted_images,indices):
-            im.array_to_plot = self.array_to_plot[:, indice[0][0] : indice[0][1], indice[1][0] : indice[1][1]]
-            
+
         return splitted_images
 
     def to_tensor(
@@ -141,7 +137,7 @@ class SatelliteImage:
             )
             for i in range(self.n_bands)
         ]
-        self.array_to_plot = np.stack(normalized_bands)
+        self.array = np.stack(normalized_bands)
         self.normalized = True
 
     def plot(self, bands_indices: List):
@@ -156,10 +152,10 @@ class SatelliteImage:
             self.normalize()
 
         fig, ax = plt.subplots(figsize=(5, 5))
-        ax.imshow(np.transpose(self.array_to_plot, (1, 2, 0))[:, :, bands_indices])
+        ax.imshow(np.transpose(self.array, (1, 2, 0))[:, :, bands_indices])
         plt.xticks([])
         plt.yticks([])
-        plt.title(f"Dimension of image {self.array_to_plot.shape[1:]}")
+        plt.title(f"Dimension of image {self.array.shape[1:]}")
         plt.show()
     
     @staticmethod
@@ -187,14 +183,14 @@ class SatelliteImage:
         n_col = len(np.unique(np.array([bb[0] for bb in list_bounding_box])))
         n_row = len(np.unique(np.array([bb[3] for bb in list_bounding_box])))
         
-        mat_list_images = np.transpose(list_images.reshape(n_row,n_col))
+        mat_list_images = np.transpose(list_images.reshape(n_col,n_row))
         
         # Create the grid of pictures and fill it
         images = np.empty((n_col,n_row), dtype = object)
         
         for i in range(n_col):
             for j in range(n_row):
-                images[i,j] = mat_list_images[i,j].array_to_plot
+                images[i,j] = mat_list_images[i,j].array
 
         images = np.flip(np.transpose(images),axis=0)
 

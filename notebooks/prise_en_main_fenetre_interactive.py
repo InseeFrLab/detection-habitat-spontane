@@ -1,8 +1,3 @@
- pip install rasterio  -q -q -q
- pip install geopandas -q -q -q
- pip install matplotlib -q -q -q
- pip install pyarrow
- 
 # %%
 %load_ext autoreload
 %autoreload 2
