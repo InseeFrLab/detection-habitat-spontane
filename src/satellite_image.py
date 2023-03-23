@@ -183,7 +183,7 @@ class SatelliteImage:
         n_col = len(np.unique(np.array([bb[0] for bb in list_bounding_box])))
         n_row = len(np.unique(np.array([bb[3] for bb in list_bounding_box])))
         
-        mat_list_images = np.transpose(list_images.reshape(n_col,n_row))
+        mat_list_images = np.transpose(list_images.reshape(n_row,n_col))
         
         # Create the grid of pictures and fill it
         images = np.empty((n_col,n_row), dtype = object)
@@ -197,7 +197,7 @@ class SatelliteImage:
         # Create a figure and axes
         fig, axs = plt.subplots(nrows=n_row, ncols=n_col, figsize=(10, 10))
 
-        # Iterate over the grid of  images and plot them
+        # Iterate over the grid of images and plot them
         for i in range(n_row):
             for j in range(n_col):
                 axs[i,j].imshow(np.transpose(images[i,j], (1, 2, 0))[:, :, bands_indices])
