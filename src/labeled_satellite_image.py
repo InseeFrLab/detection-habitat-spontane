@@ -37,7 +37,7 @@ class SegmentationLabeledSatelliteImage:
 
     def split(self, tile_length: int) -> List[SegmentationLabeledSatelliteImage]:
         """
-        Split the SegmentationLabeledSatelliteImage into `nfolds` folds.
+        Split the SegmentationLabeledSatelliteImage into tiles of dimension (`tile_length` x `tile_length`).
 
         Args:
             tile_length (int): Dimension of tiles
@@ -82,7 +82,7 @@ class SegmentationLabeledSatelliteImage:
 
         fig, ax = plt.subplots(figsize=(5, 5))
         ax.imshow(
-            np.transpose(self.satellite_image.array_to_plot, (1, 2, 0))[:, :, bands_indices]
+            np.transpose(self.satellite_image.array, (1, 2, 0))[:, :, bands_indices]
         )
         ax.imshow(self.label, alpha=alpha)
         plt.xticks([])
@@ -108,7 +108,7 @@ class SegmentationLabeledSatelliteImage:
 
         fig,(ax1,ax2) = plt.subplots(1,2, figsize = (10,10))
         ax1.imshow(
-                    np.transpose(self.satellite_image.array_to_plot, (1, 2, 0))[:, :, bands_indices]
+                    np.transpose(self.satellite_image.array, (1, 2, 0))[:, :, bands_indices]
                 )
         ax1.axis("off")
         ax2.imshow(show_mask)
@@ -149,18 +149,18 @@ class SegmentationLabeledSatelliteImage:
         n_row = len(np.unique(np.array([bb[3] for bb in list_bounding_box])))
 
         mat_list_images = np.transpose(list_images.reshape(n_col,n_row))
-        mat_list_labels = np.transpose(np.array(list_labels).reshape(n_row,n_col,tile_size,tile_size),(1,0,2,3))
+        mat_list_labels = np.transpose(np.array(list_labels).reshape(n_col,n_row,tile_size,tile_size),(1,0,2,3))
 
         mat_list_images =np.flip(np.transpose(mat_list_images),axis=0)
         mat_list_labels =np.flip(np.transpose(mat_list_labels,(1,0,2,3)),0)
 
         # Create the grid of pictures and fill it
-        images = np.empty((n_col,n_row), dtype = object)
-        labels = np.empty((n_col,n_row), dtype = object)
+        images = np.empty((n_row,n_col), dtype = object)
+        labels = np.empty((n_row,n_col), dtype = object)
 
         # Get input image dimensions
-        width = tile_size * n_row
-        height = tile_size * n_col
+        width = tile_size * n_col
+        height = tile_size * n_row
 
         # Create empty output image
         output_image = np.zeros((height, width, 3))

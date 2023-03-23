@@ -10,3 +10,6 @@ pytorch_lightning
 albumentations
 torchvision
 mlflow
+matplotlib
+pyarrow
+geopandas
