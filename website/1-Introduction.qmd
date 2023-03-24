@@ -1,3 +1,22 @@
 # Introduction
 
 Je cite @Dirac1953888
+
+
+- Enquête cartographique réalisée chaque année dans les antilles
+- Coûteuse en termes de moyens humains
+- Apparition de zones d'habitations précaires possibles, dur de bien calibrer la charge d'enquête
+- On voudrait connaître chaque année les apparitions et disparition de logements même de courte durée !
+
+
+## Un bidonville, le mont Baduel
+![Mont Baduel](figures/MontBaduel_2.png){#fig-mont-baduel}
+
+![Détection du Mont Baduel](figures/Detection_mont_baduel.png){#fig-detec-mont-baduel}
+
+- On peut détecter la présence de bidonvilles ! 
+
+## Les attendus techniques du projet sont-il bien définis ?
+
+- On voudrait ici être en mesure pour une zone donnée de détecter des apparitions ou disparitions de logement 
+- A-t'on des données annotées qui nous permettent réellement de le faire ?

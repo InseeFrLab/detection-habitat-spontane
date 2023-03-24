@@ -6,13 +6,20 @@ book:
   repo-url: https://github.com/InseeFrLab/detection-bidonvilles
   title: Slum detection like a boss
   author:
+  - name: Shiraz Adamaly
+    email: shiraz.adamaly@insee.fr
   - name: Thomas Faria
     email: thomas.faria@insee.fr
- 
+  - name: Clément Guillo
+    email: clement.guillo@insee.fr
+  - name: Tom Seimandi
+    email: tom.seimandi@insee.fr
+
   date: last-modified
   chapters:
     - index.qmd
     - 1-Introduction.qmd
+    - 2-Image-input.qmd
     - text: "---"
     - references.qmd
   appendices: 
