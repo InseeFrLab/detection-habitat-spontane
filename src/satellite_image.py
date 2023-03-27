@@ -2,19 +2,21 @@
 """
 from __future__ import annotations
 
-import torch
-from typing import List, Optional, Literal
+import os
 from datetime import date
+from typing import List, Literal, Optional
+
+import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
 import rasterio.plot as rp
+import torch
+
 from utils import (
-    get_indices_from_tile_length,
     get_bounds_for_tiles,
+    get_indices_from_tile_length,
     get_transform_for_tiles,
 )
-import matplotlib.pyplot as plt
-import os
 
 
 class SatelliteImage:
@@ -74,7 +76,7 @@ class SatelliteImage:
 
         splitted_images = [
             SatelliteImage(
-                array=self.array[:, rows[0]: rows[1], cols[0]: cols[1]],
+                array=self.array[:, rows[0] : rows[1], cols[0] : cols[1]],
                 crs=self.crs,
                 bounds=get_bounds_for_tiles(self.transform, rows, cols),
                 transform=get_transform_for_tiles(
@@ -92,8 +94,7 @@ class SatelliteImage:
         return splitted_images
 
     def to_tensor(
-        self,
-        bands_indices: Optional[List[int]] = None
+        self, bands_indices: Optional[List[int]] = None
     ) -> torch.Tensor:
         """
         Return SatelliteImage array as a torch.Tensor.
@@ -157,10 +158,11 @@ class SatelliteImage:
         plt.yticks([])
         plt.title(f"Dimension of image {self.array.shape[1:]}")
         plt.show()
-    
+
     @staticmethod
-    def plot_list_satellite_images(list_images: List,bands_indices: List):
-        """Plot a list of SatelliteImage (with a subset of bands) into a grid following the coordinates of the SatelliteImage
+    def plot_list_satellite_images(list_images: List, bands_indices: List):
+        """Plot a list of SatelliteImage (with a subset of bands) into a grid
+        following the coordinates of the SatelliteImage
 
         Args:
             list_images (List): List of SatelliteImage objects
@@ -168,7 +170,7 @@ class SatelliteImage:
                 The indices should be integers between 0 and the
                 number of bands - 1.
         """
-        list_bounding_box = np.array([im.bounds for im in list_images]) 
+        list_bounding_box = np.array([im.bounds for im in list_images])
         list_images = np.array(list_images)
         Y = np.array([bb[0] for bb in list_bounding_box])
         order_y = np.argsort(np.array(Y))
@@ -178,21 +180,21 @@ class SatelliteImage:
         list_bounding_box = list_bounding_box[order_y]
 
         X = np.array([bb[3] for bb in list_bounding_box])
-        list_images = list_images[np.lexsort((Y,X))]
+        list_images = list_images[np.lexsort((Y, X))]
 
         n_col = len(np.unique(np.array([bb[0] for bb in list_bounding_box])))
         n_row = len(np.unique(np.array([bb[3] for bb in list_bounding_box])))
-        
-        mat_list_images = np.transpose(list_images.reshape(n_row,n_col))
-        
+
+        mat_list_images = np.transpose(list_images.reshape(n_row, n_col))
+
         # Create the grid of pictures and fill it
-        images = np.empty((n_col,n_row), dtype = object)
-        
+        images = np.empty((n_col, n_row), dtype=object)
+
         for i in range(n_col):
             for j in range(n_row):
-                images[i,j] = mat_list_images[i,j].array
+                images[i, j] = mat_list_images[i, j].array
 
-        images = np.flip(np.transpose(images),axis=0)
+        images = np.flip(np.transpose(images), axis=0)
 
         # Create a figure and axes
         fig, axs = plt.subplots(nrows=n_row, ncols=n_col, figsize=(10, 10))
@@ -200,18 +202,18 @@ class SatelliteImage:
         # Iterate over the grid of images and plot them
         for i in range(n_row):
             for j in range(n_col):
-                axs[i,j].imshow(np.transpose(images[i,j], (1, 2, 0))[:, :, bands_indices])
+                axs[i, j].imshow(
+                    np.transpose(images[i, j], (1, 2, 0))[:, :, bands_indices]
+                )
 
         # Remove any unused axes
         for i in range(n_row):
             for j in range(n_col):
-                axs[i,j].set_axis_off()
+                axs[i, j].set_axis_off()
 
         # Show the plot
         plt.show()
 
-    
-    
     @staticmethod
     def from_raster(
         file_path: str,

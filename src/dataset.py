@@ -1,13 +1,18 @@
 """
 """
 import random
+from typing import List, Optional, Union
+
 import numpy as np
-from typing import List, Union, Optional
-import torch
-from torch.utils.data import Dataset, DataLoader
-from labeled_satellite_image import SegmentationLabeledSatelliteImage, DetectionLabeledSatelliteImage
 import pytorch_lightning as pl
+import torch
 from albumentations import Compose
+from torch.utils.data import DataLoader, Dataset
+
+from labeled_satellite_image import (
+    DetectionLabeledSatelliteImage,
+    SegmentationLabeledSatelliteImage,
+)
 
 
 # TODO: pour le moment que pour la segmentation
@@ -18,9 +23,12 @@ class SatelliteDataset(Dataset):
 
     def __init__(
         self,
-        labeled_images: Union[List[SegmentationLabeledSatelliteImage], List[DetectionLabeledSatelliteImage]],
+        labeled_images: Union[
+            List[SegmentationLabeledSatelliteImage],
+            List[DetectionLabeledSatelliteImage],
+        ],
         transforms: Optional[Compose] = None,
-        bands_indices: Optional[List[int]] = None
+        bands_indices: Optional[List[int]] = None,
     ):
         """
         Constructor.
@@ -56,9 +64,7 @@ class SatelliteDataset(Dataset):
 
         sample = {"image": satellite_image, "mask": mask}
         if self.transforms:
-            satellite_image = np.transpose(
-                satellite_image, (1, 2, 0)
-            )
+            satellite_image = np.transpose(satellite_image, (1, 2, 0))
             sample = self.transforms(image=satellite_image, mask=mask)
         satellite_image = sample["image"]
         mask = sample["mask"]
@@ -76,14 +82,20 @@ class SatelliteDataModule(pl.LightningDataModule):
 
     def __init__(
         self,
-        train_data: Union[List[SegmentationLabeledSatelliteImage], List[DetectionLabeledSatelliteImage]],
-        test_data: Union[List[SegmentationLabeledSatelliteImage], List[DetectionLabeledSatelliteImage]],
+        train_data: Union[
+            List[SegmentationLabeledSatelliteImage],
+            List[DetectionLabeledSatelliteImage],
+        ],
+        test_data: Union[
+            List[SegmentationLabeledSatelliteImage],
+            List[DetectionLabeledSatelliteImage],
+        ],
         transforms_preprocessing: Optional[Compose] = None,
         transforms_augmentation: Optional[Compose] = None,
         batch_size: int = 8,
         num_workers: int = 4,
         validation_prop: float = 0.2,
-        bands_indices: Optional[List[int]] = None
+        bands_indices: Optional[List[int]] = None,
     ):
         """
         Data Module constructor.
@@ -125,22 +137,24 @@ class SatelliteDataModule(pl.LightningDataModule):
         n_samples = len(self.data)
         random.shuffle(self.data)
         train_slice = slice(0, int(n_samples * (1 - self.validation_prop)))
-        val_slice = slice(int(n_samples * (1 - self.validation_prop)), n_samples)
+        val_slice = slice(
+            int(n_samples * (1 - self.validation_prop)), n_samples
+        )
 
         self.dataset_train = SatelliteDataset(
             self.data[train_slice],
             transforms=self.transforms_augmentation,
-            bands_indices=self.bands_indices
+            bands_indices=self.bands_indices,
         )
         self.dataset_val = SatelliteDataset(
             self.data[val_slice],
             transforms=self.transforms_preprocessing,
-            bands_indices=self.bands_indices
+            bands_indices=self.bands_indices,
         )
         self.dataset_test = SatelliteDataset(
             self.test_data,
             transforms=self.transforms_preprocessing,
-            bands_indices=self.bands_indices
+            bands_indices=self.bands_indices,
         )
 
     def train_dataloader(self, *args, **kwargs) -> DataLoader:
