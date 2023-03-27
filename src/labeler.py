@@ -1,15 +1,17 @@
 """
 Labeler classes.
 """
-import numpy as np
-from typing import List, Tuple, Literal
-from utils import load_ril, load_bdtopo
-from satellite_image import SatelliteImage
-from rasterio.features import rasterize, shapes
 from abc import ABC, abstractmethod
 from datetime import datetime
-from shapely import Polygon
+from typing import List, Literal, Tuple
+
 import geopandas as gpd
+import numpy as np
+from rasterio.features import rasterize, shapes
+from shapely import Polygon
+
+from satellite_image import SatelliteImage
+from utils import load_bdtopo, load_ril
 
 
 class Labeler(ABC):
@@ -190,8 +192,7 @@ class BDTOPOLabeler(Labeler):
 
         if patch.empty:
             rasterized = np.zeros(
-                satellite_image.array.shape[1:],
-                dtype=np.uint8
+                satellite_image.array.shape[1:], dtype=np.uint8
             )
         else:
             rasterized = rasterize(
