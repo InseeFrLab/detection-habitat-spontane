@@ -1,6 +1,6 @@
 # Détection de bidonvilles en Guyane et Mayotte
 
-[![Onyxia](https://img.shields.io/badge/Launch-Datalab-orange?logo=R)](https://datalab.sspcloud.fr/launcher/ide/vscode-python?autoLaunch=false&security.allowlist.enabled=false&service.image.custom.enabled=true&service.image.custom.version=«inseefrlab%2Fdetection-bidonvilles%3Alatest»&service.image.pullPolicy=«Always»&onyxia.friendlyName=«detection-bidonvilles»)
+[![Onyxia](https://img.shields.io/static/v1?logo=visualstudiocode&label=&message=Open%20in%20VS%20Code&labelColor=2c2c32&color=007acc&logoColor=007acc)](https://datalab.sspcloud.fr/launcher/ide/vscode-python?autoLaunch=false&onyxia.friendlyName=%C2%ABslums-detection%C2%BB&init.personalInit=%C2%ABhttps%3A%2F%2Fraw.githubusercontent.com%2FInseeFrLab%2Fdetection-bidonvilles%2Fmain%2Fsetup.sh%C2%BB&fauxpilot.enabled=true&service.image.custom.enabled=true&service.image.pullPolicy=%C2%ABAlways%C2%BB&service.image.custom.version=%C2%ABinseefrlab%2Fdetection-bidonvilles%3Alatest%C2%BB)
 [![Build](https://img.shields.io/github/actions/workflow/status/InseeFrLab/detection-bidonvilles/build-image.yaml?label=Build
 )](https://hub.docker.com/repository/docker/inseefrlab/detection-bidonvilles)
 
