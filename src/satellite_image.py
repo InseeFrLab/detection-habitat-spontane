@@ -2,19 +2,21 @@
 """
 from __future__ import annotations
 
-import torch
-from typing import List, Optional, Literal
+import os
 from datetime import date
+from typing import List, Literal, Optional
+
+import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
 import rasterio.plot as rp
+import torch
+
 from utils import (
-    get_indices_from_tile_length,
     get_bounds_for_tiles,
+    get_indices_from_tile_length,
     get_transform_for_tiles,
 )
-import matplotlib.pyplot as plt
-import os
 
 
 class SatelliteImage:
@@ -56,7 +58,7 @@ class SatelliteImage:
 
     def split(self, tile_length: int) -> List[SatelliteImage]:
         """
-        Split the SatelliteImage into `nfolds` folds.
+        Split the SatelliteImage into folds of size tile_length
 
         Args:
             tile_length (int): Dimension of tiles
@@ -74,7 +76,7 @@ class SatelliteImage:
 
         splitted_images = [
             SatelliteImage(
-                array=self.array[:, rows[0]: rows[1], cols[0]: cols[1]],
+                array=self.array[:, rows[0] : rows[1], cols[0] : cols[1]],
                 crs=self.crs,
                 bounds=get_bounds_for_tiles(self.transform, rows, cols),
                 transform=get_transform_for_tiles(
@@ -88,11 +90,11 @@ class SatelliteImage:
             )
             for rows, cols in indices
         ]
+
         return splitted_images
 
     def to_tensor(
-        self,
-        bands_indices: Optional[List[int]] = None
+        self, bands_indices: Optional[List[int]] = None
     ) -> torch.Tensor:
         """
         Return SatelliteImage array as a torch.Tensor.
