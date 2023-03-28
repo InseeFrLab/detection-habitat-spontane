@@ -86,7 +86,7 @@ class SatelliteImage:
                 filename=self.filename,
                 dep=self.dep,
                 date=self.date,
-                normalized=False,
+                normalized=self.normalized,
             )
             for rows, cols in indices
         ]
@@ -157,61 +157,6 @@ class SatelliteImage:
         plt.xticks([])
         plt.yticks([])
         plt.title(f"Dimension of image {self.array.shape[1:]}")
-        plt.show()
-
-    @staticmethod
-    def plot_list_satellite_images(list_images: List, bands_indices: List):
-        """Plot a list of SatelliteImage (with a subset of bands) into a grid
-        following the coordinates of the SatelliteImage
-
-        Args:
-            list_images (List): List of SatelliteImage objects
-            bands_indices (List): List of indices of bands to plot.
-                The indices should be integers between 0 and the
-                number of bands - 1.
-        """
-        list_bounding_box = np.array([im.bounds for im in list_images])
-        list_images = np.array(list_images)
-        Y = np.array([bb[0] for bb in list_bounding_box])
-        order_y = np.argsort(np.array(Y))
-        Y = Y[order_y]
-
-        list_images = list_images[order_y]
-        list_bounding_box = list_bounding_box[order_y]
-
-        X = np.array([bb[3] for bb in list_bounding_box])
-        list_images = list_images[np.lexsort((Y, X))]
-
-        n_col = len(np.unique(np.array([bb[0] for bb in list_bounding_box])))
-        n_row = len(np.unique(np.array([bb[3] for bb in list_bounding_box])))
-
-        mat_list_images = np.transpose(list_images.reshape(n_row, n_col))
-
-        # Create the grid of pictures and fill it
-        images = np.empty((n_col, n_row), dtype=object)
-
-        for i in range(n_col):
-            for j in range(n_row):
-                images[i, j] = mat_list_images[i, j].array
-
-        images = np.flip(np.transpose(images), axis=0)
-
-        # Create a figure and axes
-        fig, axs = plt.subplots(nrows=n_row, ncols=n_col, figsize=(10, 10))
-
-        # Iterate over the grid of images and plot them
-        for i in range(n_row):
-            for j in range(n_col):
-                axs[i, j].imshow(
-                    np.transpose(images[i, j], (1, 2, 0))[:, :, bands_indices]
-                )
-
-        # Remove any unused axes
-        for i in range(n_row):
-            for j in range(n_col):
-                axs[i, j].set_axis_off()
-
-        # Show the plot
         plt.show()
 
     @staticmethod
