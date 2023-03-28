@@ -1,6 +1,6 @@
 # Introduction
 
-Je cite @Dirac1953888
+Je peux citer comme cela quelques articles que j'ai lu : @mboga_detection_2017, @duque_exploring_2017...
 
 
 - Enquête cartographique réalisée chaque année dans les antilles
