@@ -1,0 +1,55 @@
+# Les images en entrées
+
+## Une image satellite
+Plusieurs caractéristiques possibles pour une image satellite :
+
+- **La résolution :** équivalence entre un pixel et le nombre de mètre couvert par ce dernier
+- **La fréquence d'acquisition :** fréquence des prises de vue pour un même endroit 
+- **source de l'émission :** optique, radar, laser
+- **une fauchée :** Largeur de la zone enregistrée sur un passage
+- **Une couverture géographique donnée**
+
+
+## Images Faibles résolution
+
+![Images Sentinel 2, résolution : 10 m, fréquence : tous les 5 jours, gratuites](figures/image_sentinel.png){#fig-im-sentinel2}
+
+![Exemple masques Sentinel 2](figures/Exemple_1.png){#fig-ex-sentinel2}
+
+- On ne peut espérer obtenir plus précis de ces images que ne peut permettre la résolution 
+
+## Images haute résolution : les données pleiades
+![Image Pléiades](figures/pleiade.png){#fig-im-pleiade}
+
+- Résolution 50/70  cm, acquisitions fraîches mais coûteuses sur demandes $\approx 1.5 \text{~~euros}/ km^{2}$
+- En réalité résolution 1 bande  50 cm et réanchantillonnage des couleurs par dessus
+
+![Grille Pléiades Cayenne](figures/Grille_images.png){#fig-pleiade-grid}
+
+- Les acquisitions peuvent être de plus ou moins bonnes qualité dépendant du moment de la prise de vue, on peut être amené à les refaire (nuage, ensoleillement), ça double les coûts.
+
+Caractéristiques de la prise de vue pouvant nuire à la qualité de l'image récupérée :
+
+- La couverture nuageuse : trop de nuages $\longrightarrow$ images non exploitables
+- Angle d'incidence : angle entre le satellite et la localisation considérée, si l'angle est trop élevé, trop de déformations dans la prise de vue
+
+![Coûts Pléiades](figures/couts_pleiades.png){#fig-pleiade-cost}
+
+![Catalogue Dinamis](figures/ElCatalogue.png){#fig-catalogue}
+
+
+| **Territoire** | **Superficie ($km^2$)**  | **Prix (en euros)** | 
+|:-------:|:----:|:-----:|
+|Martinique |1128| 1692
+|Guadeloupe |1628 |2442
+|Réunion |2512 |3768
+|Mayotte |374 |561
+|Guyane| 83900 |125850
+
+: Facturation des images hautes résolution $\approx 1.50 / km^2$.
+
+- Nécessite une approche en deux temps où on sélectionnerait au préalable grossièrement les zones que l'on veut vérifier (notamment en Guyane)
+- Quotas de gratuité pour les acteurs publics 4000 $km^2$ monoscopiques.
+
+
+
