@@ -1,7 +1,9 @@
 on:
   workflow_dispatch:
   push:
-    branches: [main, website]
+    branches: main
+    paths:
+      - website/
 
 name: Quarto Publish
 
