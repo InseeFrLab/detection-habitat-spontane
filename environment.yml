@@ -1,6 +1,9 @@
 bucket: "projet-slums-detection"
 
 sources:
+  PAPERS:
+    S2Looking: Donnees/PAPERS/S2Looking
+    LEVIR_CD: Donnees/PAPERS/LEVIR_CD
   PLEIADES: Donnees/PLEIADES/Cayenne_200722
   BDTOPO:
     2022:
@@ -65,6 +68,7 @@ sources:
     "978": Donnees/RIL/new_gr/new_gr_978.geojson
 
 local-path:
+  PAPERS: data/paper_dataset
   PLEIADES: data/PLEIADES/Cayenne
   BDTOPO:
     2022:
