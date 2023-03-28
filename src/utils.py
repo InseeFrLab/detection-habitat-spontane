@@ -2,16 +2,18 @@
 Utils.
 """
 import os
-from s3fs import S3FileSystem
-from pathlib import Path
-from affine import Affine
-from typing import List, Tuple, Dict, Literal
 from datetime import datetime
-import pyarrow.parquet as pq
+from pathlib import Path
+from typing import Dict, List, Literal, Tuple
+
 import geopandas as gpd
-import yaml
-import rasterio
 import hvac
+import pyarrow.parquet as pq
+import rasterio
+import yaml
+from affine import Affine
+from s3fs import S3FileSystem
+
 from mappings import dep_to_crs
 
 

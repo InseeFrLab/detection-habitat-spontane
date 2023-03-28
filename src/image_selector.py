@@ -1,6 +1,7 @@
 """
 """
 from typing import List
+
 from labeled_satellite_image import (
     DetectionLabeledSatelliteImage,
     SegmentationLabeledSatelliteImage,
