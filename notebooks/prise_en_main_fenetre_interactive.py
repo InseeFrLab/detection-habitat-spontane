@@ -7,7 +7,7 @@ import sys
 sys.path.append('../src')
 from satellite_image import SatelliteImage
 from utils import *
-
+from plot_utils import *
 import yaml
 import re
 import s3fs
@@ -68,7 +68,7 @@ image.plot([0,1,2])
 image.plot([3,1,2])
 
 # %% Représenter la liste des images sous forme de grille (ajouter une fonction)
-SatelliteImage.plot_list_satellite_images(list_images,bands_indices = [3,1,2])
+plot_list_satellite_images(list_images,bands_indices = [3,1,2])
 
 # %% Instanciation des labellers
 from labeler import RILLabeler
@@ -76,8 +76,9 @@ labeler = RILLabeler(date, dep = "973", buffer_size= 10)
 mask = labeler.create_segmentation_label(image) # va chercher les données et rasterise les bounding box
 image.normalize
 fig, ax = plt.subplots(figsize=(5, 5))
-ax.imshow(np.transpose(image.array_to_plot, (1, 2, 0))[:,:,:3])
-ax.imshow(mask, alpha=0.3) # magnifique ! Faire une fonction  de représentation  ? # faire du découpage ? ou une fonction de sélection aléatoire d'une tuile ?
+ax.imshow(np.transpose(image.array, (1, 2, 0))[:,:,:3])
+ax.imshow(mask, alpha=0.3)
+plt.show() # magnifique ! Faire une fonction  de représentation  ? # faire du découpage ? ou une fonction de sélection aléatoire d'une tuile ?
 
 
 # %% Mont Baduel
@@ -94,7 +95,7 @@ image = SatelliteImage.from_raster(
     )
 
 image.plot([3,1,2])
-SatelliteImage.plot_list_satellite_images(image.split(250),[0,1,2])
+plot_list_satellite_images(image.split(250),[0,1,2])
 
 
 # %%
@@ -107,7 +108,7 @@ if image.normalize == False:
 fig, ax = plt.subplots(figsize=(5, 5))
 ax.imshow(np.transpose(image.array, (1, 2, 0))[:,:,:3])
 ax.imshow(mask, alpha=0.3) # magnifique ! Faire une fonction  de représentatio
-
+plt.show()
 
 
 # %% Le mont Baduel
@@ -122,12 +123,12 @@ image = SatelliteImage.from_raster(
         n_bands = 4,
         dep = "973"
     )
-
+# %%
 image.plot([3,1,2])
 
 mask = labeler_bdtopo.create_segmentation_label(image)
 
-if image.normalize == False:
+if image.normalized == False:
     image.normalize
 fig, ax = plt.subplots(figsize=(5, 5))
 ax.imshow(np.transpose(image.array, (1, 2, 0))[:,:,:3])
@@ -147,8 +148,8 @@ image_labellisee.plot_label_next_to_image([0,1,2])
 
 liste_image_labelisee = image_labellisee.split(250)
 
+# %%
 # plot la liste d'images labellisées
 ## Ici on recolle les morceaux en partant de la liste
-SegmentationLabeledSatelliteImage.plot_list_segmentation_labeled_satellite_image(liste_image_labelisee,[0,1,2])
-
+plot_list_segmentation_labeled_satellite_image(liste_image_labelisee,[0,1,2])
 

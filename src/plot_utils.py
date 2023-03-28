@@ -4,23 +4,35 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def order_list_from_bb(list_bounding_box, list_to_order):
+def order_list_from_bb(list_bounding_box: List, list_to_order: List):
+    """Order a given List according to the X,Y coordinates
+    of the list of bounding boxes taken as input
+
+    Args:
+        list_bounding_box (List): List of bouding box (4-dimensional tuples)
+        list_to_order (List): List of object we want to order according
+        to the coordinates of the bounding boxes
+    """
     Y = np.array([bb[0] for bb in list_bounding_box])
     order_y = np.argsort(np.array(Y))
     Y = Y[order_y]
 
-    list_to_order = list_to_order[order_y]
-    list_bounding_box = list_bounding_box[order_y]
+    list_to_order = [list_to_order[i] for i in order_y]
+    list_bounding_box = [list_bounding_box[i] for i in order_y]
 
     X = np.array([bb[3] for bb in list_bounding_box])
-    list_to_order = list_to_order[np.lexsort((Y, X))]
+    order = np.lexsort((Y, X))
+
+    list_to_order = [list_to_order[i] for i in order]
 
     return list_to_order
 
 
 def plot_list_satellite_images(list_images: List, bands_indices: List):
     """Plot a list of SatelliteImage (with a subset of bands) into a grid
-    following the coordinates of the SatelliteImage
+    following the coordinates of the SatelliteImage.
+    The list of SatelliteImages taken as input when represented
+    in the correct order, has to fully cover a rectangular area.
 
     Args:
         list_images (List): List of SatelliteImage objects
@@ -29,14 +41,13 @@ def plot_list_satellite_images(list_images: List, bands_indices: List):
             number of bands - 1.
     """
     list_bounding_box = np.array([im.bounds for im in list_images])
-    list_images = np.array(list_images)
 
     list_images = order_list_from_bb(list_bounding_box, list_images)
 
     n_col = len(np.unique(np.array([bb[0] for bb in list_bounding_box])))
     n_row = len(np.unique(np.array([bb[3] for bb in list_bounding_box])))
 
-    mat_list_images = np.transpose(list_images.reshape(n_row, n_col))
+    mat_list_images = np.transpose(np.array(list_images).reshape(n_row, n_col))
 
     # Create the grid of pictures and fill it
     images = np.empty((n_col, n_row), dtype=object)
@@ -70,8 +81,10 @@ def plot_list_segmentation_labeled_satellite_image(
     list_labeled_image: List, bands_indices: List
 ):
     """Plot a list of SegmentationLabeledSatelliteImage:
-    (with a subset of bands) into 2 pictures, one with
-    the image , one with the labels
+    (with a subset of bands) into 2 pictures, one with the satelliteImage,
+    one with the labels. The list of SatelliteImages contained in the
+    labeled_images taken as input, when represented in the correct order,
+    has to fully cover a rectangular area.
 
     Args:
         list_labeled_image (List): List of SatelliteImage objects
@@ -85,27 +98,17 @@ def plot_list_segmentation_labeled_satellite_image(
     list_bounding_box = np.array(
         [iml.satellite_image.bounds for iml in list_labeled_image]
     )
-    list_images = np.array([iml.satellite_image for iml in list_labeled_image])
+    list_images = [iml.satellite_image for iml in list_labeled_image]
     list_labels = [iml.label for iml in list_labeled_image]
 
     # calcul du bon ordre relativement aux coordonnées
-    Y = np.array([bb[0] for bb in list_bounding_box])
-    order_y = np.argsort(np.array(Y))
-    Y = Y[order_y]
-
-    list_images = list_images[order_y]
-    list_labels = [list_labels[i] for i in order_y]
-    list_bounding_box = list_bounding_box[order_y]
-
-    X = np.array([bb[3] for bb in list_bounding_box])
-    order = np.lexsort((Y, X))
-    list_images = list_images[order]
-    list_labels = [list_labels[i] for i in order]
+    list_images = order_list_from_bb(list_bounding_box, list_images)
+    list_labels = order_list_from_bb(list_bounding_box, list_labels)
 
     n_col = len(np.unique(np.array([bb[0] for bb in list_bounding_box])))
     n_row = len(np.unique(np.array([bb[3] for bb in list_bounding_box])))
 
-    mat_list_images = np.transpose(list_images.reshape(n_col, n_row))
+    mat_list_images = np.transpose(np.array(list_images).reshape(n_col, n_row))
     mat_list_labels = np.transpose(
         np.array(list_labels).reshape(n_col, n_row, tile_size, tile_size),
         (1, 0, 2, 3),
@@ -149,6 +152,8 @@ def plot_list_segmentation_labeled_satellite_image(
     fig, ax = plt.subplots(1, 2, figsize=(15, 15))
     ax[0].imshow(output_image)  # avec la normalisation pour l'affichage
     ax[0].set_title("Input Image")
+    ax[0].set_axis_off()
     ax[1].imshow(output_mask)
     ax[1].set_title("Output Image")
+    ax[1].set_axis_off()
     plt.show()
