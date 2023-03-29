@@ -157,3 +157,6 @@ def plot_list_segmentation_labeled_satellite_image(
     ax[1].set_title("Output Image")
     ax[1].set_axis_off()
     plt.show()
+
+    
+       
