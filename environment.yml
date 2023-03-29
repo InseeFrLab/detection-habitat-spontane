@@ -99,7 +99,39 @@ sources:
     "978": Donnees/RIL/new_gr/new_gr_978.geojson
 
 local-path:
-  PLEIADES: data/PLEIADES/Cayenne
+  PLEIADES: 
+      2022: 
+          guadeloupe: data/PLEIADES/2022/GUADELOUPE
+          martinique: data/PLEIADES/2022/MARTINIQUE
+          #reunion: NA
+          guyane: data/PLEIADES/2022/GUYANE
+          mayotte: data/PLEIADES/2022/MAYOTTE
+          
+      2020:
+          #guadeloupe: NA
+          #martinique: NA
+          #reunion: NA
+          #guyane: NA
+          mayotte: data/PLEIADES/2020/MAYOTTE
+      2019:
+          #guadeloupe: NA
+          #martinique: NA
+          #reunion: NA
+          #guyane: NA
+          mayotte: data/PLEIADES/2019/MAYOTTE
+      2018:
+          #guadeloupe: NA
+          #martinique: NA
+          reunion: data/PLEIADES/2018/REUNION
+          #guyane: NA
+          #mayotte: NA
+      2017:
+          #guadeloupe: NA
+          martinique: data/PLEIADES/2017/MARTINIQUE
+          #reunion: NA
+          #guyane: NA
+          mayotte: data/PLEIADES/2017/MAYOTTE
   BDTOPO:
-    2022:
-      guyane: data/BDTOPO/BDTOPO_guyane_2022
+      2022:
+          #guyane: data/BDTOPO/BDTOPO_guyane_2022
+          guyane: data/BDTOPO/2022/BDTOPO_GUYANE
