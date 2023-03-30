@@ -1,29 +1,31 @@
 """
 Script to train a DL model.
 """
-import sys
+import gc
 import os
 import re
-import gc
+import sys
 from datetime import datetime
-from tqdm import tqdm
+
+import albumentations as album
 import mlflow
+import pytorch_lightning as pl
 import torch
-from satellite_image import SatelliteImage
-from labeled_satellite_image import SegmentationLabeledSatelliteImage
-from deeplabv3 import DeepLabv3Module, DeepLabv3LitModule
-from dataset import SatelliteDataModule
-from utils import get_environment
-from filter import is_too_black
-from labeler import BDTOPOLabeler
+from albumentations.pytorch.transforms import ToTensorV2
 from pytorch_lightning.callbacks import (
-    ModelCheckpoint,
     EarlyStopping,
     LearningRateMonitor,
+    ModelCheckpoint,
 )
-import pytorch_lightning as pl
-import albumentations as album
-from albumentations.pytorch.transforms import ToTensorV2
+from tqdm import tqdm
+
+from dataset import SatelliteDataModule
+from deeplabv3 import DeepLabv3LitModule, DeepLabv3Module
+from filter import is_too_black
+from labeled_satellite_image import SegmentationLabeledSatelliteImage
+from labeler import BDTOPOLabeler
+from satellite_image import SatelliteImage
+from utils import get_environment
 
 
 def main(remote_server_uri, experiment_name, run_name):
@@ -37,20 +39,26 @@ def main(remote_server_uri, experiment_name, run_name):
     environment = get_environment()
 
     path_local_pleiades_data = environment["local-path"]["PLEIADES"]
-    images_paths = [f"{path_local_pleiades_data}/16bits/ORT_2022072050325085_U22N/" + p for p in os.listdir(f"{path_local_pleiades_data}/16bits/ORT_2022072050325085_U22N/")]
-    date = datetime.strptime(re.search(r'ORT_(\d{8})', images_paths[0]).group(1), '%Y%m%d')
+    images_paths = [
+        f"{path_local_pleiades_data}/16bits/ORT_2022072050325085_U22N/" + p
+        for p in os.listdir(
+            f"{path_local_pleiades_data}/16bits/ORT_2022072050325085_U22N/"
+        )
+    ]
+    date = datetime.strptime(
+        re.search(r"ORT_(\d{8})", images_paths[0]).group(1), "%Y%m%d"
+    )
     list_images = [
-        SatelliteImage.from_raster(
-            filename,
-            dep="973",
-            date=date,
-            n_bands=4
-        ) for filename in tqdm(images_paths)
+        SatelliteImage.from_raster(filename, dep="973", date=date, n_bands=4)
+        for filename in tqdm(images_paths)
     ]
 
     image_size = (250, 250)
     splitted_list_images = [
-        im for sublist in tqdm(list_images) for im in sublist.split(image_size[0]) if not is_too_black(im)
+        im
+        for sublist in tqdm(list_images)
+        for im in sublist.split(image_size[0])
+        if not is_too_black(im)
     ]
 
     # Labeling
@@ -60,8 +68,9 @@ def main(remote_server_uri, experiment_name, run_name):
             sat_im,
             labeler_BDTOPO.create_segmentation_label(sat_im),
             "BDTOPO",
-            date
-        ) for sat_im in tqdm(splitted_list_images[:30])
+            date,
+        )
+        for sat_im in tqdm(splitted_list_images[:30])
     ]
 
     # DataModule definition
@@ -92,28 +101,25 @@ def main(remote_server_uri, experiment_name, run_name):
         transforms_preprocessing=transforms_preprocessing,
         num_workers=56,
         batch_size=16,
-        bands_indices=[0, 1, 2]
+        bands_indices=[0, 1, 2],
     )
 
     # Training
     optimizer = torch.optim.SGD
-    optimizer_params = {
-        "lr": 0.0001,
-        "momentum": 0.9
-    }
+    optimizer_params = {"lr": 0.0001, "momentum": 0.9}
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
     scheduler_params = {}
     scheduler_interval = "epoch"
 
     model = DeepLabv3Module()
     lightning_module = DeepLabv3LitModule(
-            model=model,
-            optimizer=optimizer,
-            optimizer_params=optimizer_params,
-            scheduler=scheduler,
-            scheduler_params=scheduler_params,
-            scheduler_interval=scheduler_interval
-        )
+        model=model,
+        optimizer=optimizer,
+        optimizer_params=optimizer_params,
+        scheduler=scheduler,
+        scheduler_params=scheduler_params,
+        scheduler_interval=scheduler_interval,
+    )
 
     checkpoint_callback = ModelCheckpoint(
         monitor="validation_loss", save_top_k=1, save_last=True, mode="min"
@@ -132,11 +138,15 @@ def main(remote_server_uri, experiment_name, run_name):
         mlflow.pytorch.autolog()
         with mlflow.start_run(run_name=run_name):
             trainer = pl.Trainer(
-                callbacks=[lr_monitor, checkpoint_callback, early_stop_callback],
+                callbacks=[
+                    lr_monitor,
+                    checkpoint_callback,
+                    early_stop_callback,
+                ],
                 max_epochs=2,
                 gpus=gpus,
                 num_sanity_val_steps=2,
-                strategy=strategy
+                strategy=strategy,
             )
             trainer.fit(lightning_module, datamodule=data_module)
     else:
@@ -145,7 +155,7 @@ def main(remote_server_uri, experiment_name, run_name):
             max_epochs=2,
             gpus=gpus,
             num_sanity_val_steps=2,
-            strategy=strategy
+            strategy=strategy,
         )
         trainer.fit(lightning_module, datamodule=data_module)
 

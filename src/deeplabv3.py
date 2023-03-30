@@ -1,33 +1,29 @@
 """
 """
-import torchvision
-from typing import Union, Dict
-import torch
-from torch import optim, nn
+from typing import Dict, Union
+
 import pytorch_lightning as pl
+import torch
+import torchvision
+from torch import nn, optim
 
 
 class DeepLabv3Module(nn.Module):
-    """
-    """
+    """ """
 
     def __init__(self):
-        """
-        """
+        """ """
         super().__init__()
         self.model = torchvision.models.segmentation.deeplabv3_resnet101(
-            weights='DeepLabV3_ResNet101_Weights.DEFAULT'
+            weights="DeepLabV3_ResNet101_Weights.DEFAULT"
         )
         # 1 classe !
         self.model.classifier[4] = nn.Conv2d(
-            256,
-            2,
-            kernel_size=(1, 1),
-            stride=(1, 1))
+            256, 2, kernel_size=(1, 1), stride=(1, 1)
+        )
 
     def forward(self, x):
-        """
-        """
+        """ """
         return self.model(x)
 
 
@@ -41,7 +37,9 @@ class DeepLabv3LitModule(pl.LightningModule):
         model: DeepLabv3Module,
         optimizer: Union[optim.SGD, optim.Adam],
         optimizer_params: Dict,
-        scheduler: Union[optim.lr_scheduler.OneCycleLR, optim.lr_scheduler.ReduceLROnPlateau],
+        scheduler: Union[
+            optim.lr_scheduler.OneCycleLR, optim.lr_scheduler.ReduceLROnPlateau
+        ],
         scheduler_params: Dict,
         scheduler_interval: str,
     ):
@@ -136,7 +134,7 @@ class DeepLabv3LitModule(pl.LightningModule):
         scheduler = {
             "scheduler": scheduler,
             "monitor": "validation_loss",
-            "interval": self.scheduler_interval
+            "interval": self.scheduler_interval,
         }
 
         return [optimizer], [scheduler]

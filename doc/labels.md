@@ -61,7 +61,7 @@ De 2011 à 2016, la principale source de mise à jour était l’enquête cartog
 
 #### Les enquêtes terrain
 
-**L’enquête cartographique en différentiel** est préparée à partir de mars et se déroule sur le terrain de mai à décembre. Les enquêteurs examinent des habitations en construction et leurs alentours pour voir si elles sont devenues habitables. Ils examinent également les habitations repérées grâce aux données fiscales. Pour cela, des gestionnaires traitent également des EA ou des parcelles cadastrales sur lesquelles on soupçonne un déficit dans le RIL. Elles sont repérées à la suite d’un appariement entre le RIL et des données fiscales (Fichiers démographiques sur les logements et les individus, qui apparie notamment des sources fiscales), réalisé par l’Insee. Les données fiscales constituent donc une source complémentaire à celle des permis pour améliorer la qualité du RIL. 
+**L’enquête cartographique en différentiel** est préparée à partir de mars et se déroule sur le terrain de mai à décembre. Les enquêteurs examinent des habitations en construction et leurs alentours pour voir si elles sont devenues habitables. Ils examinent également les habitations repérées grâce aux données fiscales. Pour cela, des gestionnaires traitent également des EA ou des parcelles cadastrales sur lesquelles on soupçonne un déficit dans le RIL. Elles sont repérées à la suite d’un appariement entre le RIL et des données fiscales (Fichiers démographiques sur les logements et les individus, qui apparie notamment des sources fiscales), réalisé par l’Insee. Les données fiscales constituent donc une source complémentaire à celle des permis pour améliorer la qualité du RIL.
 
 **L’enquête de mesure de la qualité du RIL** (EMQR) à La Réunion se déroule sur le terrain d’octobre à décembre. Les enquêteurs effectuent un ratissage complet d’îlots du groupe de rotation. L’objectif est d’évaluer la qualité du RIL sur ce groupe de rotation et de voir des
 adresses habitables qui n’ont pas été repérées lors de l’enquête cartographique en différentiel.
@@ -93,7 +93,7 @@ Identique au processus pour Antilles-Guyane.
 
 ## BD TOPO
 
-Documentation générale : 
+Documentation générale :
 
 Les évolutions du produit sont décrites dans des documents spécifiques nommés :
 
@@ -169,7 +169,7 @@ Après unification de la BD TOPO avec la BD PARCELLAIRE, tous les bâtiments pr�
 
 Cependant, si une nouvelle saisie photogrammétrique a lieu après les phases d’unification du bâti, les nouveaux bâtiments ne posséderont pas la granularité de la BD PARCELLAIRE. Pour la restitution, les seuils de sélection initiaux sont alors appliqués (bâtiments de plus de 50 m² et bâtiments de 20 à 50 m² en fonction de leur environnement et de leur aspect).
 
-Dans les natures proposées pour la classe *bâtiment* : 
+Dans les natures proposées pour la classe *bâtiment* :
 
 - Nature *indifférenciée* : c'est la valeur prise par défaut, chaque fois que l'aspect général d'un bâtiment ne révèle rien de sa
 nature exacte. Regroupement : Bâtiment d'habitation | Bâtiments administratifs | Bâtiment public | Bergerie traditionnelle
@@ -196,7 +196,7 @@ Fichiers sur le portail [géoservices](https://geoservices.ign.fr/documentation/
 
 ### Versions
 
-Numéro de version : X.Y, par exemple 3.0 -> 3 est le numéro de version, 0 de sous-version. 
+Numéro de version : X.Y, par exemple 3.0 -> 3 est le numéro de version, 0 de sous-version.
 
 Les classes d’objets peuvent, dans de rares cas; être amenées à changer pour être ajoutées, supprimées, ou modifiées. Dans le cas d’un ajout ou d’une suppression de classe, il s’agit d’une modification de structure d’un thème. Ces changements incrémentent le numéro de sous-version du produit.
 
