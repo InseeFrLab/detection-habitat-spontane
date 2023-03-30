@@ -10,27 +10,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
 import rasterio.plot as rp
-<<<<<<< HEAD
 import matplotlib.pyplot as plt
 import os
+import torch
 
 import sys
 sys.path.append('../src')
-=======
-import torch
 
->>>>>>> main
+
 from utils import (
     get_bounds_for_tiles,
-<<<<<<< HEAD
-    get_transform_for_tiles
-)
-
-=======
-    get_indices_from_tile_length,
     get_transform_for_tiles,
+    get_indices_from_tile_length,
 )
->>>>>>> main
 
 
 class SatelliteImage:
