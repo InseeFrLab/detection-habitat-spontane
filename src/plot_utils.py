@@ -3,6 +3,10 @@ from typing import List
 import matplotlib.pyplot as plt
 import numpy as np
 
+import sys
+sys.path.append('../src')
+from satellite_image import SatelliteImage
+
 
 def order_list_from_bb(list_bounding_box: List, list_to_order: List):
     """Order a given List according to the X,Y coordinates
@@ -157,3 +161,140 @@ def plot_list_segmentation_labeled_satellite_image(
     ax[1].set_title("Output Image")
     ax[1].set_axis_off()
     plt.show()
+    
+
+def plot_infrared_simple_mask(
+    satellite_image: SatelliteImage
+):
+    """Plot the infrared mask based on "seuillage sur la médiane infrarouge".
+
+    Args:
+        satellite_image (SatelliteImage): A satellite image with 4 bands.
+    """   
+    if satellite_image.n_bands < 4 :
+        print("Cette image n'a pas de bande infrarouge.")
+     
+    #on extrait l'array de l'image pour avoir les valeurs des pixels
+    img = satellite_image.array
+
+    #multiplication par 255 et convertion en uint8 pour avoir le bon format
+    img = (img * 255).astype(np.uint8)
+
+    img = img.transpose()
+    
+    seuil = np.quantile(img[:,:,3],0.5)
+    
+    #on parcours tous les pixels et on les modifie en fonction du seuil
+    for row in range(img.shape[0]):
+        for col in range(img.shape[1]):
+            i = img[row,col,3]
+            if i > seuil: #médiane
+                img[row, col] = np.array([0, 0, 0,0]) # blanc
+
+            else : 
+                img[row, col] = np.array([255,255,255,255]) # noir
+    
+    img = img.transpose()
+
+    #On veut le bon format
+    img = (img/255).astype(np.float64)
+
+    satellite_image.array = img
+    
+    satellite_image.plot([0,1,2])
+    
+   
+
+def plot_infrared_patch_mask(
+    satellite_image: SatelliteImage
+):
+    """Plot the infrared mask based on "seuillage patch par patch sur la médiane infrarouge du patch". 250 patches.
+
+    Args:
+        satellite_image (SatelliteImage): A satellite image with 4 bands.
+    """
+    if satellite_image.n_bands < 4 :
+        print("Cette image n'a pas de bande infrarouge.")
+    
+    list_images = satellite_image.split(250)
+
+    #on parcourt chaque patch
+    for mini_image in list_images:
+        #on extrait l'array de l'image pour avoir les valeurs des pixels
+        img = mini_image.array
+
+        #multiplication par 255 et convertion en uint8 pour avoir le bon format
+        img = (img * 255).astype(np.uint8)
+
+        img = img.transpose()
+
+        seuil = np.quantile(img[:,:,3],0.5)
+
+        #on parcours tous les pixels et on les modifie en fonction du seuil
+        for row in range(img.shape[0]):
+            for col in range(img.shape[1]):
+                i = img[row,col,3]
+                if i > seuil: #médiane
+                    img[row, col] = np.array([0, 0, 0,0]) # blanc
+
+                else : 
+                    img[row, col] = np.array([255,255,255,255]) # noir
+
+        img = img.transpose()
+
+        #On veut le bon format
+        img = (img/255).astype(np.float64)
+
+        mini_image.array = img
+
+    plot_list_satellite_images(list_images,bands_indices = [0,1,2])
+
+    
+def plot_infrared_complex_mask(
+    satellite_image: SatelliteImage
+):
+    """Plot the infrared mask based on "seuillage sur l'infrarouge, le vert et le bleu pour récuperer certaines nuances d'infrarouge".
+
+    Args:
+        satellite_image (SatelliteImage): A satellite image with 4 bands.
+    """
+    
+    if satellite_image.n_bands < 4 :
+        print("Cette image n'a pas de bande infrarouge.")
+        
+img = satellite_image.array
+
+img = (img * 255).astype(np.uint8)
+
+
+img = img.transpose()
+
+# On va parcourir tous les pixels de l'image
+for row in range(img.shape[0]):
+    for col in range(img.shape[1]):
+        b = img[row,col, 1]
+        g = img[row,col, 2]
+        r = img[row,col, 3]
+        mini = min(b,g)
+        maxi = max(b,g)
+        
+        if maxi-mini <= 20 : #étape 1
+            
+            if r > 200 and mini >= 110 and r>= (20+mini): #étape 2
+                img[row, col] = [255,255,255,255] # blanc
+            elif  r>= (20+mini) and r >= 110: #étape 3
+                img[row, col] = [0,0,0,0] #noir
+            else : #étape 4
+                img[row, col] = [255,255,255,255] # blanc
+
+        else : #étape 4
+            img[row, col] = [255,255,255,255] # blanc
+
+img = img.transpose()
+
+#On veut le bon format
+img = (img/255).astype(np.float64)
+
+satellite_image.array = img
+
+satellite_image.plot([0,1,2])
