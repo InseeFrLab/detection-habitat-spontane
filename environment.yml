@@ -1,13 +1,48 @@
 bucket: "projet-slums-detection"
 
 sources:
-  PLEIADES: Donnees/PLEIADES/Cayenne_200722
+  PLEIADES: 
+      2022: 
+          guadeloupe: Donnees/PLEIADES/GUADELOUPE/2022/MOSA
+          martinique: Donnees/PLEIADES/MARTINIQUE/2022/MOSA
+          #reunion: NA
+          guyane: Donnees/PLEIADES/Cayenne_200722/16bits/ORT_2022072050325085_U22N
+          mayotte: Donnees/PLEIADES/MAYOTTE/2022/MOSA
+          cayenne: Donnees/PLEIADES/Cayenne_200722.7z
+          
+      2020:
+          #guadeloupe: NA
+          #martinique: NA
+          #reunion: NA
+          #guyane: NA
+          mayotte: Donnees/PLEIADES/MAYOTTE/2020/MOSA
+      2019:
+          #guadeloupe: NA
+          #martinique: NA
+          #reunion: NA
+          #guyane: NA
+          mayotte: Donnees/PLEIADES/MAYOTTE/2019/MOSA
+      2018:
+          #guadeloupe: NA
+          #martinique: NA
+          reunion: Donnees/PLEIADES/REUNION/2018/MOSA
+          #guyane: NA
+          #mayotte: 
+      2017:
+          #guadeloupe: NA
+          martinique: Donnees/PLEIADES/MARTINIQUE/2017-2018/MOSA
+          #reunion: NA
+          #guyane: NA
+          mayotte: Donnees/PLEIADES/MAYOTTE/2017/MOSA
+                    
+          
+          
   BDTOPO:
     2022:
       guadeloupe: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D971_2022-03-15
       martinique: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D972_2022-03-15
       reunion: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGR92UTM40S_D974_2022-03-15
-      guyane: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_UTM22RGFG95_D973_2022-03-15
+      guyane: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_UTM22RGFG95_D973_2022-03-15/BDTOPO/1_DONNEES_LIVRAISON_2022-03-00081/BDT_3-0_SHP_UTM22RGFG95_D973-ED2022-03-15
       # guyane: Donnees/BDTOPO/BDTOPO_3-3_TOUSTHEMES_SHP_UTM22RGFG95_D973_2022-12-15
       mayotte: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGM04UTM38S_D976_2022-03-15
     2021:
@@ -65,7 +100,39 @@ sources:
     "978": Donnees/RIL/new_gr/new_gr_978.geojson
 
 local-path:
-  PLEIADES: data/PLEIADES/Cayenne
+  PLEIADES: 
+      2022: 
+          guadeloupe: data/PLEIADES/2022/GUADELOUPE
+          martinique: data/PLEIADES/2022/MARTINIQUE
+          #reunion: NA
+          guyane: data/PLEIADES/2022/GUYANE
+          mayotte: data/PLEIADES/2022/MAYOTTE
+          
+      2020:
+          #guadeloupe: NA
+          #martinique: NA
+          #reunion: NA
+          #guyane: NA
+          mayotte: data/PLEIADES/2020/MAYOTTE
+      2019:
+          #guadeloupe: NA
+          #martinique: NA
+          #reunion: NA
+          #guyane: NA
+          mayotte: data/PLEIADES/2019/MAYOTTE
+      2018:
+          #guadeloupe: NA
+          #martinique: NA
+          reunion: data/PLEIADES/2018/REUNION
+          #guyane: NA
+          #mayotte: NA
+      2017:
+          #guadeloupe: NA
+          martinique: data/PLEIADES/2017/MARTINIQUE
+          #reunion: NA
+          #guyane: NA
+          mayotte: data/PLEIADES/2017/MAYOTTE
   BDTOPO:
-    2022:
-      guyane: data/BDTOPO/BDTOPO_guyane_2022
+      2022:
+          #guyane: data/BDTOPO/BDTOPO_guyane_2022
+          guyane: data/BDTOPO/2022/BDTOPO_GUYANE
