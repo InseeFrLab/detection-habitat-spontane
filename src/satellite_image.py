@@ -21,7 +21,7 @@ sys.path.append('../src')
 from utils import (
     get_bounds_for_tiles,
     get_transform_for_tiles,
-    get_indices_from_tile_length,
+    get_indices_from_tile_length
 )
 
 
