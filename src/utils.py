@@ -14,11 +14,6 @@ import yaml
 from affine import Affine
 from s3fs import S3FileSystem
 
-import sys
-sys.path.append('../src')
-from satellite_image import SatelliteImage
-from mappings import *
-
 
 def get_root_path() -> Path:
     """
@@ -239,65 +234,3 @@ def update_storage_access():
         pass
     
     
-
-def crs_to_gps_image(satellite_image: SatelliteImage = None, filepath: str = None) :
-    
-    """
-    Give the gps point of the left-top boundingbox of the image. Argument is either a SatelliteImage or a filepath
-
-    Args:
-        satellite_image (SatelliteImage)
-        filepath (str): The full filepath 
-
-    Returns:
-        GPS coordinate : latitude and logitutude 
-    """
-    
-    if satellite_image != None:
-        folder_path = '../data/PLEIADES/' + str((satellite_image.date).year) + '/' + num_dep_to_name_dep[satellite_image.dep]
-        filepath = folder_path + '/' + satellite_image.filename
-
-    delimiters = ["-", "_"]
-
-    pattern = "|".join(delimiters)
-
-    split_filepath = re.split(pattern, filepath)
-
-    x = float(split_filepath[2])*1000 #left
-    y = float(split_filepath[3])*1000 #top
-    
-    delimiters = ["/"]
-
-    pattern = "|".join(delimiters)
-
-    split_filepath = re.split(pattern, filepath)
-    
-    dep_num = name_dep_to_num_dep[split_filepath[4]]
-    str_crs = dep_to_crs[dep_num]
-    
-    transformer = pyproj.Transformer.from_crs(str_crs, 'EPSG:4326',always_xy=True) 
-    lon, lat = transformer.transform(x,y)
-    
-    # Retourner les coordonnées GPS (latitude, longitude)
-    return lat, lon
-
-
-def gps_to_crs_point(lat : float, lon : float, crs : int or str) :
-    
-    """
-    Give the crs point of a gps point.
-
-    Args:
-        lat (float): latitude
-        lon (float): longitude
-        crs (int or str)
-
-    Returns:
-        CRS coordinate
-    """
-    # Convertir les coordonnées GPS en coordonnées dans le système de coordonnées de destination (CRS)
-    transformer = pyproj.Transformer.from_crs('EPSG:4326','EPSG:'+str(crs),always_xy=True) #au cas où le CRS en entrée est de type entier 
-    x, y = transformer.transform(lon, lat) #car y=lat et x=lon, les coordonnées gps sont en (lat,lon)
-    
-    # Retourner les coordonnées dans le CRS spécifié
-    return x, y
