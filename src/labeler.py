@@ -166,7 +166,7 @@ class BDTOPOLabeler(Labeler):
             dep (Literal): Departement.
         """
         super(BDTOPOLabeler, self).__init__(labeling_date, dep)
-        self.labeling_data = load_bdtopo(self.labeling_date)
+        self.labeling_data = load_bdtopo(self.labeling_date, self.dep)
 
     def create_segmentation_label(
         self, satellite_image: SatelliteImage
