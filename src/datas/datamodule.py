@@ -1,13 +1,8 @@
-"""
-"""
-import random
-from typing import List, Optional, Union
-
-import numpy as np
 import pytorch_lightning as pl
-import torch
+from torch.utils.data import DataLoader
+from typing import Dict, Union, Optional, List
 from albumentations import Compose
-from torch.utils.data import DataLoader, Dataset
+import albumentations as album
 
 from labeled_satellite_image import (
     DetectionLabeledSatelliteImage,
@@ -15,78 +10,128 @@ from labeled_satellite_image import (
 )
 
 
-# TODO: pour le moment que pour la segmentation
-class SatelliteDataset(Dataset):
+class SegmentationDataModule(pl.LightningDataModule):
     """
-    Custom Dataset class.
+    Pytorch Lightning Data Module.
     """
 
     def __init__(
         self,
-        labeled_images: Union[
-            List[SegmentationLabeledSatelliteImage],
-            List[DetectionLabeledSatelliteImage],
-        ],
-        transforms: Optional[Compose] = None,
-        bands_indices: Optional[List[int]] = None,
+        train_data: List[str],
+        valid_data: List[str],
+        test_data:  List[str],
+        transforms_preprocessing: Optional[Compose] = None,
+        transforms_augmentation: Optional[Compose] = None,
+        batch_size: int = 20,
+        num_workers: int = 4
     ):
         """
-        Constructor.
+        Data Module constructor.
 
         Args:
-            labeled_images (List): _description_
-            transforms (Optional[Compose]): Compose object from albumentations.
+            train_data (List): List of training (and validation) instances
+            test_data (List): List of test instances
+            transforms_preprocessing (Optional[Compose]): Compose object
+                from albumentations applied on validation and test datasets.
+            transforms_augmentation (Optional[Compose]): Compose object
+                from albumentations applied on training dataset.
+            batch_size (int): Batch size.
+            num_workers (int): Number of workers to process data.
             bands_indices (List): List of indices of bands to plot.
                 The indices should be integers between 0 and the
                 number of bands - 1.
         """
-        self.labeled_images = labeled_images
-        self.transforms = transforms
-        self.bands_indices = bands_indices
+        super().__init__()
 
-    def __getitem__(self, idx):
-        """_summary_
+        self.train_data = train_data # list containing image1 path, imaghe 2 paths and label paths
+        self.valid_data = valid_data
+        self.test_data = test_data
+        self.transforms_preprocessing = transforms_preprocessing
+        self.transforms_augmentation = transforms_augmentation
+        #self.transforms_preprocessing = False
+        #self.transforms_augmentation = False
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+
+        self.setup()
+
+    def setup(self, stage: str = None) -> None:
+        """
+        Start training, validation and test datasets.
 
         Args:
-            idx (_type_): _description_
-
-        Returns:
-            _type_: _description_
+            stage (Optional[str]): Used to separate setup logic
+                for trainer.fit and trainer.test.
         """
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
+        n_samples = len(self.train_data[0])
+        
+        self.dataset_train = ChangeDetectionS2LookingDataset(
+            self.train_data[0],
+            self.train_data[1],
+            self.train_data[2],
+            transforms=self.transforms_augmentation,
+        )
+            
+            
+         
+        self.dataset_val = ChangeDetectionS2LookingDataset(
+            self.valid_data[0],
+            self.valid_data[1],
+            self.valid_data[2],
+            transforms=self.transforms_preprocessing
+        )
+        
+        self.dataset_test = ChangeDetectionS2LookingDataset(
+            self.test_data[0],
+            self.test_data[1],
+            self.test_data[2],
+            transforms=self.transforms_preprocessing
+        )
 
-        labeled_image = self.labeled_images[idx]
-        satellite_image = labeled_image.satellite_image.array[
-            self.bands_indices, :, :
-        ].squeeze()
-        mask = labeled_image.label
+    def train_dataloader(self, *args, **kwargs) -> DataLoader:
+        """
+        Create Dataloader.
+        Returns: DataLoader
+        """
+        return DataLoader(
+            self.dataset_train,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=self.num_workers,
+        )
 
-        sample = {"image": satellite_image, "mask": mask}
-        if self.transforms:
-            satellite_image = np.transpose(satellite_image, (1, 2, 0))
-            sample = self.transforms(image=satellite_image, mask=mask)
-        satellite_image = sample["image"]
-        mask = sample["mask"]
+    def val_dataloader(self, *args, **kwargs) -> DataLoader:
+        """
+        Create Dataloader.
+        Returns: DataLoader
+        """
+        return DataLoader(
+            self.dataset_val,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+        )
 
-        return satellite_image, mask
-
-    def __len__(self):
-        return len(self.labeled_images)
-
+    def test_dataloader(self, *args, **kwargs) -> DataLoader:
+        """Create Dataloader.
+        Returns: DataLoader
+        """
+        return DataLoader(
+            self.dataset_test,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+        )
 
 class SatelliteDataModule(pl.LightningDataModule):
     """
     Pytorch Lightning Data Module.
     """
 
-    def __init__(
+    def __init__(self,
         train_data: Union[
             List[SegmentationLabeledSatelliteImage],
             List[DetectionLabeledSatelliteImage],
         ],
         test_data: Union[
-        self,
             List[SegmentationLabeledSatelliteImage],
             List[DetectionLabeledSatelliteImage],
         ],
