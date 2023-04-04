@@ -162,43 +162,49 @@ def find_image_different_years(different_year : int, satellite_image : Satellite
         folder_path = '../data/PLEIADES/' + str((satellite_image.date).year) + '/' + num_dep_to_name_dep[satellite_image.dep]
         filepath = folder_path + '/'+ satellite_image.filename
     
-    else :
-        #récupérer le département de base
-        delimiter = ["/"]
 
-        pattern = "|".join(delimiter)
+    #récupérer le département de base
+    delimiter = ["/"]
 
-        split_folder = re.split(pattern, filepath)
+    pattern = "|".join(delimiter)
 
-        departement_base = split_folder[4]
-        dep_num_base = name_dep_to_num_dep[departement_base]
+    split_folder = re.split(pattern, filepath)
 
-        folder_path = '../data/PLEIADES/'+str(different_year)+'/'+departement_base
+    departement_base = split_folder[4]
+    dep_num_base = name_dep_to_num_dep[departement_base]
 
-        #récupérer les coordonnées left-top
-        if filepath.find('_') != -1 :
-            delimiter = ["_"]
+    folder_path = '../data/PLEIADES/'+str(different_year)+'/'+departement_base
 
-        elif filepath.find('-') != -1 :
-            delimiter = ["-"]
+    #récupérer les coordonnées left-top
+    if filepath.find('_') != -1 :
+        delimiter = ["_"]
 
-        pattern = "|".join(delimiter)
+    elif filepath.find('-') != -1 :
+        delimiter = ["-"]
 
-        split_filepath = re.split(pattern, filepath)
+    pattern = "|".join(delimiter)
 
-        filename = os.listdir(folder_path)[0]
+    split_filepath = re.split(pattern, filepath)
 
-        if filename.find('_') != -1 :
-            delimiter = ["_"]
+    filename = os.listdir(folder_path)[0]
 
-        elif filename.find('-') != -1 :
-            delimiter = ["-"]    
+    if filename.find('_') != -1 :
+        delimiter = ["_"]
 
-        pattern = "|".join(delimiter)
+    elif filename.find('-') != -1 :
+        delimiter = ["-"]    
 
-        split_filename = re.split(pattern, filename)
+    pattern = "|".join(delimiter)
 
-        split_filename[2] = split_filepath[2]
-        split_filename[3] = split_filepath[3]
+    split_filename = re.split(pattern, filename)
 
-        return(folder_path+ '/' +delimiter[0].join(split_filename))
+    split_filename[2] = split_filepath[2]
+    split_filename[3] = split_filepath[3]
+    
+    new_filename = delimiter[0].join(split_filename)
+    
+    if new_filename in os.listdir(folder_path): 
+
+        return(folder_path+ '/' + new_filename)
+    else: 
+        return("Il n'y a pas d'image de ce lieu dans l'année demandée")
