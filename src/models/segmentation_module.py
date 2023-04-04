@@ -5,35 +5,16 @@ import pytorch_lightning as pl
 import torch
 import torchvision
 from torch import nn, optim
+from models.components.segmentation_models import DeepLabv3Module
 
-
-class DeepLabv3Module(nn.Module):
-    """ """
-    def __init__(self, tile_size):
-        """ """
-        super().__init__()
-        self.model = torchvision.models.segmentation.deeplabv3_resnet101(
-            weights="DeepLabV3_ResNet101_Weights.DEFAULT"
-        )
-        
-        # 1 classe !
-        self.model.classifier[4] = nn.Conv2d(
-            tile_size, 2, kernel_size=(1, 1), stride=(1, 1)
-        )
-
-    def forward(self, x):
-        """ """
-        return self.model(x)["out"]
-
-
-class SegmentationLitModule(pl.LightningModule):
+class DeepLabv3LitModule(pl.LightningModule):
     """
     Pytorch Lightning Module for DeepLabv3.
     """
 
     def __init__(
         self,
-        model: nn.Module,
+        model: DeepLabv3Module,
         optimizer: Union[optim.SGD, optim.Adam],
         optimizer_params: Dict,
         scheduler: Union[
@@ -56,6 +37,7 @@ class SegmentationLitModule(pl.LightningModule):
 
         self.model = model
         self.loss = nn.CrossEntropyLoss()
+
         self.optimizer = optimizer
         self.optimizer_params = optimizer_params
         self.scheduler = scheduler
@@ -79,11 +61,11 @@ class SegmentationLitModule(pl.LightningModule):
             batch_idx (int): batch index.
         Returns: Tensor
         """
-        images, masks = batch # 
+        samples, labels = batch
 
         # TODO: Conversion to do before
-        #labels = labels.type(torch.LongTensor).to(self.device)
-        output = self.forward(images)
+        labels = labels.type(torch.LongTensor).to(self.device)
+        output = self.forward(samples)["out"]
 
         loss = self.loss(output, labels)
         self.log("loss", loss)
@@ -97,9 +79,10 @@ class SegmentationLitModule(pl.LightningModule):
             batch_idx (int): batch index.
         Returns: Tensor
         """
-        images, labels = batch
+        samples, labels = batch
 
-        output = self.forward(images)["out"]
+        labels = labels.type(torch.LongTensor).to(self.device)
+        output = self.forward(samples)["out"]
 
         loss = self.loss(output, labels)
         self.log("validation_loss", loss, on_epoch=True)
@@ -113,8 +96,9 @@ class SegmentationLitModule(pl.LightningModule):
             batch_idx (int): batch index.
         Returns: Tensor
         """
-        images, labels = batch
-        output = self.forward(samples)
+        samples, labels = batch
+        labels = labels.type(torch.LongTensor).to(self.device)
+        output = self.forward(samples)["out"]
 
         loss = self.loss(output, labels)
         self.log("test_loss", loss, on_epoch=True)
