@@ -81,12 +81,12 @@ class SatelliteDataModule(pl.LightningDataModule):
     """
 
     def __init__(
-        self,
         train_data: Union[
             List[SegmentationLabeledSatelliteImage],
             List[DetectionLabeledSatelliteImage],
         ],
         test_data: Union[
+        self,
             List[SegmentationLabeledSatelliteImage],
             List[DetectionLabeledSatelliteImage],
         ],
