@@ -14,7 +14,7 @@ import yaml
 from affine import Affine
 from s3fs import S3FileSystem
 
-from mappings import dep_to_crs
+from mappings import *
 
 
 def get_root_path() -> Path:
@@ -161,22 +161,25 @@ def load_ril(
     return gdf
 
 
-def load_bdtopo(datetime: datetime) -> gpd.GeoDataFrame:
+def load_bdtopo(date: datetime, dep:int or str) -> gpd.GeoDataFrame:
     """
     Load BDTOPO for a given datetime.
 
     Args:
-        datetime (datetime): Date of labeling data.
+        date(datetime): Date of labeling data.
+        dep (int or str): Num of the department.
 
     Returns:
         gpd.GeoDataFrame: BDTOPO GeoDataFrame.
     """
+    annee = date.year
+    dep = num_dep_to_name_dep[str(dep)].lower()
     root_path = get_root_path()
     environment = get_environment()
 
     dir_path = os.path.join(
         root_path,
-        environment["local-path"]["BDTOPO"][2022]["guyane"],
+        environment["local-path"]["BDTOPO"][annee][dep],
     )
 
     file_path = None
