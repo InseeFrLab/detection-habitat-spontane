@@ -205,7 +205,7 @@ class PleiadeDataset(Dataset):
         
         img = img.type(torch.float)
         label = label.type(torch.LongTensor)
-        
+        #print(label)
         return img, label, {"pathimage" : pathim, "pathlabel" : pathlabel}
       
     def __len__(self):

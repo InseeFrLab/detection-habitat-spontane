@@ -12,7 +12,7 @@ import rasterio
 import rasterio.plot as rp
 import torch
 
-from utils import (
+from utils.utils import (
     get_bounds_for_tiles,
     get_indices_from_tile_length,
     get_transform_for_tiles,

@@ -24,7 +24,7 @@ def get_root_path() -> Path:
     Returns:
         Path: Root path.
     """
-    return Path(__file__).parent.parent
+    return Path(__file__).parent.parent.parent #j'ai mis un niveau d'arbre supplémentaire ici
 
 
 def get_file_system() -> S3FileSystem:

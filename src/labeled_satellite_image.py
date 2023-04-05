@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from satellite_image import SatelliteImage
-from utils import get_indices_from_tile_length
+from utils.utils import get_indices_from_tile_length
 
 
 class SegmentationLabeledSatelliteImage:

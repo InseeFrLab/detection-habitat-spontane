@@ -7,7 +7,7 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 from albumentations import Compose
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, random_split
 
 from labeled_satellite_image import (
     DetectionLabeledSatelliteImage,
@@ -17,7 +17,7 @@ from labeled_satellite_image import (
 # ce module pourrait etre generaliste si tout est separé en image et label (penser à utiliser os.walk pour les arborescences particulières)
 # le data set est créé séparément et ne doit retourn er qu'une image
 class SegmentationPleiadeDataModule(pl.LightningDataModule):
-     def __init__(
+    def __init__(
         self,
         mono_image_dataset : Dataset,
         transforms_preprocessing: Optional[Compose] = None,
@@ -50,17 +50,22 @@ class SegmentationPleiadeDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.validation_prop = validation_prop
+        self.test_prop = test_prop
         self.bands_indices = bands_indices
-        self.setup()
+        self.dataset_train: Optional[Dataset] = None
+        self.dataset_val: Optional[Dataset] = None
+        self.dataset_test: Optional[Dataset] = None
+        
+        
     
     def setup(self, stage: str = None) -> None:
         
         if not self.dataset_train and not self.dataset_val and not self.dataset_test: 
-            val_size = int(self.validation_prop * len(mono_image_dataset))
-            test_size = int(self.test_prop * len(mono_image_dataset))
-            train_size = len(mono_image_dataset) - val_size - test_size
+            val_size = int(self.validation_prop * len(self.mono_image_dataset))
+            test_size = int(self.test_prop * len(self.mono_image_dataset))
+            train_size = len(self.mono_image_dataset) - val_size - test_size
             
-            self.dataset_train, self.dataset_val, self.dataset_test = random_split(mono_image_dataset, [train_size, val_size, test_size])
+            self.dataset_train, self.dataset_val, self.dataset_test = random_split(self.mono_image_dataset, [train_size, val_size, test_size])
             self.dataset_train.transforms = self.transforms_augmentation
             self.dataset_val.transforms = self.transforms_preprocessing
             self.dataset_test.transforms = self.transforms_preprocessing
