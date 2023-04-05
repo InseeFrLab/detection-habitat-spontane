@@ -66,7 +66,9 @@ class SegmentationModule(pl.LightningModule):
         output = self.forward(images)
     
         loss = self.loss(output, labels)
-        self.log("loss", loss)
+        #self.log("loss", loss)
+        self.log("train_loss", loss, on_step=True, on_epoch=False, prog_bar=True, logger=True)
+
         return loss
     
     def validation_step(self, batch, batch_idx):
