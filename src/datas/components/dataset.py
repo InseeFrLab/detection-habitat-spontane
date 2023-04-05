@@ -5,12 +5,11 @@ import numpy as np
 import torch
 from albumentations import Compose
 from torch.utils.data import Dataset
+from satellite_image import SatelliteImage
 from labeled_satellite_image import (
     DetectionLabeledSatelliteImage,
     SegmentationLabeledSatelliteImage,
 )
-from models.components.segmentation_module import DeepLabV3LitModule
-
 
 # TODO: pour le moment que pour la segmentation
 class SatelliteDataset(Dataset):
@@ -124,14 +123,8 @@ class ChangeDetectionS2LookingDataset(Dataset):
             label[label!=0] = 1
             compteur += 1
         
-        #img1 = np.transpose(np.array(cdtriplet.image1),(2,0,1))
-        #img2 = np.transpose(np.array(cdtriplet.image2),(2,0,1))
-        
         img1 = np.array(cdtriplet.image1)
         img2 = np.array(cdtriplet.image2)
-        
-        #print(img1.shape)
-        
         
         if self.transforms:
             sample = self.transforms(image = img1, image2 = img2, mask = label)
@@ -151,3 +144,70 @@ class ChangeDetectionS2LookingDataset(Dataset):
       
     def __len__(self):
         return len(self.list_paths_image1)
+    
+
+
+
+class PleiadeDataset(Dataset):
+    """
+    Custom Dataset class.
+    """
+    def __init__(
+        self,
+        list_paths_images: List,
+        list_paths_labels: List,
+        transforms: Optional[Compose] = None
+    ):
+        """
+        Constructor.
+
+        Args:
+            list_paths_images (List): list of path of the images
+            list_paths_labels (List): list of paths containing the labels 
+            transforms (Compose) : list of transforms
+        """
+        self.list_paths_images = list_paths_images
+        self.list_paths_labels = list_paths_labels    
+        self.transforms = transforms
+    
+    def __getitem__(self, idx):
+        """_summary_
+
+        Args:
+            idx (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+        
+        pathim = self.list_paths_images[idx]
+        pathlabel = self.list_paths_labels[idx]
+        
+        img = SatelliteImage.from_raster(
+            file_path = pathim,
+            dep = None,
+            date = None,
+            n_bands = 3
+        ).array
+        
+        label = np.load(pathlabel)
+        
+        if self.transforms:
+            sample = self.transforms(image = img, label = label)
+            img = sample['image']
+            label = sample['label']
+        else:
+            img = torch.tensor(img.astype(float))
+            label = torch.tensor(label)
+        
+        
+        img = img.type(torch.float)
+        label = label.type(torch.LongTensor)
+        
+        return img, label, {"pathimage" : pathim, "pathlabel" : pathlabel}
+      
+    def __len__(self):
+        return len(self.list_paths_images)
+
