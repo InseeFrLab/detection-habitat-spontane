@@ -14,37 +14,24 @@ from labeled_satellite_image import (
     SegmentationLabeledSatelliteImage,
 )
 
+# ce module pourrait etre generaliste si tout est separé en image et label (penser à utiliser os.walk pour les arborescences particulières)
+# le data set est créé séparément et ne doit retourn er qu'une image
 class SegmentationPleiadeDataModule(pl.LightningDataModule):
-    
-
-
-class SatelliteDataModule(pl.LightningDataModule):
-    """
-    Pytorch Lightning Data Module.
-    """
-
-    def __init__(
+     def __init__(
         self,
-        train_data: Union[
-            List[SegmentationLabeledSatelliteImage],
-            List[DetectionLabeledSatelliteImage],
-        ],
-        test_data: Union[
-            List[SegmentationLabeledSatelliteImage],
-            List[DetectionLabeledSatelliteImage],
-        ],
+        mono_image_dataset : Dataset,
         transforms_preprocessing: Optional[Compose] = None,
         transforms_augmentation: Optional[Compose] = None,
         batch_size: int = 8,
         num_workers: int = 4,
         validation_prop: float = 0.2,
+        test_prop = 0.1,
         bands_indices: Optional[List[int]] = None,
     ):
         """
         Data Module constructor.
         Args:
-            train_data (List): List of training (and validation) instances
-            test_data (List): List of test instances
+            mono_image_dataset : a data set which return one single image (even if it contained more than 3 channels ), and a label
             transforms_preprocessing (Optional[Compose]): Compose object
                 from albumentations applied on validation and test datasets.
             transforms_augmentation (Optional[Compose]): Compose object
@@ -56,48 +43,28 @@ class SatelliteDataModule(pl.LightningDataModule):
                 number of bands - 1.
         """
         super().__init__()
-
-        self.data = train_data
-        self.test_data = test_data
+        
+        self.mono_image_dataset = mono_image_dataset
         self.transforms_preprocessing = transforms_preprocessing
         self.transforms_augmentation = transforms_augmentation
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.validation_prop = validation_prop
         self.bands_indices = bands_indices
-
         self.setup()
-
+    
     def setup(self, stage: str = None) -> None:
-        """
-        Start training, validation and test datasets.
-        Args:
-            stage (Optional[str]): Used to separate setup logic
-                for trainer.fit and trainer.test.
-        """
-        n_samples = len(self.data)
-        random.shuffle(self.data)
-        train_slice = slice(0, int(n_samples * (1 - self.validation_prop)))
-        val_slice = slice(
-            int(n_samples * (1 - self.validation_prop)), n_samples
-        )
-
-        self.dataset_train = SatelliteDataset(
-            self.data[train_slice],
-            transforms=self.transforms_augmentation,
-            bands_indices=self.bands_indices,
-        )
-        self.dataset_val = SatelliteDataset(
-            self.data[val_slice],
-            transforms=self.transforms_preprocessing,
-            bands_indices=self.bands_indices,
-        )
-        self.dataset_test = SatelliteDataset(
-            self.test_data,
-            transforms=self.transforms_preprocessing,
-            bands_indices=self.bands_indices,
-        )
-
+        
+        if not self.dataset_train and not self.dataset_val and not self.dataset_test: 
+            val_size = int(self.validation_prop * len(mono_image_dataset))
+            test_size = int(self.test_prop * len(mono_image_dataset))
+            train_size = len(mono_image_dataset) - val_size - test_size
+            
+            self.dataset_train, self.dataset_val, self.dataset_test = random_split(mono_image_dataset, [train_size, val_size, test_size])
+            self.dataset_train.transforms = self.transforms_augmentation
+            self.dataset_val.transforms = self.transforms_preprocessing
+            self.dataset_test.transforms = self.transforms_preprocessing
+            
     def train_dataloader(self, *args, **kwargs) -> DataLoader:
         """
         Create Dataloader.
@@ -109,7 +76,7 @@ class SatelliteDataModule(pl.LightningDataModule):
             shuffle=True,
             num_workers=self.num_workers,
         )
-
+    
     def val_dataloader(self, *args, **kwargs) -> DataLoader:
         """
         Create Dataloader.
@@ -120,7 +87,7 @@ class SatelliteDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
         )
-
+    
     def test_dataloader(self, *args, **kwargs) -> DataLoader:
         """Create Dataloader.
         Returns: DataLoader
@@ -130,3 +97,9 @@ class SatelliteDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
         )
+            
+            
+            
+            
+            
+            
