@@ -7,14 +7,14 @@ import torchvision
 from torch import nn, optim
 from models.components.segmentation_models import DeepLabv3Module
 
-class DeepLabv3LitModule(pl.LightningModule):
+# si je veux passer au niveau d'abstraction au dessus : paramétrer la loss
+class SegmentationModule(pl.LightningModule):
     """
     Pytorch Lightning Module for DeepLabv3.
     """
-
     def __init__(
         self,
-        model: DeepLabv3Module,
+        model: nn.Module,
         optimizer: Union[optim.SGD, optim.Adam],
         optimizer_params: Dict,
         scheduler: Union[
@@ -34,16 +34,15 @@ class DeepLabv3LitModule(pl.LightningModule):
             scheduler_interval
         """
         super().__init__()
-
+        
         self.model = model
         self.loss = nn.CrossEntropyLoss()
-
         self.optimizer = optimizer
         self.optimizer_params = optimizer_params
         self.scheduler = scheduler
         self.scheduler_params = scheduler_params
         self.scheduler_interval = scheduler_interval
-
+    
     def forward(self, batch):
         """
         Perform forward-pass.
@@ -52,7 +51,7 @@ class DeepLabv3LitModule(pl.LightningModule):
         Returns (Tuple[tensor, tensor]): Table, Column prediction.
         """
         return self.model(batch)
-
+    
     def training_step(self, batch, batch_idx):
         """
         Training step.
@@ -61,16 +60,15 @@ class DeepLabv3LitModule(pl.LightningModule):
             batch_idx (int): batch index.
         Returns: Tensor
         """
-        samples, labels = batch
-
-        # TODO: Conversion to do before
-        labels = labels.type(torch.LongTensor).to(self.device)
-        output = self.forward(samples)["out"]
-
+        images, labels, dic = batch
+    
+        labels = labels.to(self.device)
+        output = self.forward(images)
+    
         loss = self.loss(output, labels)
         self.log("loss", loss)
         return loss
-
+    
     def validation_step(self, batch, batch_idx):
         """
         Validation step.
@@ -79,15 +77,15 @@ class DeepLabv3LitModule(pl.LightningModule):
             batch_idx (int): batch index.
         Returns: Tensor
         """
-        samples, labels = batch
-
-        labels = labels.type(torch.LongTensor).to(self.device)
-        output = self.forward(samples)["out"]
-
+        images, labels = batch
+    
+        labels = labels.to(self.device)
+        output = self.forward(images)
+    
         loss = self.loss(output, labels)
         self.log("validation_loss", loss, on_epoch=True)
         return loss
-
+    
     def test_step(self, batch, batch_idx):
         """
         Test step.
@@ -96,10 +94,10 @@ class DeepLabv3LitModule(pl.LightningModule):
             batch_idx (int): batch index.
         Returns: Tensor
         """
-        samples, labels = batch
-        labels = labels.type(torch.LongTensor).to(self.device)
-        output = self.forward(samples)["out"]
-
+        images, labels = batch
+        labels = labels.to(self.device)
+        output = self.forward(images)
+    
         loss = self.loss(output, labels)
         self.log("test_loss", loss, on_epoch=True)
         return loss
