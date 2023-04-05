@@ -11,7 +11,7 @@ from rasterio.features import rasterize, shapes
 from shapely import Polygon
 
 from satellite_image import SatelliteImage
-from utils import load_bdtopo, load_ril
+from utils.utils import load_bdtopo, load_ril
 
 
 class Labeler(ABC):
