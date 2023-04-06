@@ -10,6 +10,8 @@ from labeled_satellite_image import (
     DetectionLabeledSatelliteImage,
     SegmentationLabeledSatelliteImage,
 )
+from change_detection_triplet import ChangedetectionTripletS2Looking
+    
 
 # TODO: pour le moment que pour la segmentation
 class SatelliteDataset(Dataset):
@@ -117,7 +119,7 @@ class ChangeDetectionS2LookingDataset(Dataset):
         label = 0
         compteur = 0
         while(np.max(label) == 0 and compteur < 15):
-            cdtriplet = ChangedetectionTripletS2Looking(pthimg1,pthimg2,pthlabel)
+            cdtriplet = ChangedetectionTripletS2Looking(pathim1,pathim2,pathlabel)
             cdtriplet.random_crop(256)
             label = np.array(cdtriplet.label)
             label[label!=0] = 1
@@ -138,6 +140,8 @@ class ChangeDetectionS2LookingDataset(Dataset):
         img_double =torch.concatenate([img1,img2],axis = 0).squeeze()
         
         img_double = img_double.type(torch.float)
+        
+        label = torch.tensor(label)
         label = label.type(torch.LongTensor)
         
         return img_double, label, {"pathim1" : pathim1, "pathim2" : pathim2, "pathlabel" : pathlabel}
