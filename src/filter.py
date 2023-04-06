@@ -12,7 +12,7 @@ from labeled_satellite_image import (
     SegmentationLabeledSatelliteImage,
 )
 from satellite_image import SatelliteImage
-from utils import get_environment, get_file_system
+from utils.utils import get_environment, get_file_system
 
 
 def is_too_black(
