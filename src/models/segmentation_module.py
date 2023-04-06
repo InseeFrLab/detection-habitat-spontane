@@ -67,7 +67,7 @@ class SegmentationModule(pl.LightningModule):
     
         loss = self.loss(output, labels)
         #self.log("loss", loss)
-        self.log("train_loss", loss, on_step=True, on_epoch=False, prog_bar=True, logger=True)
+        self.log("train_loss", loss,on_epoch=True)
 
         return loss
     
