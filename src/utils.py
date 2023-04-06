@@ -161,7 +161,7 @@ def load_ril(
     return gdf
 
 
-def load_bdtopo(date: datetime, dep:int or str) -> gpd.GeoDataFrame:
+def load_bdtopo(millesime: Literal["2020", "2021", "2022", "2023"], dep:str) -> gpd.GeoDataFrame:
     """
     Load BDTOPO for a given datetime.
 
@@ -172,14 +172,14 @@ def load_bdtopo(date: datetime, dep:int or str) -> gpd.GeoDataFrame:
     Returns:
         gpd.GeoDataFrame: BDTOPO GeoDataFrame.
     """
-    annee = date.year
+    annee = millesime
     dep = num_dep_to_name_dep[str(dep)].lower()
     root_path = get_root_path()
     environment = get_environment()
 
     dir_path = os.path.join(
         root_path,
-        environment["local-path"]["BDTOPO"][annee][dep],
+        environment["local-path"]["BDTOPO"][int(annee)][dep],
     )
 
     file_path = None
