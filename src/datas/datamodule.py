@@ -16,7 +16,7 @@ from labeled_satellite_image import (
 
 # ce module pourrait etre generaliste si tout est separé en image et label (penser à utiliser os.walk pour les arborescences particulières)
 # le data set est créé séparément et ne doit retourn er qu'une image
-class SegmentationPleiadeDataModule(pl.LightningDataModule):
+class DataModule(pl.LightningDataModule):
     def __init__(
         self,
         mono_image_dataset : Dataset,
