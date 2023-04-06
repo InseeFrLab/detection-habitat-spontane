@@ -8,11 +8,11 @@ import numpy as np
 from PIL import Image
 
 from satellite_image import SatelliteImage
-from utils import get_indices_from_tile_length
+from utils.utils import get_indices_from_tile_length
 
  
 class ChangedetectionTripletS2Looking:
-    
+    """ """
     def __init__(
         self,
         pathimage1: str,
@@ -68,15 +68,11 @@ class ChangedetectionTripletS2Looking:
         self.image2 = self.image2.crop((left,top,right,bottom))
         self.label  = self.label.crop((left,top,right,bottom))
         
-    
-
-    
-        
 
 
 
 class ChangeDetectionTriplet:
-    
+    """ """
     def __init__(
         self,
         satellite_image1: SatelliteImage,

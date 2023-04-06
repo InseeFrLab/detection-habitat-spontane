@@ -4,9 +4,10 @@ from torch import nn, optim
 
 
 class DeepLabv3Module(nn.Module):
-    """ """
-
-    def __init__(self):
+    """"""
+    "nchannel = nombre de channel en entrée du réseau" 
+    """"""
+    def __init__(self,nchannel = 3):
         """ """
         super().__init__()
         self.model = torchvision.models.segmentation.deeplabv3_resnet101(
@@ -16,6 +17,10 @@ class DeepLabv3Module(nn.Module):
         self.model.classifier[4] = nn.Conv2d(
             256, 2, kernel_size=(1, 1), stride=(1, 1)
         )
+        
+        if nchannel != 3:
+            self.model.backbone["conv1"] = nn.Conv2d(nchannel, 64, kernel_size=(7, 7), stride=(2, 2), padding = (3,3), bias = False)
+
 
     def forward(self, x):
         """ """
