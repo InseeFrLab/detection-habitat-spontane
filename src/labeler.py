@@ -207,3 +207,73 @@ class BDTOPOLabeler(Labeler):
             )
 
         return rasterized
+
+class RIL_BDTOPOLabeler(Labeler):
+    """ """
+
+    def __init__(
+        self,
+        labeling_date: datetime,
+        dep: Literal["971", "972", "973", "974", "976", "977", "978"],
+    ):
+        """
+        Constructor.
+
+        Args:
+            labeling_date (datetime): Date of labeling data.
+            dep (Literal): Departement.
+        """
+        super(RIL_BDTOPOLabeler, self).__init__(labeling_date, dep)
+        self.labeling_data_ril = load_ril(str(self.labeling_date.year), self.dep)
+        self.labeling_data_bdtopo = load_bdtopo(str(self.labeling_date.year), self.dep)
+
+
+    def create_segmentation_label(
+        self, satellite_image: SatelliteImage
+    ) -> np.array:
+        """
+        Create a segmentation label (mask) from BDTOPO data for a
+        SatelliteImage.
+
+        Args:
+            satellite_image (SatelliteImage): Satellite image.
+
+        Returns:
+            np.array: Segmentation mask.
+        """
+        if self.labeling_data_ril.crs != satellite_image.crs:
+            self.labeling_data_ril.geometry = self.labeling_data_ril.geometry.to_crs(
+                satellite_image.crs
+            )
+            
+        if self.labeling_data_bdtopo.crs != satellite_image.crs:
+            self.labeling_data_bdtopo.geometry = self.labeling_data_bdtopo.geometry.to_crs(
+                satellite_image.crs
+            )
+
+        # Filtering geometries from BDTOPO
+        xmin, ymin, xmax, ymax = satellite_image.bounds
+        patch_ril = self.labeling_data_ril.cx[xmin:xmax, ymin:ymax].copy()
+        patch_bdtopo = self.labeling_data_bdtopo.cx[xmin:xmax, ymin:ymax].copy()
+
+        patch = gpd.sjoin(patch_bdtopo, patch_ril,how="inner",predicate = "intersects")
+
+        patch.drop_duplicates(subset='geometry')
+
+        if patch.empty:
+                    rasterized = np.zeros(
+                        satellite_image.array.shape[1:], dtype=np.uint8
+                    )
+        else:
+                    rasterized = rasterize(
+                        patch.geometry,
+                        out_shape=satellite_image.array.shape[1:],
+                        fill=0,
+                        out=None,
+                        transform=satellite_image.transform,
+                        all_touched=True,
+                        default_value=1,
+                        dtype=None,
+                    )
+                
+        return rasterized     
