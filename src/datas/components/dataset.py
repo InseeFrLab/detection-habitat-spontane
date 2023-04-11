@@ -5,12 +5,12 @@ import numpy as np
 import torch
 from albumentations import Compose
 from torch.utils.data import Dataset
-from satellite_image import SatelliteImage
-from labeled_satellite_image import (
+from utils.satellite_image import SatelliteImage
+from utils.labeled_satellite_image import (
     DetectionLabeledSatelliteImage,
     SegmentationLabeledSatelliteImage,
 )
-from change_detection_triplet import ChangedetectionTripletS2Looking
+from utils.change_detection_triplet import ChangedetectionTripletS2Looking
     
 
 # TODO: pour le moment que pour la segmentation
