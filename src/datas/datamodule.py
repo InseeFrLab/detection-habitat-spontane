@@ -54,8 +54,7 @@ class DataModule(pl.LightningDataModule):
         self.bands_indices = bands_indices
         self.dataset_train: Optional[Dataset] = None
         self.dataset_val: Optional[Dataset] = None
-        self.dataset_test: Optional[Dataset] = None
-        
+        self.dataset_test: Optional[Dataset] = None # données en dur
         
     
     def setup(self, stage: str = None) -> None:

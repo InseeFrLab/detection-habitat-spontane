@@ -62,7 +62,7 @@ class SegmentationModule(pl.LightningModule):
         """
         images, labels, dic = batch
     
-        labels = labels.to(self.device)
+        #labels = labels.to(self.device)
         output = self.forward(images)
     
         loss = self.loss(output, labels)
@@ -81,7 +81,7 @@ class SegmentationModule(pl.LightningModule):
         """
         images, labels, dic = batch
     
-        labels = labels.to(self.device)
+        #labels = labels.to(self.device)
         output = self.forward(images)
         #print(output,labels,dic)
         loss = self.loss(output, labels)
@@ -97,7 +97,7 @@ class SegmentationModule(pl.LightningModule):
         Returns: Tensor
         """
         images, labels, dic = batch
-        labels = labels.to(self.device)
+        #labels = labels.to(self.device)
         output = self.forward(images)
     
         loss = self.loss(output, labels)
