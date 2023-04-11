@@ -7,11 +7,11 @@ import geopandas as gpd
 import numpy as np
 from shapely.geometry import box
 
-from labeled_satellite_image import (
+from utils.labeled_satellite_image import (
     DetectionLabeledSatelliteImage,
     SegmentationLabeledSatelliteImage,
 )
-from satellite_image import SatelliteImage
+from utils.satellite_image import SatelliteImage
 from utils.utils import get_environment, get_file_system
 
 

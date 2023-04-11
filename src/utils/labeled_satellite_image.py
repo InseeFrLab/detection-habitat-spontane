@@ -8,7 +8,7 @@ from typing import List, Literal, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 
-from satellite_image import SatelliteImage
+from utils.satellite_image import SatelliteImage
 from utils.utils import get_indices_from_tile_length
 
 
