@@ -3,6 +3,8 @@ from pyproj import Transformer
 import os
 from satellite_image import SatelliteImage
 from mappings import (dep_to_crs,name_dep_to_num_dep,num_dep_to_name_dep)
+from typing import List
+from utils import get_environment
 
 def crs_to_gps_image(satellite_image: SatelliteImage = None, filepath: str = None) :
     
@@ -21,9 +23,10 @@ def crs_to_gps_image(satellite_image: SatelliteImage = None, filepath: str = Non
         >>> crs_to_gps_image(None, filename_1)
         (14.827025734562506, -61.16930531772711)
     """
+    environment = get_environment()
     
     if satellite_image != None:
-        folder_path = environment["local-path"]["PLEIADES"][(satellite_image.date).year][num_dep_to_name_dep[satellite_image.dep].lower()]
+        folder_path = '../' + environment["local-path"]["PLEIADES"][(satellite_image.date).year][num_dep_to_name_dep[satellite_image.dep].lower()]
         filepath = folder_path + '/' + satellite_image.filename
 
     delimiters = ["-", "_"]
@@ -152,8 +155,10 @@ def find_image_different_years(different_year : int, satellite_image : Satellite
         '../data/PLEIADES/2017/MARTINIQUE/972-2017-0711-1619-U20N-0M50-RVB-E100.jp2'
     """
     
+    environment = get_environment()
+    
     if satellite_image != None:
-        folder_path = environment["local-path"]["PLEIADES"][(satellite_image.date).year][num_dep_to_name_dep[satellite_image.dep].lower()]
+        folder_path = '../' + environment["local-path"]["PLEIADES"][(satellite_image.date).year][num_dep_to_name_dep[satellite_image.dep].lower()]
         filepath = folder_path + '/'+ satellite_image.filename
     
 
@@ -165,7 +170,7 @@ def find_image_different_years(different_year : int, satellite_image : Satellite
     departement_base = split_folder[4]
     dep_num_base = name_dep_to_num_dep[departement_base]
 
-    folder_path = environment["local-path"]["PLEIADES"][different_year][departement_base.lower()]
+    folder_path = '../' + environment["local-path"]["PLEIADES"][different_year][departement_base.lower()]
 
     # Retrieve left-top coordinates
     if filepath.find('_') != -1 :
