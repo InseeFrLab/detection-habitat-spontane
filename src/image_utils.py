@@ -1,23 +1,20 @@
 import re
 from pyproj import Transformer
 import os
-
-import sys
-sys.path.append('../src')
 from satellite_image import SatelliteImage
-from mappings import *
+from mappings import (dep_to_crs,name_dep_to_num_dep,num_dep_to_name_dep)
 
 def crs_to_gps_image(satellite_image: SatelliteImage = None, filepath: str = None) :
     
     """
-    Gives the gps point of the left-top boundingbox of the image. Argument is either a SatelliteImage or a filepath.
+    Gives the gps point of the left-top boundingbox of the image. These bounds are found in the filename (quicker than if we have to open all the images). So this method is based on the filenames of the pleiades images. Argument is either a SatelliteImage or a filepath.
 
     Args:
         satellite_image (SatelliteImage)
         filepath (str): The full filepath 
 
     Returns:
-        GPS coordinate : latitude and logitutude.
+        GPS coordinate : latitude and longitutude.
         
     Example:
         >>> filename_1 = '../data/PLEIADES/2022/MARTINIQUE/ORT_2022_0711_1619_U20N_8Bits.jp2'
@@ -26,7 +23,7 @@ def crs_to_gps_image(satellite_image: SatelliteImage = None, filepath: str = Non
     """
     
     if satellite_image != None:
-        folder_path = '../data/PLEIADES/' + str((satellite_image.date).year) + '/' + num_dep_to_name_dep[satellite_image.dep]
+        folder_path = environment["local-path"]["PLEIADES"][(satellite_image.date).year][num_dep_to_name_dep[satellite_image.dep].lower()]
         filepath = folder_path + '/' + satellite_image.filename
 
     delimiters = ["-", "_"]
@@ -38,9 +35,7 @@ def crs_to_gps_image(satellite_image: SatelliteImage = None, filepath: str = Non
     x = float(split_filepath[2])*1000 #left
     y = float(split_filepath[3])*1000 #top
     
-    delimiters = ["/"]
-
-    pattern = "|".join(delimiters)
+    pattern = "/"
 
     split_filepath = re.split(pattern, filepath)
     
@@ -50,19 +45,19 @@ def crs_to_gps_image(satellite_image: SatelliteImage = None, filepath: str = Non
     transformer = Transformer.from_crs(str_crs, 'EPSG:4326',always_xy=True) 
     lon, lat = transformer.transform(x,y)
     
-    # Retourner les coordonnées GPS (latitude, longitude)
+    # Return GPS coordinates (latitude, longitude)
     return lat, lon
 
 
-def gps_to_crs_point(lat : float, lon : float, crs : int or str) :
+def gps_to_crs_point(lat : float, lon : float, crs : int) :
     
     """
-    Give the crs point of a gps point.
+    Gives the crs point of a gps point.
 
     Args:
         lat (float): latitude
         lon (float): longitude
-        crs (int or str)
+        crs (int)
 
     Returns:
         CRS coordinate.
@@ -71,21 +66,21 @@ def gps_to_crs_point(lat : float, lon : float, crs : int or str) :
         >>> gps_to_crs_point(14.636195717948983, -61.04095442371388, '5490')
         (711000.0000002225, 1618999.9999483444)
     """
-    # Convertir les coordonnées GPS en coordonnées dans le système de coordonnées de destination (CRS)
-    transformer = Transformer.from_crs('EPSG:4326','EPSG:'+str(crs),always_xy=True) #au cas où le CRS en entrée est de type entier 
-    x, y = transformer.transform(lon, lat) #car y=lat et x=lon, les coordonnées gps sont en (lat,lon)
+    # Convert GPS coordinates to coordinates in destination coordinate system (CRS)
+    transformer = Transformer.from_crs('EPSG:4326','EPSG:'+str(crs),always_xy=True) # in case the input CRS is of integer type
+    x, y = transformer.transform(lon, lat) # because y=lat and x=lon, the gps coordinates are in (lat,lon)
     
-    # Retourner les coordonnées dans le CRS spécifié
+    # Return coordinates in the specified CRS
     return x, y
 
 
-def find_image_of_point(coordinate : list, folder_path : str, coord_gps = False) :
+def find_image_of_point(coordinates : List, folder_path : str, coord_gps = False) :
     
     """
-    Gives the image in the folder which contains the point (gps or crs). Return a message if the image is not in the folder.
+    Gives the image in the folder which contains the point (gps or crs). This method is based on the filenames of the pleiades images. Returns a message if the image is not in the folder. 
 
     Args:
-        coordinate (list): [x,y] crs coordinate or [lat, lon] gps coordinate
+        coordinates (List): [x,y] crs coordinate or [lat, lon] gps coordinate
         folder_path (str): the path of the folder in which we search the image containing the point
         coord_gps (boolean): specifies if the coordinate is a gps coordinate or not
 
@@ -101,10 +96,9 @@ def find_image_of_point(coordinate : list, folder_path : str, coord_gps = False)
     """
         
     if coord_gps == True :  
-        #récupérer le crs via le département
-        delimiter = ["/"]
+        # Retrieve the crs via the department
 
-        pattern = "|".join(delimiter)
+        pattern = "/"
 
         split_folder = re.split(pattern, folder_path)
 
@@ -112,12 +106,12 @@ def find_image_of_point(coordinate : list, folder_path : str, coord_gps = False)
         dep_num = name_dep_to_num_dep[departement]
         crs = dep_to_crs[dep_num]
         
-        lat, lon = coordinate
+        lat, lon = coordinates
         x,y = gps_to_crs_point(lat,lon,crs) 
     else :
-        x,y = coordinate
+        x,y = coordinates
         
-    #récupérer les coordonnées left-top
+    # Retrieve left-top coordinates
     delimiters = ["-", "_"]
 
     pattern = "|".join(delimiters)
@@ -135,14 +129,14 @@ def find_image_of_point(coordinate : list, folder_path : str, coord_gps = False)
             if bottom <= y <= top:
                 return(folder_path + '/' +filename)
     else : 
-        return("Le point n'est pas retrouvé dans ce fichier d'images")
+        return("The point is not find in the folder.")
 
     
 
 def find_image_different_years(different_year : int, satellite_image : SatelliteImage = None, filepath : str = None) :
     
     """
-    Find the image which represents the same place but in a different year. The arguments can be either a SatteliteImage or the filepath of the image.
+    Finds the image which represents the same place but in a different year. The arguments can be either a SatteliteImage or the filepath of an image. This method is based on the filenames of the pleiades images.
 
     Args:
         different_year (int): the year we are interested in.
@@ -159,52 +153,46 @@ def find_image_different_years(different_year : int, satellite_image : Satellite
     """
     
     if satellite_image != None:
-        folder_path = '../data/PLEIADES/' + str((satellite_image.date).year) + '/' + num_dep_to_name_dep[satellite_image.dep]
+        folder_path = environment["local-path"]["PLEIADES"][(satellite_image.date).year][num_dep_to_name_dep[satellite_image.dep].lower()]
         filepath = folder_path + '/'+ satellite_image.filename
     
 
-    #récupérer le département de base
-    delimiter = ["/"]
-
-    pattern = "|".join(delimiter)
+    # Retrieve base department
+    pattern = "/"
 
     split_folder = re.split(pattern, filepath)
 
     departement_base = split_folder[4]
     dep_num_base = name_dep_to_num_dep[departement_base]
 
-    folder_path = '../data/PLEIADES/'+str(different_year)+'/'+departement_base
+    folder_path = environment["local-path"]["PLEIADES"][different_year][departement_base.lower()]
 
-    #récupérer les coordonnées left-top
+    # Retrieve left-top coordinates
     if filepath.find('_') != -1 :
-        delimiter = ["_"]
+        pattern = "_"
 
     elif filepath.find('-') != -1 :
-        delimiter = ["-"]
-
-    pattern = "|".join(delimiter)
+        pattern = "-"
 
     split_filepath = re.split(pattern, filepath)
 
     filename = os.listdir(folder_path)[0]
 
     if filename.find('_') != -1 :
-        delimiter = ["_"]
+        pattern = "_"
 
     elif filename.find('-') != -1 :
-        delimiter = ["-"]    
-
-    pattern = "|".join(delimiter)
+        pattern = "-"   
 
     split_filename = re.split(pattern, filename)
 
     split_filename[2] = split_filepath[2]
     split_filename[3] = split_filepath[3]
     
-    new_filename = delimiter[0].join(split_filename)
+    new_filename = pattern.join(split_filename)
     
     if new_filename in os.listdir(folder_path): 
 
         return(folder_path+ '/' + new_filename)
     else: 
-        return("Il n'y a pas d'image de ce lieu dans l'année demandée")
+        return("There is no image of this place in the requested year in the database Pléiades.")
