@@ -9,7 +9,7 @@ import torch
 from albumentations import Compose
 from torch.utils.data import DataLoader, Dataset, random_split
 
-from labeled_satellite_image import (
+from utils.labeled_satellite_image import (
     DetectionLabeledSatelliteImage,
     SegmentationLabeledSatelliteImage,
 )
