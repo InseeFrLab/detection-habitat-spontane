@@ -7,6 +7,7 @@ import numpy as np
 
 from satellite_image import SatelliteImage
 from mappings import (dep_to_crs,name_dep_to_num_dep,num_dep_to_name_dep)
+from utils import get_environment
 
 def order_list_from_bb(list_bounding_box: List, list_to_order: List):
     """Order a given List according to the X,Y coordinates
@@ -328,6 +329,8 @@ def plot_square_images(bands_indices: list, distance = 1, satellite_image : Sate
         >>> plot_square_images([0,1,2], 1 , None ,'../data/PLEIADES/2017/MARTINIQUE/72-2017-0711-1619-U20N-0M50-RVB-E100.jp2')
     """
     
+    environment = get_environment()
+    
     # Get folder path
     pattern = "/"
 
@@ -336,7 +339,7 @@ def plot_square_images(bands_indices: list, distance = 1, satellite_image : Sate
     folder_path = pattern.join(split_filepath_center[0:5])
     
     if satellite_image != None:
-        folder_path = environment["local-path"]["PLEIADES"][(satellite_image.date).year][num_dep_to_name_dep[satellite_image.dep].lower()]
+        folder_path = '../' + environment["local-path"]["PLEIADES"][(satellite_image.date).year][num_dep_to_name_dep[satellite_image.dep].lower()]
         filepath_center_image = folder_path + '/'+ satellite_image.filename
     
     else :
