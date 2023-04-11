@@ -5,10 +5,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-import sys
-sys.path.append('../src')
 from satellite_image import SatelliteImage
-from mappings import *
+from mappings import (dep_to_crs,name_dep_to_num_dep,num_dep_to_name_dep)
 
 def order_list_from_bb(list_bounding_box: List, list_to_order: List):
     """Order a given List according to the X,Y coordinates
@@ -107,7 +105,7 @@ def plot_list_segmentation_labeled_satellite_image(
     list_images = [iml.satellite_image for iml in list_labeled_image]
     list_labels = [iml.label for iml in list_labeled_image]
 
-    # calcul du bon ordre relativement aux coordonnées
+    # Correct order relative to the coordinates
     list_images = order_list_from_bb(list_bounding_box, list_images)
     list_labels = order_list_from_bb(list_bounding_box, list_labels)
 
@@ -156,7 +154,7 @@ def plot_list_segmentation_labeled_satellite_image(
 
     # Display input image, tiles, and output image as a grid
     fig, ax = plt.subplots(1, 2, figsize=(15, 15))
-    ax[0].imshow(output_image)  # avec la normalisation pour l'affichage
+    ax[0].imshow(output_image)  # with normalization for display
     ax[0].set_title("Input Image")
     ax[0].set_axis_off()
     ax[1].imshow(output_mask)
@@ -177,40 +175,40 @@ def plot_infrared_simple_mask(
         The simple infrared mask of the image.
     """   
     if satellite_image.n_bands < 4 :
-        print("Cette image n'a pas de bande infrarouge.")
+        print("This image has no infrared band.")
     
     else :
-        #on extrait l'array de l'image pour avoir les valeurs des pixels
+        # We extract the array from the image to get the pixel values
         img = satellite_image.array
 
-        #multiplication par 255 et convertion en uint8 pour avoir le bon format
+        # Multiply by 255 and convert to uint8 to get the correct format
         img = (img * 255).astype(np.uint8)
 
         img = img.transpose()
 
         seuil = np.quantile(img[:,:,3],0.5)
 
-        #on parcours tous les pixels et on les modifie en fonction du seuil
+        # We go through all the pixels and we modify them according to the threshold
         for row in range(img.shape[0]):
             for col in range(img.shape[1]):
                 i = img[row,col,3]
-                if i > seuil: #médiane
-                    img[row, col] = np.array([0, 0, 0,0]) # blanc
+                if i > seuil: #median
+                    img[row, col] = np.array([0, 0, 0,0]) # white
 
                 else : 
-                    img[row, col] = np.array([255,255,255,255]) # noir
+                    img[row, col] = np.array([255,255,255,255]) # black
 
         img = img.transpose()
 
-        #On veut le bon format
+        # We want the right format
         img = (img/255).astype(np.float64)
 
         satellite_image.array = img
 
         satellite_image.plot([0,1,2])
 
-   
-
+        
+        
 def plot_infrared_patch_mask(
     satellite_image: SatelliteImage
 ):
@@ -223,36 +221,36 @@ def plot_infrared_patch_mask(
         All the patchs of infrared masks of the image.
     """
     if satellite_image.n_bands < 4 :
-        print("Cette image n'a pas de bande infrarouge.")
+        print("This image has no infrared band.")
 
     else : 
         list_images = satellite_image.split(250)
 
-        #on parcourt chaque patch
+        # We go through each patch
         for mini_image in list_images:
-            #on extrait l'array de l'image pour avoir les valeurs des pixels
+            # We extract the array of the image to have the values of the pixels
             img = mini_image.array
 
-            #multiplication par 255 et convertion en uint8 pour avoir le bon format
+            # Multiply by 255 and convert to uint8 to get the correct format
             img = (img * 255).astype(np.uint8)
 
             img = img.transpose()
 
             seuil = np.quantile(img[:,:,3],0.5)
 
-            #on parcours tous les pixels et on les modifie en fonction du seuil
+            # We go through all the pixels and we modify them according to the threshold
             for row in range(img.shape[0]):
                 for col in range(img.shape[1]):
                     i = img[row,col,3]
-                    if i > seuil: #médiane
-                        img[row, col] = np.array([0, 0, 0,0]) # blanc
+                    if i > seuil: #median
+                        img[row, col] = np.array([0, 0, 0,0]) # white
 
                     else : 
-                        img[row, col] = np.array([255,255,255,255]) # noir
+                        img[row, col] = np.array([255,255,255,255]) # black
 
             img = img.transpose()
 
-            #On veut le bon format
+            # We want the right format
             img = (img/255).astype(np.float64)
 
             mini_image.array = img
@@ -273,7 +271,7 @@ def plot_infrared_complex_mask(
     """
     
     if satellite_image.n_bands < 4 :
-        print("Cette image n'a pas de bande infrarouge.")
+        print("This image has no infrared band.")
     
     else :
         img = satellite_image.array
@@ -283,7 +281,7 @@ def plot_infrared_complex_mask(
 
         img = img.transpose()
 
-        # On va parcourir tous les pixels de l'image
+        # We go through all the pixels and we modify them according to the threshold
         for row in range(img.shape[0]):
             for col in range(img.shape[1]):
                 b = img[row,col, 1]
@@ -292,21 +290,21 @@ def plot_infrared_complex_mask(
                 mini = min(b,g)
                 maxi = max(b,g)
 
-                if maxi-mini <= 20 : #étape 1
+                if maxi-mini <= 20 : # step 1
 
-                    if r > 200 and mini >= 110 and r>= (20+mini): #étape 2
-                        img[row, col] = [255,255,255,255] # blanc
-                    elif  r>= (20+mini) and r >= 110: #étape 3
-                        img[row, col] = [0,0,0,0] #noir
-                    else : #étape 4
-                        img[row, col] = [255,255,255,255] # blanc
+                    if r > 200 and mini >= 110 and r>= (20+mini): # step 2
+                        img[row, col] = [255,255,255,255] # white
+                    elif  r>= (20+mini) and r >= 110: # step 3
+                        img[row, col] = [0,0,0,0] # black
+                    else : # step 4
+                        img[row, col] = [255,255,255,255] # white
 
-                else : #étape 4
-                    img[row, col] = [255,255,255,255] # blanc
+                else : # step 4
+                    img[row, col] = [255,255,255,255] # white
 
         img = img.transpose()
 
-        #On veut le bon format
+        # We want the right format
         img = (img/255).astype(np.float64)
 
         satellite_image.array = img
@@ -330,27 +328,25 @@ def plot_square_images(bands_indices: list, distance = 1, satellite_image : Sate
         >>> plot_square_images([0,1,2], 1 , None ,'../data/PLEIADES/2017/MARTINIQUE/72-2017-0711-1619-U20N-0M50-RVB-E100.jp2')
     """
     
-    #récupérer le path du dossier
-    delimiter = ["/"]
-
-    pattern = "|".join(delimiter)
+    # Get folder path
+    pattern = "/"
 
     split_filepath_center = re.split(pattern, filepath_center_image)
 
-    folder_path = "/".join(split_filepath_center[0:5])
+    folder_path = pattern.join(split_filepath_center[0:5])
     
     if satellite_image != None:
-        folder_path = '../data/PLEIADES/' + str((satellite_image.date).year) + '/' + num_dep_to_name_dep[satellite_image.dep]
+        folder_path = environment["local-path"]["PLEIADES"][(satellite_image.date).year][num_dep_to_name_dep[satellite_image.dep].lower()]
         filepath_center_image = folder_path + '/'+ satellite_image.filename
     
     else :
         
-        #récupérer l'année et le département
+        # Retrieve the year and the department
         annee = split_filepath_center[3]
         departement = split_filepath_center[4]
         dep_num = name_dep_to_num_dep[departement]
 
-        #récupérer les coordonnées left-top de l'image du centre
+        # Retrieve the left-top coordinates of the center image
         delimiters = ["-", "_"]
 
         pattern = "|".join(delimiters)
@@ -365,7 +361,7 @@ def plot_square_images(bands_indices: list, distance = 1, satellite_image : Sate
 
         for filename in os.listdir(folder_path):
 
-            #récupérer les coordonnées left-top de toutes les images
+            # Retrieve left-top coordinates of all images
             split_filename = re.split(pattern, filename)
 
             left = float(split_filename[2])*1000.0
