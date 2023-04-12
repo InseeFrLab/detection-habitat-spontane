@@ -6,6 +6,10 @@ import torch
 import torchvision
 from torch import nn, optim
 from models.components.segmentation_models import DeepLabv3Module
+from utils.satellite_image import SatelliteImage
+from utils.labeled_satellite_image import SegmentationLabeledSatelliteImage
+import numpy as np
+import mlflow
 
 # si je veux passer au niveau d'abstraction au dessus : paramétrer la loss
 class SegmentationModule(pl.LightningModule):
@@ -83,7 +87,39 @@ class SegmentationModule(pl.LightningModule):
         output = self.forward(images)
         loss = self.loss(output, labels)
         
+        # Calculate IOU
+        preds = torch.argmax(output,axis = 1)
+        
+        numIOU = torch.sum((preds * labels),axis = [1,2]) # vaut 1 quand les 2 valent 1
+        denomIOU = torch.sum(torch.clamp(preds+labels,max = 1),axis = [1,2])
+
+        IOU =  numIOU/denomIOU
+        IOU= torch.tensor([1 if torch.isnan(x) else x for x in IOU])
+        IOU = torch.mean(IOU)
+        
+        self.log("validation_IOU", IOU, on_epoch=True)
         self.log("validation_loss", loss, on_epoch=True)
+        
+        # Calculate model mask for the first element
+        idx  = 0
+        pthimg = dic["pathimage"][idx]
+        pthlabel = dic["pathlabel"][idx]
+
+        satellite_image = SatelliteImage.from_raster(
+            file_path = pthimg,
+            dep = None,
+            date = None,
+            n_bands= 3)
+
+        img_label_gt= SegmentationLabeledSatelliteImage(satellite_image,np.load(pthlabel),"",None)
+        img_label_model = SegmentationLabeledSatelliteImage(satellite_image,np.array(preds[idx].to("cpu")),"",None)
+        
+        #fig1 = img_label_gt.plot([0,1,2])
+        fig1 = img_label_model.plot([0,1,2])
+        plot_file = "temp.png"
+        fig1.savefig(plot_file)
+        mlflow.log_artifact(plot_file, artifact_path="plots")
+        
         return loss
     
     def test_step(self, batch, batch_idx):
