@@ -158,6 +158,7 @@ class SatelliteImage:
         plt.yticks([])
         plt.title(f"Dimension of image {self.array.shape[1:]}")
         plt.show()
+        
 
     @staticmethod
     def from_raster(
