@@ -94,30 +94,6 @@ def apply_cld_shdw_mask(img):
     # Subset reflectance bands and update their masks, return the result.
     return img.select('B.*').updateMask(not_cld_shdw)
 
-### MARTINIQUE
-# Parameters
-west = -61.264617
-south = 14.378599
-east = -60.781573
-north = 14.899453
-AOI = ee.Geometry.BBox(west, south, east, north)
-
-START_DATE = '2020-03-01'
-END_DATE = '2020-09-01'
-CLOUD_FILTER = 60
-CLD_PRB_THRESH = 40
-NIR_DRK_THRESH = 0.15
-CLD_PRJ_DIST = 2
-BUFFER = 50
-
-s2_sr_cld_col = get_s2_sr_cld_col(AOI, START_DATE, END_DATE)
-s2_sr_median = (s2_sr_cld_col.map(add_cld_shdw_mask)
-                             .map(apply_cld_shdw_mask)
-                             .median())
-
-
-fishnet = geemap.fishnet(AOI, rows=4, cols=4)
-geemap.download_ee_image_tiles(s2_sr_median, fishnet, "martinique_test/", prefix="data_", crs="EPSG:4559", scale=10)
 
 ### GUADELOUPE
 # Parameters
