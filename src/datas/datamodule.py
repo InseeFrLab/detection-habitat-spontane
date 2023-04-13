@@ -2,7 +2,6 @@
 """
 import random
 from typing import List, Optional, Union
-
 import numpy as np
 import pytorch_lightning as pl
 import torch
