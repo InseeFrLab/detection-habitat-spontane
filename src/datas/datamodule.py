@@ -19,13 +19,13 @@ from utils.labeled_satellite_image import (
 class DataModule(pl.LightningDataModule):
     def __init__(
         self,
-        mono_image_dataset : Dataset,
+        dataset : Dataset,
         transforms_preprocessing: Optional[Compose] = None,
         transforms_augmentation: Optional[Compose] = None,
         batch_size: int = 8,
         num_workers: int = 4,
         validation_prop: float = 0.2,
-        test_prop = 0.1,
+        dataset_test =  Optional[List[str]] , # pour l'affichage des résultats du modèle seulement sinon la validation suffit
         bands_indices: Optional[List[int]] = None,
     ):
         """
@@ -44,30 +44,29 @@ class DataModule(pl.LightningDataModule):
         """
         super().__init__()
         
-        self.mono_image_dataset = mono_image_dataset
+        self.dataset = dataset
         self.transforms_preprocessing = transforms_preprocessing
         self.transforms_augmentation = transforms_augmentation
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.validation_prop = validation_prop
-        self.test_prop = test_prop
         self.bands_indices = bands_indices
         self.dataset_train: Optional[Dataset] = None
         self.dataset_val: Optional[Dataset] = None
-        self.dataset_test: Optional[Dataset] = None # données en dur
+        self.dataset_test = dataset_test # données en dur
         
     
     def setup(self, stage: str = None) -> None:
-        
-        if not self.dataset_train and not self.dataset_val and not self.dataset_test: 
-            val_size = int(self.validation_prop * len(self.mono_image_dataset))
-            test_size = int(self.test_prop * len(self.mono_image_dataset))
-            train_size = len(self.mono_image_dataset) - val_size - test_size
             
-            self.dataset_train, self.dataset_val, self.dataset_test = random_split(self.mono_image_dataset, [train_size, val_size, test_size])
-            self.dataset_train.transforms = self.transforms_augmentation
-            self.dataset_val.transforms = self.transforms_preprocessing
-            self.dataset_test.transforms = self.transforms_preprocessing
+        val_size = int(self.validation_prop * len(self.dataset))
+        train_size = len(self.dataset) - val_size 
+
+        self.dataset_train, self.dataset_val = random_split(self.dataset, [train_size, val_size])
+        
+        self.dataset_train.dataset.transforms = self.transforms_augmentation
+        self.dataset_val.dataset.transforms = self.transforms_preprocessing # la fonction random_split wrap le dataset dans un objet dont l'attribut est .dataset :o
+        
+        self.dataset_test.transforms = self.transforms_preprocessing
             
     def train_dataloader(self, *args, **kwargs) -> DataLoader:
         """
@@ -86,6 +85,7 @@ class DataModule(pl.LightningDataModule):
         Create Dataloader.
         Returns: DataLoader
         """
+        
         return DataLoader(
             self.dataset_val,
             batch_size=self.batch_size,
@@ -96,6 +96,7 @@ class DataModule(pl.LightningDataModule):
         """Create Dataloader.
         Returns: DataLoader
         """
+        self.dataset_test.transforms = self.transforms_preprocessing
         return DataLoader(
             self.dataset_test,
             batch_size=self.batch_size,

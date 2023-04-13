@@ -94,11 +94,29 @@ class SegmentationModule(pl.LightningModule):
         denomIOU = torch.sum(torch.clamp(preds+labels,max = 1),axis = [1,2])
 
         IOU =  numIOU/denomIOU
-        IOU= torch.tensor([1 if torch.isnan(x) else x for x in IOU])
+        IOU= torch.tensor([1 if torch.isnan(x) else x for x in IOU],dtype =torch.float)
         IOU = torch.mean(IOU)
         
         self.log("validation_IOU", IOU, on_epoch=True)
         self.log("validation_loss", loss, on_epoch=True)
+        
+        return loss
+    
+    def test_step(self, batch, batch_idx):
+        """
+        Test step.
+        Args:
+            batch (List[Tensor]): Data for training.
+            batch_idx (int): batch index.
+        Returns: Tensor
+        """
+        images, labels, dic = batch
+        output = self.forward(images)
+        
+        loss = self.loss(output, labels)
+        self.log("test_loss", loss, on_epoch=True)
+        
+        preds = torch.argmax(output,axis = 1)
         
         # Calculate model mask for the first element
         idx  = 0
@@ -120,21 +138,6 @@ class SegmentationModule(pl.LightningModule):
         fig1.savefig(plot_file)
         mlflow.log_artifact(plot_file, artifact_path="plots")
         
-        return loss
-    
-    def test_step(self, batch, batch_idx):
-        """
-        Test step.
-        Args:
-            batch (List[Tensor]): Data for training.
-            batch_idx (int): batch index.
-        Returns: Tensor
-        """
-        images, labels, dic = batch
-        output = self.forward(images)
-    
-        loss = self.loss(output, labels)
-        self.log("test_loss", loss, on_epoch=True)
         return loss
 
     def configure_optimizers(self):

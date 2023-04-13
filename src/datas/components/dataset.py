@@ -62,11 +62,12 @@ class SatelliteDataset(Dataset):
 
         sample = {"image": satellite_image, "mask": mask}
         if self.transforms:
+        
             satellite_image = np.transpose(satellite_image, (1, 2, 0))
             sample = self.transforms(image=satellite_image, mask=mask)
         satellite_image = sample["image"]
         mask = sample["mask"]
-
+        
         return satellite_image, mask
 
     def __len__(self):
@@ -196,14 +197,18 @@ class PleiadeDataset(Dataset):
             n_bands = 3
         ).array
         
-        label = np.load(pathlabel)
         
+        img = np.transpose(img.astype(float),[1,2,0])
+        label = torch.tensor(np.load(pathlabel))
+
         if self.transforms:
             sample = self.transforms(image = img, label = label)
             img = sample['image']
             label = sample['label']
+            #img = img.permute([2,0,1])
         else:
             img = torch.tensor(img.astype(float))
+            img = img.permute([2,0,1])
             label = torch.tensor(label)
         
         
