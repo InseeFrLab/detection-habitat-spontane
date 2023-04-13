@@ -13,3 +13,6 @@ mlflow
 matplotlib
 pyarrow
 geopandas
+earthengine-api
+geemap
+geedim
