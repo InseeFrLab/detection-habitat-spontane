@@ -179,36 +179,27 @@ def plot_infrared_simple_mask(
         print("This image has no infrared band.")
     
     else :
-        # We extract the array from the image to get the pixel values
-        img = satellite_image.array
+        # Extract the array from the image to get the pixel values   
+        img = satellite_image.array.copy()
 
-        # Multiply by 255 and convert to uint8 to get the correct format
-        img = (img * 255).astype(np.uint8)
-
-        img = img.transpose()
-
-        seuil = np.quantile(img[:,:,3],0.5)
-
-        # We go through all the pixels and we modify them according to the threshold
-        for row in range(img.shape[0]):
-            for col in range(img.shape[1]):
-                i = img[row,col,3]
-                if i > seuil: #median
-                    img[row, col] = np.array([0, 0, 0,0]) # white
-
-                else : 
-                    img[row, col] = np.array([255,255,255,255]) # black
-
-        img = img.transpose()
-
-        # We want the right format
-        img = (img/255).astype(np.float64)
-
-        satellite_image.array = img
-
-        satellite_image.plot([0,1,2])
-
+        img = img.transpose(2,1,0)
+        shape = img.shape[0:2]
         
+        # Threshold : median of the 4th band
+        threshold = np.quantile(img[:,:,3],0.5) #only on the 4th band
+        black = np.ones(shape, dtype = float)
+        white = np.zeros(shape, dtype = float)
+        
+        # Creation of the mask : all the infrared prixels below the threshold will be black and all the infrared prixels above the threshold will be white.
+        mask = np.where(img[:,:,3]>threshold, white,black)
+        
+        # Return to the right shape
+        mask = mask.transpose(1,0)
+
+        # Plot the mask
+        plt.imshow(mask, cmap='gray')
+        plt.show()
+
         
 def plot_infrared_patch_mask(
     satellite_image: SatelliteImage
@@ -226,37 +217,62 @@ def plot_infrared_patch_mask(
 
     else : 
         list_images = satellite_image.split(250)
+        list_mask = []
 
         # We go through each patch
-        for mini_image in list_images:
-            # We extract the array of the image to have the values of the pixels
-            img = mini_image.array
+        for indice,mini_image in enumerate(list_images):
+            
+            # Extract the array from the image to get the pixel values        
+            img = mini_image.array.copy()
 
-            # Multiply by 255 and convert to uint8 to get the correct format
-            img = (img * 255).astype(np.uint8)
+            img = img.transpose(2,1,0)
+            shape = img.shape
+            
+            # Threshold : median of the 4th band on the patch
+            threshold = np.quantile(img[:,:,3],0.5) #only on the 4th band
+            black = np.ones(shape[0:2], dtype = float)
+            white = np.zeros(shape[0:2], dtype = float)
 
-            img = img.transpose()
+            # Creation of the mask : all the infrared prixels below the threshold will be black and all the infrared prixels above the threshold will be white.
+            mask = np.where(img[:,:,3]>threshold, white,black)
 
-            seuil = np.quantile(img[:,:,3],0.5)
+            # Return to the right shape
+            mask = mask.transpose(1,0)
 
-            # We go through all the pixels and we modify them according to the threshold
-            for row in range(img.shape[0]):
-                for col in range(img.shape[1]):
-                    i = img[row,col,3]
-                    if i > seuil: #median
-                        img[row, col] = np.array([0, 0, 0,0]) # white
+            list_mask.append(mask)
 
-                    else : 
-                        img[row, col] = np.array([255,255,255,255]) # black
+        list_bounding_box = np.array([im.bounds for im in list_images])
+        n_col = len(np.unique(np.array([bb[0] for bb in list_bounding_box])))
+        n_row = len(np.unique(np.array([bb[3] for bb in list_bounding_box])))
 
-            img = img.transpose()
+        mat_list_mask = np.transpose(np.array(list_indice_mask).reshape(n_row, n_col))
 
-            # We want the right format
-            img = (img/255).astype(np.float64)
+        # Create the grid of pictures and fill it with masks
+        masks = np.empty((n_col, n_row), dtype=object)        
 
-            mini_image.array = img
+        for i in range(n_col):
+            for j in range(n_row):
+                masks[i, j] = list_mask[8*i+j]
 
-        plot_list_satellite_images(list_images,bands_indices = [0,1,2])
+
+        # Create a figure and axes
+        fig, axs = plt.subplots(nrows=n_row, ncols=n_col, figsize=(10, 10))
+
+        # Iterate over the grid of masks and plot them
+        for i in range(n_row):
+            for j in range(n_col):
+                axs[i, j].imshow(
+                    masks[i, j], cmap='gray'
+                )
+
+        # Remove any unused axes
+        for i in range(n_row):
+            for j in range(n_col):
+                axs[i, j].set_axis_off()
+
+        # Show the plot
+        plt.show()
+        
 
     
 def plot_infrared_complex_mask(
@@ -275,12 +291,13 @@ def plot_infrared_complex_mask(
         print("This image has no infrared band.")
     
     else :
-        img = satellite_image.array
+        img = image.array.copy()
 
-        img = (img * 255).astype(np.uint8)
+        img = img.transpose(2,1,0)
+        shape = img.shape[0:2]
 
+        mask = np.empty(shape, dtype = float)
 
-        img = img.transpose()
 
         # We go through all the pixels and we modify them according to the threshold
         for row in range(img.shape[0]):
@@ -293,24 +310,20 @@ def plot_infrared_complex_mask(
 
                 if maxi-mini <= 20 : # step 1
 
-                    if r > 200 and mini >= 110 and r>= (20+mini): # step 2
-                        img[row, col] = [255,255,255,255] # white
-                    elif  r>= (20+mini) and r >= 110: # step 3
-                        img[row, col] = [0,0,0,0] # black
+                    if r > 200/255 and mini >= 110/255 and r>= (20/255+mini): # step 2
+                        mask[row, col] = 1.0 # white
+                    elif  r>= (20/255+mini) and r >= 110/255: # step 3
+                        mask[row, col] = 0.0 # black
                     else : # step 4
-                        img[row, col] = [255,255,255,255] # white
+                        mask[row, col] = 1.0 # white
 
                 else : # step 4
-                    img[row, col] = [255,255,255,255] # white
+                    mask[row, col] = 1.0 # white
 
-        img = img.transpose()
+        mask = mask.transpose(1,0)
 
-        # We want the right format
-        img = (img/255).astype(np.float64)
-
-        satellite_image.array = img
-
-        satellite_image.plot([0,1,2])
+        plt.imshow(mask, cmap='gray')
+        plt.show()
 
 
 def plot_square_images(bands_indices: list, distance = 1, satellite_image : SatelliteImage = None, filepath_center_image : str = None):
