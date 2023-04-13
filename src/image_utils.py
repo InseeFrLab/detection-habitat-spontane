@@ -45,7 +45,7 @@ def crs_to_gps_image(satellite_image: SatelliteImage = None, filepath: str = Non
     dep_num = name_dep_to_num_dep[split_filepath[4]]
     str_crs = dep_to_crs[dep_num]
     
-    transformer = Transformer.from_crs(str_crs, 'EPSG:4326',always_xy=True) 
+    transformer = Transformer.from_crs('EPSG:'+str_crs, 'EPSG:4326',always_xy=True) 
     lon, lat = transformer.transform(x,y)
     
     # Return GPS coordinates (latitude, longitude)
