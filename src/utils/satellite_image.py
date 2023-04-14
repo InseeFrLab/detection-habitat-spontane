@@ -83,7 +83,7 @@ class SatelliteImage:
                     self.transform, rows[0], cols[0]
                 ),
                 n_bands=self.n_bands,
-                filename=self.filename,
+                filename=self.filename,# a adapter pour eviter la numerotation foireurse quand je decoupe..
                 dep=self.dep,
                 date=self.date,
                 normalized=self.normalized,
