@@ -8,6 +8,7 @@ from torch import nn, optim
 from models.components.segmentation_models import DeepLabv3Module
 from utils.satellite_image import SatelliteImage
 from utils.labeled_satellite_image import SegmentationLabeledSatelliteImage
+from utils.plot_utils import plot_list_segmentation_labeled_satellite_image
 import numpy as np
 import mlflow
 from utils.scores import calculate_IOU
@@ -48,7 +49,8 @@ class SegmentationModule(pl.LightningModule):
         self.scheduler = scheduler
         self.scheduler_params = scheduler_params
         self.scheduler_interval = scheduler_interval
-    
+        self.list_labeled_satellite_image = []
+        
     def forward(self, batch):
         """
         Perform forward-pass.
@@ -113,6 +115,7 @@ class SegmentationModule(pl.LightningModule):
         
         # Calculate model mask for the first element
         #idx  = 0
+        #print(batch_idx)
         for idx in range(images.shape[0]):
             pthimg = dic["pathimage"][idx]
             pthlabel = dic["pathlabel"][idx]
@@ -122,16 +125,21 @@ class SegmentationModule(pl.LightningModule):
                 dep = None,
                 date = None,
                 n_bands= 3)
+            satellite_image.normalize()
 
             #img_label_gt= SegmentationLabeledSatelliteImage(satellite_image,np.load(pthlabel),"",None)
             img_label_model = SegmentationLabeledSatelliteImage(satellite_image,np.array(preds[idx].to("cpu")),"",None)
-
+            self.list_labeled_satellite_image.append(img_label_model)
             #fig1 = img_label_gt.plot([0,1,2])
-            fig1 = img_label_model.plot([0,1,2])
+        
+        if batch_idx == 6 :# à paramétrer
+            #print("coucou")
+            fig1 = plot_list_segmentation_labeled_satellite_image(self.list_labeled_satellite_image,[0,1,2])
+            #fig1 = img_label_model.plot([0,1,2])
             if not os.path.exists("img/"):
                 os.makedirs("img/")
-        
-            plot_file = "img/"+str(batch_idx)+"_"+str(idx)+".png"
+            plot_file = "image_test.png"
+            #plot_file = "img/"+str(batch_idx)+"_"+str(idx)+".png"
             fig1.savefig(plot_file)
             mlflow.log_artifact(plot_file, artifact_path="plots")
 
