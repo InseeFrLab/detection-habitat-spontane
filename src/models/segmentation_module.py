@@ -122,12 +122,12 @@ class SegmentationModule(pl.LightningModule):
                 date = None,
                 n_bands= 3)
 
-            img_label_gt= SegmentationLabeledSatelliteImage(satellite_image,np.load(pthlabel),"",None)
+            #img_label_gt= SegmentationLabeledSatelliteImage(satellite_image,np.load(pthlabel),"",None)
             img_label_model = SegmentationLabeledSatelliteImage(satellite_image,np.array(preds[idx].to("cpu")),"",None)
 
             #fig1 = img_label_gt.plot([0,1,2])
             fig1 = img_label_model.plot([0,1,2])
-            plot_file = "temp.png"
+            plot_file = "img/"+pthimg+idx".png"
             fig1.savefig(plot_file)
             mlflow.log_artifact(plot_file, artifact_path="plots")
 
