@@ -152,6 +152,7 @@ def export_s2_no_cloud(
         prefix="data_",
         crs=f"EPSG:{EPSGs[DOM]}",
         scale=10,
+        num_threads=50,
     )
 
 
