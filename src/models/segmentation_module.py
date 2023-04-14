@@ -128,11 +128,12 @@ class SegmentationModule(pl.LightningModule):
             satellite_image.normalize()
 
             #img_label_gt= SegmentationLabeledSatelliteImage(satellite_image,np.load(pthlabel),"",None)
+            #print(preds[idx].shape)
             img_label_model = SegmentationLabeledSatelliteImage(satellite_image,np.array(preds[idx].to("cpu")),"",None)
             self.list_labeled_satellite_image.append(img_label_model)
             #fig1 = img_label_gt.plot([0,1,2])
         
-        if batch_idx == 6 :# à paramétrer
+        if batch_idx == 7 :# à paramétrer
             #print("coucou")
             fig1 = plot_list_segmentation_labeled_satellite_image(self.list_labeled_satellite_image,[0,1,2])
             #fig1 = img_label_model.plot([0,1,2])
@@ -142,6 +143,7 @@ class SegmentationModule(pl.LightningModule):
             #plot_file = "img/"+str(batch_idx)+"_"+str(idx)+".png"
             fig1.savefig(plot_file)
             mlflow.log_artifact(plot_file, artifact_path="plots")
+        print("parametrer le numero du. batch en fonction de la taille du batch et dunb d'elements dans tests..")
 
         return loss # in fine j'aimerais bien tout récupérer dans une meme labelled satellite Image et en envoyer qu'une seule (définir une fonction end epoch ?)
 
