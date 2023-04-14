@@ -51,6 +51,7 @@ def plot_list_satellite_images(list_images: List, bands_indices: List):
 
     n_col = len(np.unique(np.array([bb[0] for bb in list_bounding_box])))
     n_row = len(np.unique(np.array([bb[3] for bb in list_bounding_box])))
+    
 
     mat_list_images = np.transpose(np.array(list_images).reshape(n_row, n_col))
 
@@ -244,8 +245,6 @@ def plot_infrared_patch_mask(
         list_bounding_box = np.array([im.bounds for im in list_images])
         n_col = len(np.unique(np.array([bb[0] for bb in list_bounding_box])))
         n_row = len(np.unique(np.array([bb[3] for bb in list_bounding_box])))
-
-        mat_list_mask = np.transpose(np.array(list_indice_mask).reshape(n_row, n_col))
 
         # Create the grid of pictures and fill it with masks
         masks = np.empty((n_col, n_row), dtype=object)        
