@@ -64,7 +64,6 @@ class DataModule(pl.LightningDataModule):
         
         self.dataset_train.dataset.transforms = self.transforms_augmentation
         self.dataset_val.dataset.transforms = self.transforms_preprocessing # la fonction random_split wrap le dataset dans un objet dont l'attribut est .dataset :o
-        
         self.dataset_test.transforms = self.transforms_preprocessing
             
     def train_dataloader(self, *args, **kwargs) -> DataLoader:
@@ -95,7 +94,6 @@ class DataModule(pl.LightningDataModule):
         """Create Dataloader.
         Returns: DataLoader
         """
-        self.dataset_test.transforms = self.transforms_preprocessing
         return DataLoader(
             self.dataset_test,
             batch_size=self.batch_size,
