@@ -11,6 +11,7 @@ from utils.labeled_satellite_image import SegmentationLabeledSatelliteImage
 import numpy as np
 import mlflow
 from utils.scores import calculate_IOU
+import os
 
 # si je veux passer au niveau d'abstraction au dessus : paramétrer la loss
 class SegmentationModule(pl.LightningModule):
@@ -127,11 +128,14 @@ class SegmentationModule(pl.LightningModule):
 
             #fig1 = img_label_gt.plot([0,1,2])
             fig1 = img_label_model.plot([0,1,2])
-            plot_file = "img/"+pthimg+idx".png"
+            if not os.path.exists("img/"):
+                os.makedirs("img/")
+        
+            plot_file = "img/"+str(batch_idx)+"_"+str(idx)+".png"
             fig1.savefig(plot_file)
             mlflow.log_artifact(plot_file, artifact_path="plots")
 
-        return loss
+        return loss # in fine j'aimerais bien tout récupérer dans une meme labelled satellite Image et en envoyer qu'une seule (définir une fonction end epoch ?)
 
     def configure_optimizers(self):
         """
