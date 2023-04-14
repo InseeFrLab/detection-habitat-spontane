@@ -10,12 +10,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
 import rasterio.plot as rp
+import matplotlib.pyplot as plt
+import os
 import torch
+
+import sys
+sys.path.append('../src')
+
 
 from utils import (
     get_bounds_for_tiles,
-    get_indices_from_tile_length,
     get_transform_for_tiles,
+    get_indices_from_tile_length
 )
 
 

@@ -14,8 +14,6 @@ import yaml
 from affine import Affine
 from s3fs import S3FileSystem
 
-from mappings import dep_to_crs
-
 
 def get_root_path() -> Path:
     """
@@ -234,3 +232,5 @@ def update_storage_access():
         del os.environ["AWS_SESSION_TOKEN"]
     except KeyError:
         pass
+    
+    
