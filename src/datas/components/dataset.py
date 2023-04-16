@@ -189,7 +189,7 @@ class PleiadeDataset(Dataset):
         
         pathim = self.list_paths_images[idx]
         pathlabel = self.list_paths_labels[idx]
-        
+        #print(pathim)
         img = SatelliteImage.from_raster(
             file_path = pathim,
             dep = None,
@@ -215,8 +215,9 @@ class PleiadeDataset(Dataset):
         img = img.type(torch.float)
         label = label.type(torch.LongTensor)
         #print(label)
-        return img, label, {"pathimage" : pathim, "pathlabel" : pathlabel}
       
+        return img, label, {"pathimage" : pathim, "pathlabel" : pathlabel}
+        
     def __len__(self):
         return len(self.list_paths_images)
 
