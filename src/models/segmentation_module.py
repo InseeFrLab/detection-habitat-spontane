@@ -126,7 +126,7 @@ class SegmentationModule(pl.LightningModule):
                 dep = None,
                 date = None,
                 n_bands= 3)
-            #satellite_image.normalize()
+            satellite_image.normalize()
 
             img_label_model = SegmentationLabeledSatelliteImage(satellite_image,np.array(preds[idx].to("cpu")),"",None)
             self.list_labeled_satellite_image.append(img_label_model)

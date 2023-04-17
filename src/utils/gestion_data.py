@@ -112,7 +112,7 @@ def build_dataset_train(
 ):
     
     local_path = load_pleiade_data(year,territory)
-   # write_splitted_images_masks(local_path,train_directory_name,labeler,tile_size,n_bands,dep)
+    write_splitted_images_masks(local_path,train_directory_name,labeler,tile_size,n_bands,dep)
     
     list_path_labels =  np.sort([train_directory_name + "/labels/" + name for name in os.listdir(train_directory_name+"/labels")])
     list_path_images =  np.sort([train_directory_name + "/images/" + name for name in os.listdir(train_directory_name+"/images")])
