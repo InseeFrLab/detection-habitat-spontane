@@ -13,7 +13,7 @@ import numpy as np
 import mlflow
 from utils.model_evaluation import calculate_IOU
 import os
-
+import math 
 # si je veux passer au niveau d'abstraction au dessus : paramétrer la loss
 class SegmentationModule(pl.LightningModule):
     """
@@ -111,12 +111,13 @@ class SegmentationModule(pl.LightningModule):
         loss = self.loss(output, labels)
         self.log("test_loss", loss, on_epoch=True)
         
+        IOU = calculate_IOU(output,labels)
+        self.log("test IOU", IOU, on_epoch=True)
+        
+        batch_size = images.shape[0]
         preds = torch.argmax(output,axis = 1)
         
-        # Calculate model mask for the first element
-        #idx  = 0
-        #print(batch_idx)
-        for idx in range(images.shape[0]):
+        for idx in range(batch_size):
             pthimg = dic["pathimage"][idx]
             pthlabel = dic["pathlabel"][idx]
 
@@ -125,27 +126,21 @@ class SegmentationModule(pl.LightningModule):
                 dep = None,
                 date = None,
                 n_bands= 3)
-            satellite_image.normalize()
+            #satellite_image.normalize()
 
-            #img_label_gt= SegmentationLabeledSatelliteImage(satellite_image,np.load(pthlabel),"",None)
-            #print(preds[idx].shape)
             img_label_model = SegmentationLabeledSatelliteImage(satellite_image,np.array(preds[idx].to("cpu")),"",None)
             self.list_labeled_satellite_image.append(img_label_model)
-            #fig1 = img_label_gt.plot([0,1,2])
         
-        if batch_idx == 7 :# à paramétrer
-            #print("coucou")
+        if (batch_idx+1)% batch_size == 0: # Et on mettra des tailles de batch de taille nombre de patchs ie (2000/Tile size)**2 
             fig1 = plot_list_segmentation_labeled_satellite_image(self.list_labeled_satellite_image,[0,1,2])
-            #fig1 = img_label_model.plot([0,1,2])
             if not os.path.exists("img/"):
                 os.makedirs("img/")
-            plot_file = "image_test.png"
-            #plot_file = "img/"+str(batch_idx)+"_"+str(idx)+".png"
+            
+            plot_file = "img/"+str(satellite_image.bounds[1])+"_"+str(satellite_image.bounds[2])+".png" #bottom right
             fig1.savefig(plot_file)
             mlflow.log_artifact(plot_file, artifact_path="plots")
-        print("parametrer le numero du. batch en fonction de la taille du batch et dunb d'elements dans tests..")
-
-        return loss # in fine j'aimerais bien tout récupérer dans une meme labelled satellite Image et en envoyer qu'une seule (définir une fonction end epoch ?)
+        
+        return IOU 
 
     def configure_optimizers(self):
         """

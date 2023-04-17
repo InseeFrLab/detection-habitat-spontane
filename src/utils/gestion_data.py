@@ -3,9 +3,11 @@ import os
 from tqdm import tqdm
 import numpy as np
 from typing import Type
+from datetime import datetime
 
 from utils.utils import get_root_path, get_environment, update_storage_access
 from utils.satellite_image import SatelliteImage
+from utils.labeler import RILLabeler
 from utils.filter import is_too_black
 from datas.components.dataset import PleiadeDataset
 from torch.utils.data import Dataset
@@ -101,18 +103,16 @@ def write_splitted_images_masks(file_path,output_directory_name,labeler,tile_siz
 def build_dataset_train(
     year,
     territory,
-    type_labeler,
+    dep,
+    labeler,
+    tile_size,
+    n_bands,
     train_directory_name,
     dataset_class: Type[Dataset]
 ):
     
     local_path = load_pleiade_data(year,territory)
-    date = datetime.strptime(str(year)+"0101",'%Y%m%d')
-
-    if type_labeler == "RIL":
-        labeler = RILLabeler(date, dep = dep, buffer_size = buffer_size) 
-        
-    write_splitted_images_masks(local_path,train_directory_name,labeler,tile_size,n_bands,dep)
+   # write_splitted_images_masks(local_path,train_directory_name,labeler,tile_size,n_bands,dep)
     
     list_path_labels =  np.sort([train_directory_name + "/labels/" + name for name in os.listdir(train_directory_name+"/labels")])
     list_path_images =  np.sort([train_directory_name + "/images/" + name for name in os.listdir(train_directory_name+"/images")])
@@ -125,7 +125,8 @@ def build_dataset_test(
     filepath:str,
     n_bands:int,
     tile_size:int,
-    labeler
+    labeler,
+    dataset_class: Type[Dataset]
 ):
     """
     Build a dataset for testing with Pleiades satellite images. This dataset test is based on one image of 2000x2000 and split into patchs of size tile_size
@@ -172,7 +173,7 @@ def build_dataset_test(
     list_path_images_test = np.sort([output_images_path + filename for filename in os.listdir(output_images_path)])
     list_path_labels_test = np.sort([output_masks_path + filename for filename in os.listdir(output_masks_path)])
      
-    dataset_test = PleiadeDataset(list_path_images_test,list_path_labels_test) 
+    dataset_test = dataset_class(list_path_images_test,list_path_labels_test) 
     
     return(dataset_test)
 
