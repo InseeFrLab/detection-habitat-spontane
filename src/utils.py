@@ -162,7 +162,7 @@ def load_ril(
 
 
 def load_bdtopo(    
-    millesime: Literal["2020", "2021", "2022", "2023"],
+    millesime: Literal["2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"],
     dep: Literal["971", "972", "973", "974", "976", "977", "978"],
 ) -> gpd.GeoDataFrame:
     """
@@ -183,14 +183,23 @@ def load_bdtopo(
         root_path,
         environment["local-path"]["BDTOPO"][int(millesime)][dep],
     )
-
+    
     file_path = None
-    for root, dirs, files in os.walk(dir_path):
-        if "BATIMENT.shp" in files:
-            file_path = os.path.join(root, "BATIMENT.shp")
-    if not file_path:
-        raise ValueError("No valid `BATIMENT.shp` file found.")
-
+    
+    if int(millesime) >= 2019:
+        for root, dirs, files in os.walk(dir_path):
+            if "BATIMENT.shp" in files:
+                file_path = os.path.join(root, "BATIMENT.shp")
+        if not file_path:
+            raise ValueError("No valid `BATIMENT.shp` file found.")
+            
+    elif int(millesime) < 2019: 
+        for root, dirs, files in os.walk(dir_path):
+            if "BATI_INDIFFERENCIE.SHP" in files:
+                file_path = os.path.join(root, "BATI_INDIFFERENCIE.SHP")
+        if not file_path:
+            raise ValueError("No valid `BATI_INDIFFERENCIE.SHP` file found.")
+        
     df = gpd.read_file(file_path)
 
     return df
