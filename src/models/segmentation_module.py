@@ -11,7 +11,7 @@ from utils.labeled_satellite_image import SegmentationLabeledSatelliteImage
 from utils.plot_utils import plot_list_segmentation_labeled_satellite_image
 import numpy as np
 import mlflow
-from utils.scores import calculate_IOU
+from utils.model_evaluation import calculate_IOU
 import os
 
 # si je veux passer au niveau d'abstraction au dessus : paramétrer la loss
