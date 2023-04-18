@@ -2,7 +2,6 @@
 Utils.
 """
 import os
-from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Literal, Tuple
 
@@ -14,7 +13,7 @@ import yaml
 from affine import Affine
 from s3fs import S3FileSystem
 
-from mappings import *
+from mappings import (dep_to_crs, num_dep_to_name_dep)
 
 
 def get_root_path() -> Path:
