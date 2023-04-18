@@ -152,11 +152,11 @@ def main(remote_server_uri, experiment_name, run_name):
     )
 
     checkpoint_callback = ModelCheckpoint(
-        monitor="validation_IOU", save_top_k=1, save_last=True, mode="max"
+        monitor="validation_loss", save_top_k=1, save_last=True, mode="max"
     )
 
     early_stop_callback = EarlyStopping(
-        monitor="validation_IOU", mode="max", patience=3
+        monitor="validation_loss", mode="max", patience=3
     )
 
     lr_monitor = LearningRateMonitor(logging_interval="step")
