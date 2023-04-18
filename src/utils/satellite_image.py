@@ -83,7 +83,7 @@ class SatelliteImage:
                     self.transform, rows[0], cols[0]
                 ),
                 n_bands=self.n_bands,
-                filename=self.filename,# a adapter pour eviter la numerotation foireurse quand je decoupe..
+                filename=self.filename,  # a adapter avec bb
                 dep=self.dep,
                 date=self.date,
                 normalized=self.normalized,
@@ -158,7 +158,6 @@ class SatelliteImage:
         plt.yticks([])
         plt.title(f"Dimension of image {self.array.shape[1:]}")
         plt.show()
-        
 
     @staticmethod
     def from_raster(
@@ -199,39 +198,34 @@ class SatelliteImage:
             date,
             normalized,
         )
-    
-    def to_raster(
-        self,
-        directory_name:str ,
-        file_name: str
-    )-> None:
+
+    def to_raster(self, directory_name: str, file_name: str) -> None:
         """
         save a SatelliteImage Object into a raster file (.tif)
 
         Args:
-            directory_name: a string representing the name of the directory where the output file should be saved.
+            directory_name: a string representing the name of the directory \
+            where the output file should be saved.
             file_name: a string representing the name of the output file.
         """
 
         data = self.array
-        crs  = self.crs
+        crs = self.crs
         transform = self.transform
         n_bands = self.n_bands
 
         metadata = {
-            'dtype': data.dtype,
-            'count': n_bands,
-            'width': data.shape[2],
-            'height': data.shape[1],
-            'crs': crs,
-            'transform': transform
+            "dtype": data.dtype,
+            "count": n_bands,
+            "width": data.shape[2],
+            "height": data.shape[1],
+            "crs": crs,
+            "transform": transform,
         }
 
-        #print(os.path.exists(directory_name))
         if not os.path.exists(directory_name):
             os.makedirs(directory_name)
 
-        # Save the array as a raster file in jp2 format
-        with rasterio.open(directory_name + "/" + file_name, 'w', **metadata) as dst:
-            dst.write(data, indexes = np.arange(n_bands)+1)
-
+        file = directory_name + "/" + file_name
+        with rasterio.open(file, "w", **metadata) as dst:
+            dst.write(data, indexes=np.arange(n_bands) + 1)

@@ -71,9 +71,9 @@ def main(remote_server_uri, experiment_name, run_name):
 
     update_storage_access()
     os.environ["MLFLOW_S3_ENDPOINT_URL"] = "https://minio.lab.sspcloud.fr"
-    # %env MLFLOW_S3_ENDPOINT_URL=https://minio.lab.sspcloud.fr
-    # DL des données du teritoire dont on se sert pour l'entraînement
 
+    # DL des données du territoire dont on se sert pour l'entraînement
+    # On peut faire une liste de couples années/territoire également
     if source_train == "PLEIADE":
         # Plus tard décliner avec change detection etc..
         if type_labeler == "RIL":
@@ -92,9 +92,8 @@ def main(remote_server_uri, experiment_name, run_name):
         )
 
         load_pleiade_data(2020, "mayotte")
-
-        test_file = "../data/PLEIADES/2020/MAYOTTE, \
-            ORT_2020052526670967_0519_8586_U38S_8Bits.jp2"
+        dir_may = "../data/PLEIADES/2020/MAYOTTE/"
+        test_file = dir_may + "ORT_2020052526670967_0519_8586_U38S_8Bits.jp2"
 
         dataset_test = build_dataset_test(
             test_file, 3, 250, labeler, PleiadeDataset
@@ -198,5 +197,6 @@ if __name__ == "__main__":
 
     main(remote_server_uri, experiment_name, run_name)
 
-# python train_segmentation.py \
-# https://projet-slums-detection-386760.user.lab.sspcloud.fr segmentation bibi
+# python train_segmentation.py
+# https://projet-slums-detection-386760.user.lab.sspcloud.fr
+# segmentation testonvscode

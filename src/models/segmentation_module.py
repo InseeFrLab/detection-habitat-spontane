@@ -1,24 +1,25 @@
 """
 """
+import os
 from typing import Dict, Union
+
+import mlflow
+import numpy as np
 import pytorch_lightning as pl
 import torch
-import torchvision
 from torch import nn, optim
-from models.components.segmentation_models import DeepLabv3Module
-from utils.satellite_image import SatelliteImage
+
 from utils.labeled_satellite_image import SegmentationLabeledSatelliteImage
-from utils.plot_utils import plot_list_segmentation_labeled_satellite_image
-import numpy as np
-import mlflow
 from utils.model_evaluation import calculate_IOU
-import os
-import math 
-# si je veux passer au niveau d'abstraction au dessus : paramétrer la loss
+from utils.plot_utils import plot_list_segmentation_labeled_satellite_image
+from utils.satellite_image import SatelliteImage
+
+
 class SegmentationModule(pl.LightningModule):
     """
     Pytorch Lightning Module for DeepLabv3.
     """
+
     def __init__(
         self,
         model: nn.Module,
@@ -41,7 +42,7 @@ class SegmentationModule(pl.LightningModule):
             scheduler_interval
         """
         super().__init__()
-        
+
         self.model = model
         self.loss = nn.CrossEntropyLoss()
         self.optimizer = optimizer
@@ -50,7 +51,7 @@ class SegmentationModule(pl.LightningModule):
         self.scheduler_params = scheduler_params
         self.scheduler_interval = scheduler_interval
         self.list_labeled_satellite_image = []
-        
+
     def forward(self, batch):
         """
         Perform forward-pass.
@@ -59,7 +60,7 @@ class SegmentationModule(pl.LightningModule):
         Returns (Tuple[tensor, tensor]): Table, Column prediction.
         """
         return self.model(batch)
-    
+
     def training_step(self, batch, batch_idx):
         """
         Training step.
@@ -69,15 +70,14 @@ class SegmentationModule(pl.LightningModule):
         Returns: Tensor
         """
         images, labels, dic = batch
-    
+
         output = self.forward(images)
-    
         loss = self.loss(output, labels)
-    
-        self.log("train_loss", loss,on_epoch=True)
+
+        self.log("train_loss", loss, on_epoch=True)
 
         return loss
-    
+
     def validation_step(self, batch, batch_idx):
         """
         Validation step.
@@ -87,16 +87,16 @@ class SegmentationModule(pl.LightningModule):
         Returns: Tensor
         """
         images, labels, dic = batch
-    
+
         output = self.forward(images)
         loss = self.loss(output, labels)
-        IOU = calculate_IOU(output,labels)
-        
+        IOU = calculate_IOU(output, labels)
+
         self.log("validation_IOU", IOU, on_epoch=True)
         self.log("validation_loss", loss, on_epoch=True)
-        
+
         return loss
-    
+
     def test_step(self, batch, batch_idx):
         """
         Test step.
@@ -107,40 +107,16 @@ class SegmentationModule(pl.LightningModule):
         """
         images, labels, dic = batch
         output = self.forward(images)
-        
+
         loss = self.loss(output, labels)
         self.log("test_loss", loss, on_epoch=True)
-        
-        IOU = calculate_IOU(output,labels)
+
+        IOU = calculate_IOU(output, labels)
         self.log("test IOU", IOU, on_epoch=True)
-        
-        batch_size = images.shape[0]
-        preds = torch.argmax(output,axis = 1)
-        
-        for idx in range(batch_size):
-            pthimg = dic["pathimage"][idx]
-            pthlabel = dic["pathlabel"][idx]
 
-            satellite_image = SatelliteImage.from_raster(
-                file_path = pthimg,
-                dep = None,
-                date = None,
-                n_bands= 3)
-            satellite_image.normalize()
+        self.evaluate_on_example(batch_idx, output, images, dic)
 
-            img_label_model = SegmentationLabeledSatelliteImage(satellite_image,np.array(preds[idx].to("cpu")),"",None)
-            self.list_labeled_satellite_image.append(img_label_model)
-        
-        if (batch_idx+1)% batch_size == 0: # Et on mettra des tailles de batch de taille nombre de patchs ie (2000/Tile size)**2 
-            fig1 = plot_list_segmentation_labeled_satellite_image(self.list_labeled_satellite_image,[0,1,2])
-            if not os.path.exists("img/"):
-                os.makedirs("img/")
-            
-            plot_file = "img/"+str(satellite_image.bounds[1])+"_"+str(satellite_image.bounds[2])+".png" #bottom right
-            fig1.savefig(plot_file)
-            mlflow.log_artifact(plot_file, artifact_path="plots")
-        
-        return IOU 
+        return IOU
 
     def configure_optimizers(self):
         """
@@ -156,3 +132,54 @@ class SegmentationModule(pl.LightningModule):
         }
 
         return [optimizer], [scheduler]
+
+    def evaluate_on_example(self, batch_idx, output, images, dic):
+        """
+        Evaluate model output on a batch of examples\
+        and generate visualizations. the set data set contains all the patch\
+        of a selected image, the whole image and the associated\
+        model prediction will be saved in mlflow at the end.
+
+        Args:
+            batch_idx (int): Batch index.
+            output (Tensor): Model output.
+            images (Tensor): Input images.
+            dic (dict): Dictionary containing image paths.
+
+        Returns:
+            None
+        """
+        preds = torch.argmax(output, axis=1)
+        batch_size = images.shape[0]
+
+        for idx in range(batch_size):
+            pthimg = dic["pathimage"][idx]
+            n_bands = images.shape[1]
+
+            satellite_image = SatelliteImage.from_raster(
+                file_path=pthimg, dep=None, date=None, n_bands=n_bands
+            )
+            satellite_image.normalize()
+
+            img_label_model = SegmentationLabeledSatelliteImage(
+                satellite_image, np.array(preds[idx].to("cpu")), "", None
+            )
+
+            self.list_labeled_satellite_image.append(img_label_model)
+
+        if (batch_idx + 1) % batch_size == 0:
+            fig1 = plot_list_segmentation_labeled_satellite_image(
+                self.list_labeled_satellite_image, np.arange(n_bands)
+            )
+
+            if not os.path.exists("img/"):
+                os.makedirs("img/")
+
+            bounds = satellite_image.bounds
+            bottom = str(bounds[1])
+            right = str(bounds[2])
+
+            plot_file = "img/" + bottom + "_" + right + ".png"
+            fig1.savefig(plot_file)
+
+            mlflow.log_artifact(plot_file, artifact_path="plots")

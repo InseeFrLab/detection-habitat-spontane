@@ -102,8 +102,7 @@ class SegmentationLabeledSatelliteImage:
         plt.xticks([])
         plt.yticks([])
         plt.title(f"Dimension of image {self.satellite_image.array.shape[1:]}")
-        #plt.show()
-        
+
         return plt.gcf()
 
     def plot_label_next_to_image(self, bands_indices):

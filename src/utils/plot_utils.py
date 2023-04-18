@@ -73,9 +73,8 @@ def plot_list_satellite_images(list_images: List, bands_indices: List):
         for j in range(n_col):
             axs[i, j].set_axis_off()
 
-    # Show the plot
-    #plt.show()
     return plt.gcf()
+
 
 def plot_list_segmentation_labeled_satellite_image(
     list_labeled_image: List, bands_indices: List
@@ -156,8 +155,5 @@ def plot_list_segmentation_labeled_satellite_image(
     ax[1].imshow(output_mask)
     ax[1].set_title("Output Image")
     ax[1].set_axis_off()
-    #plt.show()
-    return plt.gcf()
 
-    
-       
+    return plt.gcf()
