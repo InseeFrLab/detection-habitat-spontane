@@ -4,8 +4,8 @@ sources:
   PAPERS:
     S2Looking: Donnees/PAPERS/S2Looking
     LEVIR_CD: Donnees/PAPERS/LEVIR_CD
-  PLEIADES: 
-      2022: 
+  PLEIADES:
+      2022:
           guadeloupe: Donnees/PLEIADES/GUADELOUPE/2022/MOSA
           martinique: Donnees/PLEIADES/MARTINIQUE/2022/MOSA
           #reunion: NA
@@ -29,7 +29,7 @@ sources:
           #martinique: NA
           reunion: Donnees/PLEIADES/REUNION/2018/MOSA
           #guyane: NA
-          #mayotte: 
+          #mayotte:
       2017:
           #guadeloupe: NA
           martinique: Donnees/PLEIADES/MARTINIQUE/2017-2018/MOSA
@@ -101,14 +101,14 @@ sources:
 
 local-path:
   PAPERS: data/paper_dataset
-  PLEIADES: 
-      2022: 
+  PLEIADES:
+      2022:
           guadeloupe: data/PLEIADES/2022/GUADELOUPE
           martinique: data/PLEIADES/2022/MARTINIQUE
           #reunion: NA
           guyane: data/PLEIADES/2022/GUYANE
           mayotte: data/PLEIADES/2022/MAYOTTE
-          
+
       2020:
           #guadeloupe: NA
           #martinique: NA
@@ -137,4 +137,3 @@ local-path:
       2022:
           #guyane: data/BDTOPO/BDTOPO_guyane_2022
           guyane: data/BDTOPO/2022/BDTOPO_GUYANE
-  

@@ -207,7 +207,6 @@ class PleiadeDataset(Dataset):
             sample = self.transforms(image=img, label=label)
             img = sample["image"]
             label = sample["label"]
-
         else:
             img = torch.tensor(img.astype(float))
             img = img.permute([2, 0, 1])
