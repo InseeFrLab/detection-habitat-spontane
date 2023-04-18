@@ -61,7 +61,7 @@ class SegmentationLabeledSatelliteImage:
 
         indices = get_indices_from_tile_length(m, n, tile_length)
         splitted_labels = [
-            self.label[rows[0] : rows[1], cols[0] : cols[1]]
+            self.label[rows[0]: rows[1], cols[0]: cols[1]]
             for rows, cols in indices
         ]
 
