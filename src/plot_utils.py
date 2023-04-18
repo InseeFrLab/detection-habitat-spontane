@@ -130,7 +130,7 @@ def plot_list_segmentation_labeled_satellite_image(
     for i in range(0, height - tile_size + 1, stride):
         for j in range(0, width - tile_size + 1, stride):
             output_image[
-                i : i + tile_size, j : j + tile_size, :
+                i: i + tile_size, j: j + tile_size, :
             ] = np.transpose(
                 mat_list_images[compteur_ligne, compteur_col].array,
                 (1, 2, 0),
@@ -142,7 +142,7 @@ def plot_list_segmentation_labeled_satellite_image(
             show_mask = np.zeros((label.shape[0], label.shape[1], 3))
             show_mask[label == 1, :] = [255, 255, 255]
             show_mask = show_mask.astype(np.uint8)
-            output_mask[i : i + tile_size, j : j + tile_size, :] = show_mask
+            output_mask[i: i + tile_size, j: j + tile_size, :] = show_mask
             compteur_col += 1
 
         compteur_col = 0
