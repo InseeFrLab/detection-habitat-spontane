@@ -83,6 +83,9 @@ def write_splitted_images_masks(
     output_images_path = output_directory_name + "/images"
     output_masks_path = output_directory_name + "/labels"
 
+    if os.path.exists(output_images_path):
+        print("fichiers déjà écrits")
+
     if not os.path.exists(output_masks_path):
         os.makedirs(output_masks_path)
 
