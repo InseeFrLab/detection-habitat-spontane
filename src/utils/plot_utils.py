@@ -5,10 +5,10 @@ from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
-from mappings import name_dep_to_num_dep, num_dep_to_name_dep
-from satellite_image import SatelliteImage
 
-from utils import get_environment
+from utils.mappings import name_dep_to_num_dep, num_dep_to_name_dep
+from utils.satellite_image import SatelliteImage
+from utils.utils import get_environment
 
 
 def order_list_from_bb(list_bounding_box: List, list_to_order: List):
