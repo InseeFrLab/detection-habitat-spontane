@@ -247,3 +247,5 @@ def update_storage_access():
         del os.environ["AWS_SESSION_TOKEN"]
     except KeyError:
         pass
+    
+    
