@@ -112,7 +112,7 @@ def write_splitted_images_masks(
                 output_masks_path + "/" + file_name_i + ".npy", mask
             )  # save
     dir = str(len(os.listdir(output_directory_name + "/images")))
-    print(dir + "couples images masques retenus")
+    print(dir + " couples images masques retenus")
 
 
 def build_dataset_train(
