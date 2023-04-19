@@ -211,6 +211,18 @@ def has_cloud(image: SatelliteImage) -> bool:
     --------
     bool
         True if the image contains cloud(s), False otherwise.
+
+    Example:
+        >>> filename_1 = '../data/PLEIADES/2020/MAYOTTE/ORT_2020052526656219_0508_8599_U38S_8Bits.jp2' 
+        >>> date_1 = date.fromisoformat('2020-01-01')
+        >>> image_1 = SatelliteImage.from_raster(
+                                    filename_1,
+                                    date = date_1,
+                                    n_bands = 3,
+                                    dep = "976"
+                                )
+        >>> has_cloud(image_1)
+        True
     """
 
     mask = mask_cloud(image, 250, 20000)
