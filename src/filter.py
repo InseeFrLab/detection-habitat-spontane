@@ -62,26 +62,31 @@ def mask_cloud(image: SatelliteImage, threshold: int, min_size: int) -> np.ndarr
     Detects clouds in a SatelliteImage using a threshold-based approach (grayscale threshold and pixel cluster size threshold) and returns a binary mask of the detected clouds.
 
     Args:
-        image (SatelliteImage): The input satellite image to process.
-        threshold (int): The threshold value to use for detecting clouds on the image transformed into grayscale. A pixel is considered part of a cloud if its value is greater than this threshold.
-        min_size (int): The minimum size (in pixels) of a cloud region to be considered valid.
+        image (SatelliteImage):
+            The input satellite image to process.
+        threshold (int) :
+            The threshold value to use for detecting clouds on the image transformed into grayscale. A pixel is considered part of a cloud if its value is greater than this threshold.
+        min_size (int) :
+            The minimum size (in pixels) of a cloud region to be considered valid.
 
     Returns:
-        np.ndarray: A binary mask of the detected clouds in the input image.
+        mask (np.ndarray) : 
+            A binary mask of the detected clouds in the input image.
 
     Example:
         >>> filename_1 = '../data/PLEIADES/2020/MAYOTTE/ORT_2020052526656219_0508_8599_U38S_8Bits.jp2' 
         >>> date_1 = date.fromisoformat('2020-01-01')
-        >>> image = SatelliteImage.from_raster(
+        >>> image_1 = SatelliteImage.from_raster(
                                     filename_1,
                                     date = date_1,
                                     n_bands = 3,
                                     dep = "976"
                                 )
-        >>> cloud_mask = mask_cloud(image, 250, 20000)
+        >>> mask = mask_cloud(image, 250, 20000)
+        >>> fig, ax = plt.subplots(figsize=(10, 10))
+        >>> ax.imshow(np.transpose(image_1.array, (1, 2, 0))[:,:,:3])
+        >>> ax.imshow(mask, alpha=0.3)
     """
-
-
     image = image.array.copy()
 
     image = image[[0, 1, 2], :, :]
@@ -90,88 +95,109 @@ def mask_cloud(image: SatelliteImage, threshold: int, min_size: int) -> np.ndarr
 
     image = image.transpose(1, 2, 0)
 
-    # Convertir l'image RGB en niveau de gris
+    # Convert the RGB image to grayscale
     grayscale = np.mean(image, axis=2)
 
-    # Trouver les amas de pixels blancs correspondant à 5% ou plus de l'image
-    #threshold = 250  # seuil pour considérer un pixel comme "blanc"
-
+    # Find clusters of white pixels that correspond to 5% or more of the image
     labeled, num_features = label(grayscale > threshold)
 
-    #min_size = 20000  # taille minimale de l'amas (2000*2000 = 4 000 000 pixels et on souhaite détecter des nuages qui occupent + de 0,5% de l'image)
+    # Minimum size of the cluster
     mask = labeled.copy()
 
     if num_features >= 1:
-        for i in tqdm(range(1, num_features + 1)): #Affichage de la barre de progression
+        for i in tqdm(range(1, num_features + 1)): # Display the progress bar
             if np.sum(mask == i) < min_size:
                 mask[mask == i] = 0
             else:
                 mask[mask == i] = 1
 
-    # Retourner le masque nuage
+    # Return the cloud mask
     return mask
 
-def mask_full_cloud(image : SatelliteImage, threshold_center : int, threshold_full : int, min_size : int) -> np.ndarray:
+def mask_full_cloud(image : SatelliteImage, threshold_center : int = 250, threshold_full : int = 140, min_size : int = 20000) -> np.ndarray:
     """
-    Masks out clouds in a SatelliteImage using two thresholds for cloud coverage, and returns the resulting cloud-free mask as a rasterized GeoDataFrame.
+    Masks out clouds in a SatelliteImage using two thresholds for cloud coverage, and returns the resulting cloud mask as a rasterized GeoDataFrame.
 
     Parameters:
     -----------
-    image : SatelliteImage
+    image (SatelliteImage) :
         An instance of the SatelliteImage class representing the input image to be processed.
-    threshold_center : int
-        An integer representing the threshold for center coverage of clouds in the image. Pixels with a cloud coverage value higher than this threshold are classified as cloud-covered.
-    threshold_full : int
-        An integer representing the threshold for full coverage of clouds in the image. Pixels with a cloud coverage value higher than this threshold are classified as fully covered by clouds.
-    min_size : int
-        An integer representing the minimum size (in pixels) of a cloud region that will be retained in the output mask.
+    threshold_center (int, optional) :
+        An integer representing the threshold for coverage of the center of clouds in the image. Pixels with a cloud coverage value higher than this threshold are classified as cloud-covered. Defaults to 250 (pure white pixels).
+    threshold_full (int, optional) :
+        An integer representing the threshold for coverage of the full clouds in the image. Pixels with a cloud coverage value higher than this threshold are classified as covered by clouds. Defaults to 140 (light grey pixels).
+    min_size (int, optional) :
+        An integer representing the minimum size (in pixels) of a cloud region that will be retained in the output mask. Defaults to 20,000 (2,000*2,000 = 4,000,000 pixels and we want to detect clouds that occupy > 0.5% of the image).
 
     Returns:
     --------
-    rasterized : np.ndarray
-        A 2D numpy array representing the rasterized version of the cloud mask. Pixels with a value of 1 are classified as cloud-free, while pixels with a value of 0 are classified as cloud-covered.
+    rasterized (np.ndarray) :
+        A numpy array representing the rasterized version of the cloud mask. Pixels with a value of 1 are classified as cloud-free, while pixels with a value of 0 are classified as cloud-covered.
+    
+    Example:
+        >>> filename_1 = '../data/PLEIADES/2020/MAYOTTE/ORT_2020052526656219_0508_8599_U38S_8Bits.jp2' 
+        >>> date_1 = date.fromisoformat('2020-01-01')
+        >>> image_1 = SatelliteImage.from_raster(
+                                    filename_1,
+                                    date = date_1,
+                                    n_bands = 3,
+                                    dep = "976"
+                                )
+        >>> mask_full = mask_full_cloud(image_1)
+        >>> fig, ax = plt.subplots(figsize=(10, 10))
+        >>> ax.imshow(np.transpose(image_1.array, (1, 2, 0))[:,:,:3])
+        >>> ax.imshow(mask_full, alpha=0.3)
     """
+    # Mask out clouds from the image using different thresholds
+    cloud_center = mask_cloud(image, threshold_center, min_size)
+    cloud_full = mask_cloud(image, threshold_full, min_size)
 
-    nuage_center = mask_cloud(image, threshold_center, min_size)
-    nuage_full = mask_cloud(image, threshold_full, min_size)
- 
     image_height = image.array.shape[1]
     image_width = image.array.shape[2]
 
+    # Create a list of polygons from the masked center clouds in order to obtain a GeoDataFrame from it
     polygon_list_center = []
-    for shape in list(shapes(nuage_center)):
+    for shape in list(shapes(cloud_center)):
         polygon = Polygon(shape[0]["coordinates"][0])
         if polygon.area > 0.85 * image_height * image_width:
             continue
         polygon_list_center.append(polygon)
 
-    # Créer un GeoSeries à partir de la liste de polygons
     g_center = gpd.GeoDataFrame(geometry=polygon_list_center)
 
+    # Same but from the masked full clouds
     polygon_list_full = []
-    for shape in list(shapes(nuage_full)):
+    for shape in list(shapes(cloud_full)):
         polygon = Polygon(shape[0]["coordinates"][0])
         if polygon.area > 0.85 * image_height * image_width:
             continue
         polygon_list_full.append(polygon)
 
-    #Créer un GeoSeries à partir de la liste de polygons
     g_full = gpd.GeoDataFrame(geometry=polygon_list_full)
-   
+
+    # Spatial join on the GeoDataFrames for the masked full clouds and the masked center clouds
     result = gpd.sjoin(g_full, g_center, how="inner", predicate="intersects")
 
+    # Remove any duplicate geometries
+    result = result.drop_duplicates(subset='geometry')
+
+    # fig, ax = plt.subplots(figsize=(10, 10))
+    # ax.imshow(np.transpose(image.array, (1, 2, 0))[:,:,:3])
+    # result.plot(color = "orange", ax=ax)
+
+    # Rasterize the geometries into a numpy array
     rasterized = rasterize(
                     result.geometry,
                     out_shape=image.array.shape[1:],
                     fill=0,
                     out=None,
-                    transform=image.transform,
                     all_touched=True,
                     default_value=1,
                     dtype=None,
-                    )
+                )
 
     return rasterized
+
 
 
 class RILFilter:
