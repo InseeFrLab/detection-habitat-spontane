@@ -46,16 +46,41 @@ def is_too_black(
             to the threshold, False otherwise.
     """
     gray_image = (
-        0.2989 * image.array[0]
-        + 0.5870 * image.array[1]
-        + 0.1140 * image.array[2]
-    )
+           0.2989 * image.array[0]
+           + 0.5870 * image.array[1]
+            + 0.1140 * image.array[2]
+        )
     nb_black_pixels = np.sum(gray_image < black_value_threshold)
 
     if (nb_black_pixels / (gray_image.shape[0] ** 2)) >= black_area_threshold:
         return True
     else:
         return False
+    
+def is_too_black2(
+    image: SatelliteImage, black_area=0.5
+) -> bool:
+        # Extract the array from the image to get the pixel values   
+        img = image.array.copy()
+        
+        image = image[[0,1,2],:, :]
+
+        image = (image*255).astype(np.uint8)
+
+        img = img.transpose(1,2,0)
+
+        # Trouver tous les pixels noirs
+        black_pixels = np.where((img[:,:,0] == 0) & (img[:,:,1] == 0) & (img[:,:,2] == 0))
+
+        # Extraire les pixels noirs de l'image RGB
+        #black_pixels_rgb = img[black_pixels]
+        
+        nb_black_pixels = len(black_pixels[0])
+
+        if (nb_black_pixels / (img.shape[0] ** 2)) >= black_area:
+            return True
+        else:
+            return False
 
 def mask_cloud(image: SatelliteImage, threshold: int, min_size: int) -> np.ndarray:
     """
