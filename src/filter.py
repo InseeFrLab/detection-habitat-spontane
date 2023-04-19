@@ -186,15 +186,18 @@ def mask_full_cloud(image: SatelliteImage, threshold_center: int = 250, threshol
     # result.plot(color = "orange", ax=ax)
 
     # Rasterize the geometries into a numpy array
-    rasterized = rasterize(
-                    result.geometry,
-                    out_shape=image.array.shape[1:],
-                    fill=0,
-                    out=None,
-                    all_touched=True,
-                    default_value=1,
-                    dtype=None,
-                )
+    if result.empty:
+        rasterized = np.zeros(image.array.shape[1:])
+    else:        
+        rasterized = rasterize(
+                        result.geometry,
+                        out_shape=image.array.shape[1:],
+                        fill=0,
+                        out=None,
+                        all_touched=True,
+                        default_value=1,
+                        dtype=None,
+                    )
 
     return rasterized
 
@@ -228,11 +231,49 @@ def has_cloud(image: SatelliteImage) -> bool:
     mask = mask_full_cloud(image)
 
     if len(np.where(mask == 1)[0]) > 0:
-        return True
+        return (mask, True)
 
     else:
-        return False
+        return (mask, False)
 
+def patch_nocloud(image: SatelliteImage, mask_full_cloud: np.ndarray, nb_patch: int) -> list[SatelliteImage]:
+    
+    mask_full_rgb = np.zeros((mask_full_cloud.shape[0], mask_full_cloud.shape[1], 3), dtype=float)
+
+    # Remplir l'array RGB avec les valeurs du tableau en niveaux de gris
+    mask_full_rgb[:, :, 0] = mask_full_cloud
+    mask_full_rgb[:, :, 1] = mask_full_cloud
+    mask_full_rgb[:, :, 2] = mask_full_cloud
+    
+    mask_full_rgb = mask_full_rgb.transpose(2,0,1)
+    
+    image_cloud = SatelliteImage(
+                array=mask_full_rgb,
+                crs=image.crs,
+                bounds=image.bounds,
+                transform=image.transform,
+                n_bands=image.n_bands,
+                filename=image.filename,
+                dep=image.dep,
+                date=image.date,
+                normalized=image.normalized,
+            )
+    
+    list_images_cloud = image_cloud.split(nb_patch)
+    list_images = image.split(nb_patch)
+    list_patch_cloud = []
+    
+    #on parcourt chaque patch
+    for i,mini_image in enumerate(list_images_cloud):
+        mask = mini_image.array
+        if len(np.where(mask == 1)[0]) > 0:
+            list_patch_cloud.append((list_images[i], True))
+        else:
+            list_patch_cloud.append((list_images[i], False))
+            
+    list_patch_nocloud = [patch for patch, boolean in list_patch_cloud if boolean == False]
+    
+    return list_patch_nocloud
 
 
 class RILFilter:
