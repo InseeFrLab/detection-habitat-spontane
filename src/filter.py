@@ -114,7 +114,7 @@ def mask_cloud(image: SatelliteImage, threshold: int, min_size: int) -> np.ndarr
     # Return the cloud mask
     return mask
 
-def mask_full_cloud(image : SatelliteImage, threshold_center : int = 250, threshold_full : int = 140, min_size : int = 20000) -> np.ndarray:
+def mask_full_cloud(image: SatelliteImage, threshold_center: int = 250, threshold_full: int = 140, min_size: int = 20000) -> np.ndarray:
     """
     Masks out clouds in a SatelliteImage using two thresholds for cloud coverage, and returns the resulting cloud mask as a rasterized GeoDataFrame.
 
@@ -197,6 +197,28 @@ def mask_full_cloud(image : SatelliteImage, threshold_center : int = 250, thresh
                 )
 
     return rasterized
+
+def has_cloud(image: SatelliteImage) -> bool:
+    """
+    Determines if an image contains cloud(s) or not.
+    
+    Parameters:
+    -----------
+    image (SatelliteImage) :
+        A SatelliteImage object representing the image to analyze.
+        
+    Returns:
+    --------
+    bool
+        True if the image contains cloud(s), False otherwise.
+    """
+
+    mask_full = mask_full_cloud(image)
+    if len(np.where(mask_full == 1)[0]) > 0:
+
+        return True
+    else:
+        return False
 
 
 
