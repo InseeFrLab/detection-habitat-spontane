@@ -213,8 +213,9 @@ def has_cloud(image: SatelliteImage) -> bool:
         True if the image contains cloud(s), False otherwise.
     """
 
-    mask_full = mask_full_cloud(image)
-    if len(np.where(mask_full == 1)[0]) > 0:
+    mask = mask_cloud(image, 250, 20000)
+
+    if len(np.where(mask == 1)[0]) > 0:
 
         return True
     else:
