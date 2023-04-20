@@ -17,6 +17,7 @@ from pytorch_lightning.callbacks import (
     ModelCheckpoint,
 )
 
+from datas.components.change_detection_dataset import end_to_end_cd_dataset
 from datas.components.dataset import PleiadeDataset
 from datas.datamodule import DataModule
 from models.segmentation_module import SegmentationModule
@@ -36,7 +37,7 @@ def main(remote_server_uri, experiment_name, run_name):
     """
 
     config = {
-        "tile size": 500,
+        "tile size": 200,
         "source train": "PLEIADE",
         "type labeler": "RIL",  # None if source train != PLEIADE
         "buffer size": 10,  # None if BDTOPO
@@ -44,6 +45,7 @@ def main(remote_server_uri, experiment_name, run_name):
         "territory": "martinique",
         "dep": "972",
         "n bands": 3,
+        "n channels train": 6,
     }
 
     config_train = {
@@ -55,6 +57,8 @@ def main(remote_server_uri, experiment_name, run_name):
     }
 
     # params
+    n_channel_train = config["n channels train"]
+
     tile_size = config["tile size"]
     n_bands = config["n bands"]
     dep = config["dep"]
@@ -96,7 +100,7 @@ def main(remote_server_uri, experiment_name, run_name):
             tile_size,
             n_bands,
             train_directory_name,
-            PleiadeDataset,
+            end_to_end_cd_dataset,
         )
 
         load_pleiade_data(2020, "mayotte")
@@ -139,8 +143,9 @@ def main(remote_server_uri, experiment_name, run_name):
     scheduler_params = {}
     scheduler_interval = "epoch"
 
-    model = instantiate_module(module)
+    model = instantiate_module(module, n_channel_train)
 
+    batch_size = 2
     data_module = DataModule(
         dataset=dataset_train,
         transforms_augmentation=transforms_augmentation,
@@ -175,6 +180,11 @@ def main(remote_server_uri, experiment_name, run_name):
     # !pip install mlflow
     mlflow.end_run()
 
+    # remote_server_uri =
+    # "https://projet-slums-detection-561009.user.lab.sspcloud.fr"
+    # experiment_name = "segmentation"
+    # run_name = "testraya"
+
     mlflow.set_tracking_uri(remote_server_uri)
     mlflow.set_experiment(experiment_name)
     mlflow.pytorch.autolog()
@@ -207,3 +217,8 @@ if __name__ == "__main__":
 
 # python train_segmentation.py https://projet-slums-detection-
 # 561009.user.lab.sspcloud.fr segmentation testonvscodepostmerge
+
+
+# python train_segementation
+# https://projet-slums-detection-561009.user.lab.sspcloud.fr
+#  segmentation testRaya

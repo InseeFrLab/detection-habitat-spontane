@@ -214,7 +214,7 @@ def build_dataset_test(
     return dataset_test
 
 
-def instantiate_module(module_type):
+def instantiate_module(module_type, nchannel=3):
     """
     Instantiate a module based on the provided module type.
 
@@ -229,4 +229,7 @@ def instantiate_module(module_type):
     if module_type not in module_dict:
         raise ValueError("Invalid module type")
 
-    return module_dict[module_type]()
+    if module_type == "deeplabv3":
+        return module_dict[module_type](nchannel)
+    else:
+        return module_dict[module_type]()
