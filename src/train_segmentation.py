@@ -26,7 +26,7 @@ from utils.gestion_data import (
     instantiate_module,
     load_pleiade_data,
 )
-from utils.labeler import RILLabeler
+from utils.labeler import BDTOPOLabeler, RILLabeler
 from utils.utils import update_storage_access
 
 
@@ -36,7 +36,7 @@ def main(remote_server_uri, experiment_name, run_name):
     """
 
     config = {
-        "tile size": 250,
+        "tile size": 500,
         "source train": "PLEIADE",
         "type labeler": "RIL",  # None if source train != PLEIADE
         "buffer size": 10,  # None if BDTOPO
@@ -50,7 +50,7 @@ def main(remote_server_uri, experiment_name, run_name):
         "lr": 0.0001,
         "momentum": 0.9,
         "module": "deeplabv3",
-        "batch size": 9,
+        "batch size": 2,
         "max epochs": 100,
     }
 
@@ -77,8 +77,16 @@ def main(remote_server_uri, experiment_name, run_name):
     if source_train == "PLEIADE":
         # Plus tard décliner avec change detection etc..
         if type_labeler == "RIL":
-            date = datetime.strptime(str(year) + "0101", "%Y%m%d")
+            date = datetime.strptime(
+                str(year).split("-")[-1] + "0101", "%Y%m%d"
+            )
             labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
+
+        if type_labeler == "BDTOPO":
+            date = datetime.strptime(
+                str(year).split("-")[-1] + "0101", "%Y%m%d"
+            )
+            labeler = BDTOPOLabeler(date, dep=dep)
 
         dataset_train = build_dataset_train(
             year,
@@ -96,7 +104,7 @@ def main(remote_server_uri, experiment_name, run_name):
         test_file = dir_may + "ORT_2020052526670967_0519_8586_U38S_8Bits.jp2"
 
         dataset_test = build_dataset_test(
-            test_file, 3, 250, labeler, PleiadeDataset
+            test_file, 3, tile_size, labeler, PleiadeDataset
         )
         image_size = (tile_size, tile_size)
 
@@ -197,6 +205,5 @@ if __name__ == "__main__":
 
     main(remote_server_uri, experiment_name, run_name)
 
-# python train_segmentation.py
-# https://projet-slums-detection-386760.user.lab.sspcloud.fr
-# segmentation testonvscode
+# python train_segmentation.py https://projet-slums-detection-
+# 561009.user.lab.sspcloud.fr segmentation testonvscodepostmerge
