@@ -1,8 +1,9 @@
 import random
-from typing import Compose, List, Optional
+from typing import List, Optional
 
 import numpy as np
 import torch
+from albumentations import Compose
 from torch.utils.data import Dataset
 
 from utils.satellite_image import SatelliteImage
