@@ -16,3 +16,4 @@ geopandas
 earthengine-api
 geemap
 geedim
+gdal
