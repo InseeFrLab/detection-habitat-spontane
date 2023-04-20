@@ -1,11 +1,12 @@
 import ee
 import geemap
+import os
 
 service_account = (
     "slums-detection-sa@ee-insee-sentinel.iam.gserviceaccount.com"
 )
 credentials = ee.ServiceAccountCredentials(
-    service_account, "../GCP_credentials.json"
+    service_account, "GCP_credentials.json"
 )
 
 # Initialize the library.
@@ -148,12 +149,103 @@ def export_s2_no_cloud(
     geemap.download_ee_image_tiles(
         s2_sr_median,
         fishnet,
-        f"{DOM}_test/",
+        f'{DOM}_{start_date[0:4]}/',
         prefix="data_",
         crs=f"EPSG:{EPSGs[DOM]}",
         scale=10,
         num_threads=50,
     )
+
+    liste = os.listdir(f"{DOM}_{start_date[0:4]}/")
+    for im in liste:
+        if ("05" in im) or ("10" in im) or ("15" in im) or ("20" in im) or ("21" in im) or ("22" in im) or ("23" in im) or ("24" in im) or ("25" in im):
+            os.remove(f"{DOM}_{start_date[0:4]}/{im}")
+
+
+    upload_satelliteImages(
+        f'{DOM}_{start_date[0:4]}',
+        f'projet-slums-detection/Donnees/SENTINEL2/{DOM.upper()}/TUILES_{start_date[0:4]}',
+        250)
+    
+    shutil.rmtree(f"{DOM}_{start_date[0:4]}",ignore_errors=True)
+
+def exportToMinio(image,rpath):
+    client = hvac.Client(
+            url='https://vault.lab.sspcloud.fr', token=os.environ["VAULT_TOKEN"]
+        )
+
+    secret = os.environ["VAULT_MOUNT"] + os.environ["VAULT_TOP_DIR"] + "/s3"
+    mount_point, secret_path = secret.split("/", 1)
+    secret_dict = client.secrets.kv.read_secret_version(
+        path=secret_path, mount_point=mount_point
+    )
+
+    os.environ["AWS_ACCESS_KEY_ID"] = secret_dict["data"]["data"][
+        "ACCESS_KEY_ID"
+    ]
+    os.environ["AWS_SECRET_ACCESS_KEY"] = secret_dict["data"]["data"][
+        "SECRET_ACCESS_KEY"
+    ]
+
+    try:
+        del os.environ['AWS_SESSION_TOKEN']
+    except KeyError:
+        pass
+
+    fs = s3fs.S3FileSystem(
+        client_kwargs={'endpoint_url': 'https://'+'minio.lab.sspcloud.fr'},
+        key=os.environ["AWS_ACCESS_KEY_ID"],
+        secret=os.environ["AWS_SECRET_ACCESS_KEY"]
+    )
+    
+    return fs.put(image,rpath,True)
+
+
+def upload_satelliteImages(
+    lpath,
+    rpath,
+    dim
+):
+    images_paths = os.listdir(lpath)
+
+    for i in range(len(images_paths)):
+        images_paths[i] = lpath+'/'+images_paths[i]
+
+    list_satelliteImages = [
+        SatelliteImage.from_raster(
+            filename,
+            dep = "973",
+            n_bands = 12
+        ) for filename in tqdm(images_paths)]
+
+    splitted_list_images = [im for sublist in tqdm(list_satelliteImages) for im in sublist.split(dim)]
+
+    for i in range(len(splitted_list_images)):
+        image = splitted_list_images[i]
+
+        transf = image.transform
+        in_ds = gdal.Open(images_paths[1])
+        proj = in_ds.GetProjection()
+
+        array = image.array
+
+        driver = gdal.GetDriverByName("GTiff")
+        out_ds = driver.Create(f'Donnees/image{i}.tif', array.shape[2], array.shape[1], array.shape[0], gdal.GDT_Float64)
+        out_ds.SetGeoTransform([transf[2],transf[0],transf[1],transf[5],transf[3],transf[4]])
+        out_ds.SetProjection(proj)
+
+        for j in range(array.shape[0]):
+            out_ds.GetRasterBand(j+1).WriteArray(array[j,:,:])
+
+        if os.path.isfile(f'Donnees/image{i-1}.tif'):
+            exportToMinio(f'Donnees/image{i-1}.tif',rpath)
+            os.remove(f'Donnees/image{i-1}.tif')
+
+    for x in os.listdir('Donnees'):
+        if "image" in x and "tif" in x:        
+            exportToMinio(f'Donnees/image{i}.tif',rpath)
+            os.remove(f'Donnees/image{i}.tif')
+
 
 
 AOIs = {
@@ -175,12 +267,18 @@ AOIs = {
         "east": 45.308891,
         "north": -12.633022,
     },
+    "Guyane": {
+        "west": -52.883,
+        "south": 4.148,
+        "east": -51.813,
+        "north": 5.426
+    }
 }
 
-EPSGs = {"Guadeloupe": "4559", "Martinique": "4559", "Mayotte": "4471"}
+EPSGs = {"Guadeloupe": "4559", "Martinique": "4559", "Mayotte": "4471", "Guyane": "4235"}
 
-START_DATE = "2020-03-01"
-END_DATE = "2020-09-01"
+START_DATE = "2021-05-01"
+END_DATE = "2021-09-01"
 CLOUD_FILTER = 60
 CLD_PRB_THRESH = 40
 NIR_DRK_THRESH = 0.15
