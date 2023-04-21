@@ -111,7 +111,7 @@ def write_splitted_images_masks(
             file_name_i = file_name.split(".")[0] + "_" + str(i)
             if np.sum(mask) == 0:  # je dégage les masques vides j'écris pas
                 continue
-            satellite_image.to_raster(output_images_path, file_name_i + ".tif")
+            satellite_image.to_raster(output_images_path, file_name_i + ".jp2")
             np.save(
                 output_masks_path + "/" + file_name_i + ".npy", mask
             )  # save

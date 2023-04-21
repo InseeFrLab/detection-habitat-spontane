@@ -221,6 +221,9 @@ class SatelliteImage:
             "height": data.shape[1],
             "crs": crs,
             "transform": transform,
+            "driver": "JP2OpenJPEG",
+            "compress": "jp2k",
+            "interleave": "pixel",
         }
 
         if not os.path.exists(directory_name):
