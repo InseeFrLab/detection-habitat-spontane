@@ -1,6 +1,17 @@
+import sys
+import os
+sys.path.append('../src')
+import shutil
 import ee
 import geemap
-import os
+import tqdm
+import s3fs
+import fs
+import hvac
+from minio import Minio
+from satellite_image import SatelliteImage
+from osgeo import gdal
+
 
 service_account = (
     "slums-detection-sa@ee-insee-sentinel.iam.gserviceaccount.com"
@@ -145,7 +156,7 @@ def export_s2_no_cloud(
         s2_sr_cld_col.map(add_cld_shdw_mask).map(apply_cld_shdw_mask).median()
     )
 
-    fishnet = geemap.fishnet(AOI, rows=4, cols=4)
+    fishnet = geemap.fishnet(AOI, rows=4, cols=4, delta=0.5)
     geemap.download_ee_image_tiles(
         s2_sr_median,
         fishnet,
@@ -156,18 +167,13 @@ def export_s2_no_cloud(
         num_threads=50,
     )
 
-    liste = os.listdir(f"{DOM}_{start_date[0:4]}/")
-    for im in liste:
-        if ("05" in im) or ("10" in im) or ("15" in im) or ("20" in im) or ("21" in im) or ("22" in im) or ("23" in im) or ("24" in im) or ("25" in im):
-            os.remove(f"{DOM}_{start_date[0:4]}/{im}")
-
-
     upload_satelliteImages(
         f'{DOM}_{start_date[0:4]}',
         f'projet-slums-detection/Donnees/SENTINEL2/{DOM.upper()}/TUILES_{start_date[0:4]}',
         250)
     
     shutil.rmtree(f"{DOM}_{start_date[0:4]}",ignore_errors=True)
+
 
 def exportToMinio(image,rpath):
     client = hvac.Client(
@@ -230,21 +236,18 @@ def upload_satelliteImages(
         array = image.array
 
         driver = gdal.GetDriverByName("GTiff")
-        out_ds = driver.Create(f'Donnees/image{i}.tif', array.shape[2], array.shape[1], array.shape[0], gdal.GDT_Float64)
+        out_ds = driver.Create(f'image{i}.tif', array.shape[2], array.shape[1], array.shape[0], gdal.GDT_Float64)
         out_ds.SetGeoTransform([transf[2],transf[0],transf[1],transf[5],transf[3],transf[4]])
         out_ds.SetProjection(proj)
 
         for j in range(array.shape[0]):
             out_ds.GetRasterBand(j+1).WriteArray(array[j,:,:])
 
-        if os.path.isfile(f'Donnees/image{i-1}.tif'):
-            exportToMinio(f'Donnees/image{i-1}.tif',rpath)
-            os.remove(f'Donnees/image{i-1}.tif')
+        out_ds = None
 
-    for x in os.listdir('Donnees'):
-        if "image" in x and "tif" in x:        
-            exportToMinio(f'Donnees/image{i}.tif',rpath)
-            os.remove(f'Donnees/image{i}.tif')
+        exportToMinio(f'image{i}.tif',rpath)
+        os.remove(f'image{i}.tif')
+
 
 
 
@@ -285,41 +288,41 @@ NIR_DRK_THRESH = 0.15
 CLD_PRJ_DIST = 2
 BUFFER = 50
 
-export_s2_no_cloud(
-    "Guadeloupe",
-    AOIs,
-    EPSGs,
-    START_DATE,
-    END_DATE,
-    CLOUD_FILTER,
-    CLD_PRB_THRESH,
-    NIR_DRK_THRESH,
-    CLD_PRJ_DIST,
-    BUFFER,
-)
+# export_s2_no_cloud(
+#     "Guadeloupe",
+#     AOIs,
+#     EPSGs,
+#     START_DATE,
+#     END_DATE,
+#     CLOUD_FILTER,
+#     CLD_PRB_THRESH,
+#     NIR_DRK_THRESH,
+#     CLD_PRJ_DIST,
+#     BUFFER,
+# )
 
-export_s2_no_cloud(
-    "Martinique",
-    AOIs,
-    EPSGs,
-    START_DATE,
-    END_DATE,
-    CLOUD_FILTER,
-    CLD_PRB_THRESH,
-    NIR_DRK_THRESH,
-    CLD_PRJ_DIST,
-    BUFFER,
-)
+# export_s2_no_cloud(
+#     "Martinique",
+#     AOIs,
+#     EPSGs,
+#     START_DATE,
+#     END_DATE,
+#     CLOUD_FILTER,
+#     CLD_PRB_THRESH,
+#     NIR_DRK_THRESH,
+#     CLD_PRJ_DIST,
+#     BUFFER,
+# )
 
-export_s2_no_cloud(
-    "Mayotte",
-    AOIs,
-    EPSGs,
-    START_DATE,
-    END_DATE,
-    CLOUD_FILTER,
-    CLD_PRB_THRESH,
-    NIR_DRK_THRESH,
-    CLD_PRJ_DIST,
-    BUFFER,
-)
+# export_s2_no_cloud(
+#     "Mayotte",
+#     AOIs,
+#     EPSGs,
+#     START_DATE,
+#     END_DATE,
+#     CLOUD_FILTER,
+#     CLD_PRB_THRESH,
+#     NIR_DRK_THRESH,
+#     CLD_PRJ_DIST,
+#     BUFFER,
+# )
