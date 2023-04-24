@@ -17,3 +17,5 @@ earthengine-api
 geemap
 geedim
 gdal
+ee
+satellite_image
