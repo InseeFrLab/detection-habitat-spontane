@@ -7,10 +7,13 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 
 from models.components.segmentation_models import DeepLabv3Module
-from utils.filter import is_too_black
+
 from utils.labeler import Labeler
 from utils.satellite_image import SatelliteImage
 from utils.utils import get_environment, get_root_path, update_storage_access
+from utils.filter import (
+    is_too_black2, has_cloud, mask_full_cloud, patch_nocloud,
+)
 
 
 def load_pleiade_data(year: int, territory: str):
@@ -33,11 +36,12 @@ def load_pleiade_data(year: int, territory: str):
     update_storage_access()
     root_path = get_root_path()
     environment = get_environment()
+    dep = territory.lower()
 
     bucket = environment["bucket"]
-    path_s3 = environment["sources"]["PLEIADES"][year][territory]
+    path_s3 = environment["sources"]["PLEIADES"][year][dep]
     path_local = os.path.join(
-        root_path, environment["local-path"]["PLEIADES"][year][territory]
+        root_path, environment["local-path"]["PLEIADES"][year][dep]
     )
 
     if os.path.exists(path_local):
@@ -101,11 +105,20 @@ def write_splitted_images_masks(
             file_path=path, dep=None, date=None, n_bands=3
         )
 
-        list_satellite_image = big_satellite_image.split(tile_size)
-        list_satellite_image = [
-            im for im in list_satellite_image if not is_too_black(im)
-        ]
-        # mettre le filtre nuage ici !!!
+        boolean = has_cloud(big_satellite_image)
+
+        if boolean:
+            mask_full = mask_full_cloud(big_satellite_image)
+            list_patch_filtered = patch_nocloud(
+                big_satellite_image, mask_full, nb_patch=250
+            )
+            list_satellite_image = [patch for patch in list_patch_filtered if
+                                    not is_too_black2(patch)]
+        else:
+            list_patch_filtered = big_satellite_image.split(250)
+            list_satellite_image = [patch for patch in list_patch_filtered if
+                                    not is_too_black2(patch)]
+
         for i, satellite_image in enumerate(list_satellite_image):
             mask = labeler.create_segmentation_label(satellite_image)
             file_name_i = file_name.split(".")[0] + "_" + str(i)
@@ -194,7 +207,7 @@ def build_dataset_test(
 
     for i, simg in enumerate(list_test):
         file_name = simg.filename.split(".")[0] + "_" + str(i)
-        simg.to_raster(output_images_path, file_name + ".tif")
+        simg.to_raster(output_images_path, file_name + ".jp2")
         mask = labeler.create_segmentation_label(simg)
         np.save(output_masks_path + file_name + ".npy", mask)
 

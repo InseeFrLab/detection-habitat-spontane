@@ -18,7 +18,6 @@ from pytorch_lightning.callbacks import (
 )
 
 from datas.components.change_detection_dataset import end_to_end_cd_dataset
-from datas.components.dataset import PleiadeDataset
 from datas.datamodule import DataModule
 from models.segmentation_module import SegmentationModule
 from utils.gestion_data import (
@@ -37,7 +36,7 @@ def main(remote_server_uri, experiment_name, run_name):
     """
 
     config = {
-        "tile size": 200,
+        "tile size": 250,
         "source train": "PLEIADE",
         "type labeler": "RIL",  # None if source train != PLEIADE
         "buffer size": 10,  # None if BDTOPO
@@ -103,12 +102,12 @@ def main(remote_server_uri, experiment_name, run_name):
             end_to_end_cd_dataset,
         )
 
-        load_pleiade_data(2020, "mayotte")
-        dir_may = "../data/PLEIADES/2020/MAYOTTE/"
-        test_file = dir_may + "ORT_2020052526670967_0519_8586_U38S_8Bits.jp2"
+        load_pleiade_data(2022, "martinique")
+        dir_may = "../data/PLEIADES/2022/MARTINIQUE/"
+        test_file = dir_may + "ORT_2022_0691_1638_U20N_8Bits.jp2"
 
         dataset_test = build_dataset_test(
-            test_file, 3, tile_size, labeler, PleiadeDataset
+            test_file, 3, tile_size, labeler, end_to_end_cd_dataset
         )
         image_size = (tile_size, tile_size)
 
@@ -227,5 +226,5 @@ remote_server_uri = (
     "https://projet-slums-detection-561009.user.lab.sspcloud.fr"
 )
 experiment_name = "segmentation"
-run_name = "testraya"
+run_name = "testraya_1"
 main(remote_server_uri, experiment_name, run_name)
