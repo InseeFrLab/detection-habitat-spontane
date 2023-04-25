@@ -91,6 +91,6 @@ class DataModule(pl.LightningDataModule):
         """
         return DataLoader(
             self.dataset_test,
-            batch_size=8,  # 8*8  = 64 patchs
+            batch_size=2,  # 8*8  = 64 patchs
             num_workers=self.num_workers,
         )

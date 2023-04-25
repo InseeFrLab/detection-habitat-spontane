@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 from utils.satellite_image import SatelliteImage
 
 
-class end_to_end_cd_dataset(Dataset):
+class ChangeIsEverywhereDataset(Dataset):
     """
     Custom Dataset class.
     """
@@ -81,7 +81,9 @@ class end_to_end_cd_dataset(Dataset):
         label1 = torch.tensor(np.load(pathlabel1))
         label2 = torch.tensor(np.load(pathlabel2))
 
-        # label = np.where(np.logical_xor(label1,label2), 1, 0)
+        # ici on transforme les images et les labels , peut être qu'il ne faut
+        # pas faire de transformation trop violente pour que les masques
+        # de type change detection aient du sens
 
         if self.transforms:
             sample1 = self.transforms(image=img1, label=label1)
