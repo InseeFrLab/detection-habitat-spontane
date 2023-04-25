@@ -222,7 +222,9 @@ if __name__ == "__main__":
 # https://projet-slums-detection-561009.user.lab.sspcloud.fr
 #  segmentation testRaya
 
-remote_server_uri = "https://projet-slums-detection-561009.user.lab.sspcloud.fr"
+remote_server_uri = (
+    "https://projet-slums-detection-561009.user.lab.sspcloud.fr"
+)
 experiment_name = "segmentation"
 run_name = "testraya_1"
 main(remote_server_uri, experiment_name, run_name)
