@@ -5,7 +5,7 @@ import torch
 from albumentations import Compose
 from torch.utils.data import Dataset
 
-from utils.change_detection_triplet import ChangedetectionTripletS2Looking
+# from utils.change_detection_triplet import ChangedetectionTripletS2Looking
 from utils.labeled_satellite_image import (
     DetectionLabeledSatelliteImage,
     SegmentationLabeledSatelliteImage,
@@ -71,91 +71,6 @@ class SatelliteDataset(Dataset):
 
     def __len__(self):
         return len(self.labeled_images)
-
-
-class ChangeDetectionS2LookingDataset(Dataset):
-    """
-    Custom Dataset class.
-    """
-
-    def __init__(
-        self,
-        list_paths_image1: List,
-        list_paths_image2: List,
-        list_paths_labels: List,
-        transforms: Optional[Compose] = None,
-    ):
-        """
-        Constructor.
-
-        Args:
-            list_paths_image1 (List): list of path of the before state pictures
-            list_paths_image2 (List): list of paths containing  the "after"\
-            state pictures
-            list_paths_labels (List): list of paths containing the labeled\
-            differences
-        """
-        self.list_paths_image1 = list_paths_image1
-        self.list_paths_image2 = list_paths_image2
-        self.list_paths_labels = list_paths_labels
-        self.transforms = transforms
-
-    def __getitem__(self, idx):
-        """_summary_
-
-        Args:
-            idx (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-
-        pathim1 = self.list_paths_image1[idx]
-        pathim2 = self.list_paths_image2[idx]
-        pathlabel = self.list_paths_labels[idx]
-
-        label = 0
-        compteur = 0
-        while np.max(label) == 0 and compteur < 15:
-            cdtriplet = ChangedetectionTripletS2Looking(
-                pathim1, pathim2, pathlabel
-            )
-            cdtriplet.random_crop(256)
-            label = np.array(cdtriplet.label)
-            label[label != 0] = 1
-            compteur += 1
-
-        img1 = np.array(cdtriplet.image1)
-        img2 = np.array(cdtriplet.image2)
-
-        if self.transforms:
-            sample = self.transforms(image=img1, image2=img2, mask=label)
-            img1 = sample["image"]
-            img2 = sample["image2"]
-            label = sample["mask"]
-        else:
-            img1 = torch.tensor(np.transpose(img1, (2, 0, 1)))
-            img2 = torch.tensor(np.transpose(img2, (2, 0, 1)))
-
-        img_double = torch.concatenate([img1, img2], axis=0).squeeze()
-
-        img_double = img_double.type(torch.float)
-
-        label = torch.tensor(label)
-        label = label.type(torch.LongTensor)
-
-        dic = {
-            "pathimage1": pathim1,
-            "pathimage2": pathim2,
-            "pathlabel": pathlabel,
-        }
-
-        return img_double, label, dic
-
-    def __len__(self):
-        return len(self.list_paths_image1)
 
 
 class PleiadeDataset(Dataset):
