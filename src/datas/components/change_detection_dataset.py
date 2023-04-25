@@ -1,3 +1,10 @@
+"""
+All the __getitem__ functions will return a triplet
+image, label, meta_data, with meta_data containing
+paths to the non-transformed images or other necessary
+information
+"""
+
 import random
 from typing import List, Optional
 
@@ -124,14 +131,14 @@ class ChangeIsEverywhereDataset(Dataset):
 
         label = label.type(torch.LongTensor)
 
-        dic = {
+        meta_data = {
             "pathimage1": pathim1,
             "pathimage2": pathim2,
             "pathlabel1": pathlabel1,
             "pathlabel2": pathlabel2,
         }
 
-        return img_double, label, dic
+        return img_double, label, meta_data
 
     def __len__(self):
         return len(self.list_paths_images)
@@ -229,10 +236,16 @@ class ChangeDetectionS2LookingDataset(Dataset):
         label = torch.tensor(label)
         label = label.type(torch.LongTensor)
 
+        meta_data = {
+            "pathim1": pathim1,
+            "pathim2": pathim2,
+            "pathlabel": pathlabel,
+        }
+
         return (
             img_double,
             label,
-            {"pathim1": pathim1, "pathim2": pathim2, "pathlabel": pathlabel},
+            meta_data,
         )
 
     def __len__(self):

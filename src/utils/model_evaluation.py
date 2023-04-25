@@ -1,9 +1,17 @@
 import torch
 
-# Calculate IOU
-
 
 def calculate_IOU(output, labels):
+    """
+    Calculate Intersection Over Union indicator
+    based on output segmentation mask of a model
+    and the true segmentations mask
+
+    Args:
+        output: the output of the segmentation
+        label: the true segmentation mask
+
+    """
     preds = torch.argmax(output, axis=1)
 
     numIOU = torch.sum((preds * labels), axis=[1, 2])  # vaut 1 si les 2 = 1

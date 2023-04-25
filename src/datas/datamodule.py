@@ -16,7 +16,7 @@ class DataModule(pl.LightningDataModule):
         batch_size: int = 8,
         num_workers: int = 4,
         validation_prop: float = 0.2,
-        dataset_test=Optional[List[str]],
+        dataset_test=Optional[Dataset],
         bands_indices: Optional[List[int]] = None,
     ):
         """
