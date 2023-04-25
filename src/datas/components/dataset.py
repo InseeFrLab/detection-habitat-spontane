@@ -1,3 +1,9 @@
+"""
+All the __getitem__ functions will return a triplet
+image, label, meta_data, with meta_data containing
+paths to the non-transformed images or other necessary
+information
+"""
 from typing import List, Optional, Union
 
 import numpy as np
@@ -128,8 +134,8 @@ class PleiadeDataset(Dataset):
 
         img = img.type(torch.float)
         label = label.type(torch.LongTensor)
-        dic = {"pathimage": pathim, "pathlabel": pathlabel}
-        return img, label, dic
+        metadata = {"pathimage": pathim, "pathlabel": pathlabel}
+        return img, label, metadata
 
     def __len__(self):
         return len(self.list_paths_images)

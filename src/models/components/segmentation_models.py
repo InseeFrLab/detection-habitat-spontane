@@ -3,10 +3,13 @@ from torch import nn
 
 
 class DeepLabv3Module(nn.Module):
-    """"""
+    """
+    From the paper https://arxiv.org/abs/1706.05587
+    segmentation model using atrous convolution to
+    take into account multiscales effect
 
-    "nchannel = nombre de channel en entrée du réseau"
-    """"""
+    n_channel: (int) number of channels of the input image
+    """
 
     def __init__(self, nchannel=3):
         """ """
