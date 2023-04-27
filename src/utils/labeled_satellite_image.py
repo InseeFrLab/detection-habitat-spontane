@@ -8,8 +8,8 @@ from typing import List, Literal, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 
-from satellite_image import SatelliteImage
-from utils import get_indices_from_tile_length
+from utils.satellite_image import SatelliteImage
+from utils.utils import get_indices_from_tile_length
 
 
 class SegmentationLabeledSatelliteImage:
@@ -102,7 +102,8 @@ class SegmentationLabeledSatelliteImage:
         plt.xticks([])
         plt.yticks([])
         plt.title(f"Dimension of image {self.satellite_image.array.shape[1:]}")
-        plt.show()
+
+        return plt.gcf()
 
     def plot_label_next_to_image(self, bands_indices):
         """
