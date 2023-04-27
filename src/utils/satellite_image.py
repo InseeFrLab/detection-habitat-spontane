@@ -10,18 +10,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
 import rasterio.plot as rp
-import matplotlib.pyplot as plt
-import os
 import torch
 
-import sys
-sys.path.append('../src')
-
-
-from utils import (
+from utils.utils import (
     get_bounds_for_tiles,
+    get_indices_from_tile_length,
     get_transform_for_tiles,
-    get_indices_from_tile_length
 )
 
 
@@ -89,7 +83,7 @@ class SatelliteImage:
                     self.transform, rows[0], cols[0]
                 ),
                 n_bands=self.n_bands,
-                filename=self.filename,
+                filename=self.filename,  # a adapter avec bb
                 dep=self.dep,
                 date=self.date,
                 normalized=self.normalized,
@@ -204,3 +198,37 @@ class SatelliteImage:
             date,
             normalized,
         )
+
+    def to_raster(self, directory_name: str, file_name: str) -> None:
+        """
+        save a SatelliteImage Object into a raster file (.tif)
+
+        Args:
+            directory_name: a string representing the name of the directory \
+            where the output file should be saved.
+            file_name: a string representing the name of the output file.
+        """
+
+        data = self.array
+        crs = self.crs
+        transform = self.transform
+        n_bands = self.n_bands
+
+        metadata = {
+            "dtype": data.dtype,
+            "count": n_bands,
+            "width": data.shape[2],
+            "height": data.shape[1],
+            "crs": crs,
+            "transform": transform,
+            "driver": "JP2OpenJPEG",
+            "compress": "jp2k",
+            "interleave": "pixel",
+        }
+
+        if not os.path.exists(directory_name):
+            os.makedirs(directory_name)
+
+        file = directory_name + "/" + file_name
+        with rasterio.open(file, "w", **metadata) as dst:
+            dst.write(data, indexes=np.arange(n_bands) + 1)

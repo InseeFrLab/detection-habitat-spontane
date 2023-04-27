@@ -1,41 +1,42 @@
 bucket: "projet-slums-detection"
 
 sources:
-  PLEIADES: 
-      2022: 
-          guadeloupe: Donnees/PLEIADES/GUADELOUPE/2022/MOSA/
-          martinique: Donnees/PLEIADES/MARTINIQUE/2022/MOSA/
+  PAPERS:
+    S2Looking: Donnees/PAPERS/S2Looking
+    LEVIR_CD: Donnees/PAPERS/LEVIR_CD
+  PLEIADES:
+      2022:
+          guadeloupe: Donnees/PLEIADES/GUADELOUPE/2022/MOSA
+          martinique: Donnees/PLEIADES/MARTINIQUE/2022/MOSA
           #reunion: NA
-          guyane: Donnees/PLEIADES/Cayenne_200722/16bits/ORT_2022072050325085_U22N/
-          mayotte: Donnees/PLEIADES/MAYOTTE/2022/MOSA/
-          
+          guyane: Donnees/PLEIADES/Cayenne_200722/16bits/ORT_2022072050325085_U22N
+          mayotte: Donnees/PLEIADES/MAYOTTE/2022/MOSA
+
       2020:
           #guadeloupe: NA
           #martinique: NA
           #reunion: NA
           #guyane: NA
-          mayotte: Donnees/PLEIADES/MAYOTTE/2020/MOSA/
+          mayotte: Donnees/PLEIADES/MAYOTTE/2020/MOSA
       2019:
           #guadeloupe: NA
           #martinique: NA
           #reunion: NA
           #guyane: NA
-          mayotte: Donnees/PLEIADES/MAYOTTE/2019/MOSA/
+          mayotte: Donnees/PLEIADES/MAYOTTE/2019/MOSA
       2018:
           #guadeloupe: NA
           #martinique: NA
-          reunion: Donnees/PLEIADES/REUNION/2018/MOSA/
+          reunion: Donnees/PLEIADES/REUNION/2018/MOSA
           #guyane: NA
-          #mayotte: 
+          #mayotte:
       2017:
           #guadeloupe: NA
-          martinique: Donnees/PLEIADES/MARTINIQUE/2017-2018/MOSA/
+          martinique: Donnees/PLEIADES/MARTINIQUE/2017-2018/MOSA
           #reunion: NA
           #guyane: NA
-          mayotte: Donnees/PLEIADES/MAYOTTE/2017/MOSA/
-                    
-          
-          
+          mayotte: Donnees/PLEIADES/MAYOTTE/2017/MOSA
+
   BDTOPO:
     2022:
       guadeloupe: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D971_2022-03-15
@@ -99,14 +100,15 @@ sources:
     "978": Donnees/RIL/new_gr/new_gr_978.geojson
 
 local-path:
-  PLEIADES: 
-      2022: 
+  PAPERS: data/paper_dataset
+  PLEIADES:
+      2022:
           guadeloupe: data/PLEIADES/2022/GUADELOUPE
           martinique: data/PLEIADES/2022/MARTINIQUE
           #reunion: NA
           guyane: data/PLEIADES/2022/GUYANE
           mayotte: data/PLEIADES/2022/MAYOTTE
-          
+
       2020:
           #guadeloupe: NA
           #martinique: NA
