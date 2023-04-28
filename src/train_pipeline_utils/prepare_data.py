@@ -95,7 +95,7 @@ def write_splitted_images_masks(
                 )
                 np.save(output_masks_path + "/" + file_name_i + ".npy", mask)
             except rasterio._err.CPLE_AppDefinedError:
-                print(file_name_i)
+                print("erreur ecriture " + file_name_i)
                 continue
 
     dir = str(len(os.listdir(output_directory_name + "/images")))

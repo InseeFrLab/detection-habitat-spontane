@@ -187,3 +187,4 @@ class SegmentationModule(pl.LightningModule):
             fig1.savefig(plot_file)
 
             mlflow.log_artifact(plot_file, artifact_path="plots")
+
