@@ -324,7 +324,7 @@ def instantiate_trainer(config, lightning_module):
     return trainer
 
 
-def run_pipeline():
+def run_pipeline(remote_server_uri, experiment_name, run_name):
     """
     Runs the segmentation pipeline u
     sing the configuration specified in `config.yml` 
@@ -380,9 +380,9 @@ if __name__ == "__main__":
     remote_server_uri = sys.argv[1]
     experiment_name = sys.argv[2]
     run_name = sys.argv[3]
+ run_pipeline(remote_server_uri, experiment_name, run_name)
 
-    run_pipeline(remote_server_uri, experiment_name, run_name)
-
+   
 
 #remote_server_uri = "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
 #experiment_name = "segmentation"
