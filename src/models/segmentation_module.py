@@ -38,6 +38,7 @@ class SegmentationModule(pl.LightningModule):
         Initialize TableNet Module.
         Args:
             model
+            loss
             optimizer
             optimizer_params
             scheduler

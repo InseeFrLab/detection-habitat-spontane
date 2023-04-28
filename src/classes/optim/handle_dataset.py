@@ -14,6 +14,20 @@ def instanciate_dataset_test(config):
 
 
 def split_dataset(dataset, prop_val):
+    """
+    Splits a given dataset into training and 
+    validation sets based on a given proportion.
+
+    Args:
+        dataset (torch.utils.data.Dataset): The dataset to split.
+        prop_val (float): The proportion of the dataset to use for validation,
+        should be between 0 and 1.
+
+    Returns:
+        (torch.utils.data.Dataset, torch.utils.data.Dataset):
+        A tuple containing the training and validation datasets.
+
+    """
     val_size = int(prop_val * len(dataset))
     train_size = len(dataset) - val_size
 
@@ -26,6 +40,19 @@ def split_dataset(dataset, prop_val):
 
 
 def generate_transform(tile_size, augmentation):
+    """
+    Generates PyTorch transforms for data augmentation and preprocessing.
+
+    Args:
+        tile_size (int): The size of the image tiles.
+        augmentation (bool): Whether or not to include data augmentation.
+
+    Returns:
+        (albumentations.core.composition.Compose,
+        albumentations.core.composition.Compose):
+        A tuple containing the augmentation and preprocessing transforms.
+
+    """
     image_size = (tile_size, tile_size)
 
     transforms_augmentation = None

@@ -38,6 +38,9 @@ def write_splitted_images_masks(
         bands in the input image.
         dep: a string representing the department of the input image, \
         or None if not applicable.
+   
+    Returns:
+        str: The name of the output directory.
     """
 
     output_images_path = output_directory_name + "/images"
