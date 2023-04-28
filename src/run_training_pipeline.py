@@ -25,6 +25,7 @@ from models.components.segmentation_models import DeepLabv3Module
 from models.segmentation_module import SegmentationModule
 from train_pipeline_utils.download_data import load_pleiade_data
 from train_pipeline_utils.prepare_data import write_splitted_images_masks
+from utils.utils import update_storage_access
 
 
 def download_data(config):
@@ -354,10 +355,13 @@ def run_pipeline():
     gc.collect()
 
     if config["mlflow"]:
+
+        update_storage_access()
+        os.environ["MLFLOW_S3_ENDPOINT_URL"] = "https://minio.lab.sspcloud.fr"
         mlflow.end_run()
         mlflow.set_tracking_uri(remote_server_uri)
         mlflow.set_experiment(experiment_name)
-        mlflow.pytorch.autolog()
+      #  mlflow.pytorch.autolog()
         
         with mlflow.start_run(run_name=run_name):
             mlflow.log_artifact(
@@ -380,10 +384,9 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
-# remote_server_uri =
-# "https://projet-slums-detection-561009.user.lab.sspcloud.fr"
-# experiment_name = "segmentation"
-# run_name = "testraya"
+#remote_server_uri = "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
+#experiment_name = "segmentation"
+#run_name = "testclem"
 
 # TO DO :
 # préparer Test exemples
