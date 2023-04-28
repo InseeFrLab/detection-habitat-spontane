@@ -9,10 +9,12 @@ import pytorch_lightning as pl
 import torch
 from torch import nn, optim
 
-from utils.labeled_satellite_image import SegmentationLabeledSatelliteImage
-from utils.model_evaluation import calculate_IOU
+from classes.data.labeled_satellite_image \
+    import SegmentationLabeledSatelliteImage
+
+from classes.optim.evaluation_model import calculate_IOU
 from utils.plot_utils import plot_list_segmentation_labeled_satellite_image
-from utils.satellite_image import SatelliteImage
+from classes.data.satellite_image import SatelliteImage
 
 
 class SegmentationModule(pl.LightningModule):
