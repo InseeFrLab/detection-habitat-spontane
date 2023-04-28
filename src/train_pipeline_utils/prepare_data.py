@@ -1,8 +1,8 @@
 import os
 
 import numpy as np
-from tqdm import tqdm
 import rasterio
+from tqdm import tqdm
 
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import Labeler
@@ -45,7 +45,7 @@ def write_splitted_images_masks(
 
     if os.path.exists(output_images_path):
         print("fichiers déjà écrits")
-        return None
+        return output_directory_name
 
     if not os.path.exists(output_masks_path):
         os.makedirs(output_masks_path)
@@ -88,15 +88,14 @@ def write_splitted_images_masks(
                 continue
             try:
                 satellite_image.to_raster(
-                 output_images_path,
-                 file_name_i + ".jp2"
-                 )
-                np.save(
-                    output_masks_path + "/" + file_name_i + ".npy", mask
+                    output_images_path, file_name_i + ".jp2"
                 )
+                np.save(output_masks_path + "/" + file_name_i + ".npy", mask)
             except rasterio._err.CPLE_AppDefinedError:
                 print(file_name_i)
                 continue
 
     dir = str(len(os.listdir(output_directory_name + "/images")))
     print(dir + " couples images masques retenus")
+
+    return output_directory_name
