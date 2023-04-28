@@ -66,12 +66,7 @@ class DataModule(pl.LightningDataModule):
         Create Dataloader.
         Returns: DataLoader
         """
-        return DataLoader(
-            self.dataset_train,
-            batch_size=self.batch_size,
-            shuffle=True,
-            num_workers=self.num_workers,
-        )
+  x
 
     def val_dataloader(self, *args, **kwargs) -> DataLoader:
         """

@@ -6,6 +6,7 @@ donnees:
   buffer size: 10
   n channels train: 3
   tile size: 250
+  augmentation: True
 
 optim:
   lr: 0.0001
@@ -13,3 +14,6 @@ optim:
   module: "deeplabv3"
   batch size: 2
   max epochs: 100
+  val prop: 0.2
+
+mlflow: True
