@@ -28,6 +28,16 @@ from train_pipeline_utils.prepare_data import write_splitted_images_masks
 
 
 def download_data(config):
+    """
+    Downloads data based on the given configuration.
+
+    Args:
+        config: a dictionary representing the 
+        configuration information for data download.
+
+    Returns:
+        A list of output directories for each downloaded dataset.
+    """
     config_data = config["donnees"]
     list_output_dir = []
 
@@ -43,6 +53,21 @@ def download_data(config):
 
 
 def prepare_data(config, list_data_dir):
+    """
+    Preprocesses and splits the raw input images 
+    into tiles and corresponding masks, 
+    and saves them in the specified output directories. 
+    
+    Args:
+        config: A dictionary representing the configuration settings.
+        list_data_dir: A list of strings representing the paths
+        to the directories containing the raw input image files.
+    
+    Returns:
+        A list of strings representing the paths to 
+        the output directories containing the 
+        preprocessed tile and mask image files.
+    """
     # load labeler
     config_data = config["donnees"]
 
@@ -73,6 +98,20 @@ def prepare_data(config, list_data_dir):
 
 
 def instanciate_dataset(config, list_path_images, list_path_labels):
+    """
+    Instantiates the appropriate dataset object
+    based on the configuration settings.
+    
+    Args:
+        config: A dictionary representing the configuration settings.
+        list_path_images: A list of strings representing
+        the paths to the preprocessed tile image files.
+        list_path_labels: A list of strings representing
+        the paths to the corresponding preprocessed mask image files.
+    
+    Returns:
+        A dataset object of the specified type.
+    """
     dataset_dict = {"PLEIADE": PleiadeDataset}
     dataset_type = config["donnees"]["source train"]
 
@@ -88,6 +127,38 @@ def instanciate_dataset(config, list_path_images, list_path_labels):
 
 
 def instanciate_dataloader(config, list_output_dir):
+    """
+    Instantiates and returns the data loaders for
+    training, validation, and testing datasets.
+    
+    Args:
+    - config (dict): A dictionary containing the configuration parameters
+    for data loading and processing.
+    - list_output_dir (list): A list of strings containing the paths to
+    the directories that contain the training data.
+    
+    Returns:
+    - train_dataloader (torch.utils.data.DataLoader):
+    The data loader for the training dataset.
+    - valid_dataloader (torch.utils.data.DataLoader): 
+    The data loader for the validation dataset.
+    - test_dataloader (torch.utils.data.DataLoader): 
+    The data loader for the testing dataset.
+    
+    The function first generates the paths for the image and label data
+    based on the data source (Sentinel, PLEIADES) vs pre-annotated datasets.
+    It then instantiates the required dataset class
+    (using the `instanciate_dataset` function) and splits the full dataset
+    into training and validation datasets based on the validation proportion
+    specified in the configuration parameters.
+    
+    Next, the appropriate transformations are applied to the training
+    and validation datasets using the `generate_transform` function.
+    
+    Finally, the data loaders for the training and validation datasets 
+    are created using the `DataLoader` class from the PyTorch library, 
+    and the data loader for the testing dataset is set to `None`.
+    """
     # génération des paths en fonction du type de Données
     # (Sentinel, PLEIADES) VS Dataset préannotés
 
@@ -98,12 +169,15 @@ def instanciate_dataloader(config, list_output_dir):
             labels = os.listdir(dir + "/labels")
             images = os.listdir(dir + "/images")
 
-            list_path_labels.apend(
+            list_path_labels = np.concatenate((
+                list_path_labels,
                 np.sort([dir + "/labels/" + name for name in labels])
-            )
-            list_path_images.append(
+            ))
+            
+            list_path_images = np.concatenate((
+                list_path_images,
                 np.sort([dir + "/images/" + name for name in images])
-            )
+            ))
 
     # récupération de la classe de Dataset souhaitée
     full_dataset = instanciate_dataset(
@@ -166,6 +240,17 @@ def instantiate_model(config):
 
 
 def instantiate_loss(config):
+    """
+    Instanciates an optimizer object with the parameters 
+    specified in the configuration file.
+
+    Args:
+        model: A PyTorch model object.
+        config: A dictionary object containing the configuration parameters.
+
+    Returns:
+        An optimizer object from the `torch.optim` module.
+    """
     loss_type = config["optim"]["loss"]
     loss_dict = {"crossentropy": CrossEntropy}
 
@@ -176,6 +261,18 @@ def instantiate_loss(config):
 
 
 def instantiate_lightning_module(config, model):
+    """
+    Create a PyTorch Lightning module for segmentation
+    with the given model and optimization configuration.
+
+    Args:
+        config (dict): Dictionary containing the configuration
+        parameters for optimization.
+        model: The PyTorch model to use for segmentation.
+
+    Returns:
+        A PyTorch Lightning module for segmentation.
+    """
     list_params = generate_optimization_elements(config)
 
     lightning_module = SegmentationModule(
@@ -191,6 +288,18 @@ def instantiate_lightning_module(config, model):
 
 
 def instantiate_trainer(config, lightning_module):
+    """
+    Create a PyTorch Lightning module for segmentation with 
+    the given model and optimization configuration.
+
+    Args:
+        config (dict): Dictionary containing the configuration
+        parameters for optimization.
+        model: The PyTorch model to use for segmentation.
+
+    Returns:
+        SegmentationModule: A PyTorch Lightning module for segmentation.
+    """
     # def callbacks
     checkpoint_callback = ModelCheckpoint(
         monitor="validation_loss", save_top_k=1, save_last=True, mode="max"
@@ -215,6 +324,15 @@ def instantiate_trainer(config, lightning_module):
 
 
 def run_pipeline():
+    """
+    Runs the segmentation pipeline u
+    sing the configuration specified in `config.yml` 
+    and the provided MLFlow parameters.
+    Args:
+        None
+    Returns:
+        None
+    """
     # Open the file and load the file
     with open("../config.yml") as f:
         config = yaml.load(f, Loader=SafeLoader)
@@ -265,3 +383,6 @@ if __name__ == "__main__":
 
 # indicateur nombre de zones détectées dans l'image
 # config sur mlflow
+
+
+# diminution dunombre d'images DL
