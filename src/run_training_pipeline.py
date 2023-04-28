@@ -82,7 +82,7 @@ def prepare_data(config, list_data_dir):
 
             labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
 
-        output_dir = "train_data" + dep + "-" + year + "/"
+        output_dir = "train_data" + dep + "-" + str(year) + "/"
 
         write_splitted_images_masks(
             list_data_dir[i],
@@ -277,7 +277,7 @@ def instantiate_lightning_module(config, model):
 
     lightning_module = SegmentationModule(
         model=model,
-        loss=instantiate_loss(config["optim"]["loss"]),
+        loss=instantiate_loss(config),
         optimizer=list_params[0],
         optimizer_params=list_params[1],
         scheduler=list_params[2],
@@ -358,8 +358,12 @@ def run_pipeline():
         mlflow.set_tracking_uri(remote_server_uri)
         mlflow.set_experiment(experiment_name)
         mlflow.pytorch.autolog()
-
+        
         with mlflow.start_run(run_name=run_name):
+            mlflow.log_artifact(
+                "../config.yml",
+                artifact_path="config.yml"
+            )
             trainer.fit(light_module, train_dl, valid_dl)
             # trainer.test(light_module, test_dl)
     else:
@@ -381,8 +385,35 @@ if __name__ == "__main__":
 # experiment_name = "segmentation"
 # run_name = "testraya"
 
+# TO DO :
+# préparer Test exemples
 # indicateur nombre de zones détectées dans l'image
-# config sur mlflow
+# IOU
+# visu
+# test routine sur S2Looking dataset
+
+# diminution du nombre d'images DL : pour test
+
+# import os
+
+# list_data_dir = ["../data/PLEIADES/2022/GUADELOUPE/",
+# "../data/PLEIADES/2022/MARTINIQUE/"]
+
+# len(os.listdir(list_data_dir[0]))
+# len(os.listdir(list_data_dir[1]))
 
 
-# diminution dunombre d'images DL
+# def delete_files_in_dir(dir_path,length_delete):
+#    # Get a list of all the files in the directory
+#  files = os.listdir(dir_path)[:length_delete]
+
+    # Loop through the files and delete them
+#    for file in files:
+#        file_path = os.path.join(dir_path, file)
+#        if os.path.isfile(file_path):
+#            os.remove(file_path)
+
+
+# delete_files_in_dir(list_data_dir[0], 600)
+# delete_files_in_dir(list_data_dir[1], 1350)
+# optimisation filtrage
