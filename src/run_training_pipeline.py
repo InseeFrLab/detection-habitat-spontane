@@ -17,7 +17,6 @@ from torch.utils.data import DataLoader
 from yaml.loader import SafeLoader
 
 from classes.labelers.labeler import RILLabeler
-from classes.optim.handle_dataset import generate_transform, split_dataset
 from classes.optim.losses import CrossEntropy
 from classes.optim.optimizer import generate_optimization_elements
 from data.components.dataset import PleiadeDataset
@@ -25,6 +24,10 @@ from models.components.segmentation_models import DeepLabv3Module
 from models.segmentation_module import SegmentationModule
 from train_pipeline_utils.download_data import load_pleiade_data
 from train_pipeline_utils.prepare_data import write_splitted_images_masks
+from train_pipeline_utils.handle_dataset import (
+    generate_transform,
+    split_dataset
+)
 from utils.utils import update_storage_access
 
 
