@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from utils.mappings import name_dep_to_num_dep, num_dep_to_name_dep
-from utils.satellite_image import SatelliteImage
+from classes.data.satellite_image import SatelliteImage
 from utils.utils import get_environment
 
 

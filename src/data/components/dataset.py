@@ -11,11 +11,11 @@ import torch
 from albumentations import Compose
 from torch.utils.data import Dataset
 
-from utils.labeled_satellite_image import (
+from classes.data.labeled_satellite_image import (
     DetectionLabeledSatelliteImage,
     SegmentationLabeledSatelliteImage,
 )
-from utils.satellite_image import SatelliteImage
+from classes.data.satellite_image import SatelliteImage
 
 
 class SatelliteDataset(Dataset):

@@ -10,11 +10,11 @@ from scipy.ndimage import label
 from shapely.geometry import Polygon, box
 from tqdm import tqdm
 
-from utils.labeled_satellite_image import (
+from classes.data.labeled_satellite_image import (
     DetectionLabeledSatelliteImage,
     SegmentationLabeledSatelliteImage,
 )
-from utils.satellite_image import SatelliteImage
+from classes.data.satellite_image import SatelliteImage
 from utils.utils import get_environment, get_file_system
 
 
