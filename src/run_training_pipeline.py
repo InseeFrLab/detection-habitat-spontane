@@ -98,7 +98,7 @@ def prepare_data(config, list_data_dir):
     return list_output_dir
 
 
-def instanciate_dataset(config, list_path_images, list_path_labels):
+def intantiate_dataset(config, list_path_images, list_path_labels):
     """
     Instantiates the appropriate dataset object
     based on the configuration settings.
@@ -127,7 +127,7 @@ def instanciate_dataset(config, list_path_images, list_path_labels):
     return full_dataset
 
 
-def instanciate_dataloader(config, list_output_dir):
+def intantiate_dataloader(config, list_output_dir):
     """
     Instantiates and returns the data loaders for
     training, validation, and testing datasets.
@@ -149,7 +149,7 @@ def instanciate_dataloader(config, list_output_dir):
     The function first generates the paths for the image and label data
     based on the data source (Sentinel, PLEIADES) vs pre-annotated datasets.
     It then instantiates the required dataset class
-    (using the `instanciate_dataset` function) and splits the full dataset
+    (using the `intantiate_dataset` function) and splits the full dataset
     into training and validation datasets based on the validation proportion
     specified in the configuration parameters.
     
@@ -181,7 +181,7 @@ def instanciate_dataloader(config, list_output_dir):
             ))
 
     # récupération de la classe de Dataset souhaitée
-    full_dataset = instanciate_dataset(
+    full_dataset = intantiate_dataset(
         config, list_path_images, list_path_labels
     )
     train_dataset, valid_dataset = split_dataset(
@@ -242,7 +242,7 @@ def instantiate_model(config):
 
 def instantiate_loss(config):
     """
-    Instanciates an optimizer object with the parameters 
+    intantiates an optimizer object with the parameters 
     specified in the configuration file.
 
     Args:
@@ -343,7 +343,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     model = instantiate_model(config)
 
-    train_dl, valid_dl, test_dl = instanciate_dataloader(
+    train_dl, valid_dl, test_dl = intantiate_dataloader(
         config, list_output_dir
     )
 
@@ -380,7 +380,7 @@ if __name__ == "__main__":
     remote_server_uri = sys.argv[1]
     experiment_name = sys.argv[2]
     run_name = sys.argv[3]
- run_pipeline(remote_server_uri, experiment_name, run_name)
+    run_pipeline(remote_server_uri, experiment_name, run_name)
 
    
 
