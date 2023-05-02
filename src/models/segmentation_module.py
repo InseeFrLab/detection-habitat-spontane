@@ -9,10 +9,12 @@ import pytorch_lightning as pl
 import torch
 from torch import nn, optim
 
-from utils.labeled_satellite_image import SegmentationLabeledSatelliteImage
-from utils.model_evaluation import calculate_IOU
-from utils.plot_utils import plot_list_segmentation_labeled_satellite_image
-from utils.satellite_image import SatelliteImage
+from classes.data.labeled_satellite_image \
+    import SegmentationLabeledSatelliteImage
+from classes.data.satellite_image import SatelliteImage
+from classes.optim.evaluation_model import calculate_IOU
+from utils.plot_utils import \
+    plot_list_segmentation_labeled_satellite_image
 
 
 class SegmentationModule(pl.LightningModule):
@@ -23,6 +25,7 @@ class SegmentationModule(pl.LightningModule):
     def __init__(
         self,
         model: nn.Module,
+        loss: Union[nn.Module],
         optimizer: Union[optim.SGD, optim.Adam],
         optimizer_params: Dict,
         scheduler: Union[
@@ -35,6 +38,7 @@ class SegmentationModule(pl.LightningModule):
         Initialize TableNet Module.
         Args:
             model
+            loss
             optimizer
             optimizer_params
             scheduler
@@ -44,7 +48,7 @@ class SegmentationModule(pl.LightningModule):
         super().__init__()
 
         self.model = model
-        self.loss = nn.CrossEntropyLoss()
+        self.loss = loss
         self.optimizer = optimizer
         self.optimizer_params = optimizer_params
         self.scheduler = scheduler
@@ -183,3 +187,4 @@ class SegmentationModule(pl.LightningModule):
             fig1.savefig(plot_file)
 
             mlflow.log_artifact(plot_file, artifact_path="plots")
+
