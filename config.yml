@@ -1,7 +1,7 @@
 donnees:
-  source train: "PLEIADE"
-  year: [2022, 2022]
-  dep: ["972","971"]
+  source train: "PLEIADES"
+  year: [2022]
+  dep: ["972"]
   type labeler: "RIL"
   buffer size: 10
   n channels train: 3
@@ -17,4 +17,4 @@ optim:
   max epochs: 100
   val prop: 0.2
 
-mlflow: True
+mlflow: False
