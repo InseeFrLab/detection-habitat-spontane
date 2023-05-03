@@ -6,9 +6,9 @@ from typing import List
 import matplotlib.pyplot as plt
 import numpy as np
 
-from mappings import name_dep_to_num_dep, num_dep_to_name_dep
-from satellite_image import SatelliteImage
-from utils import get_environment
+from classes.data.satellite_image import SatelliteImage
+from utils.mappings import name_dep_to_num_dep, num_dep_to_name_dep
+from utils.utils import get_environment
 
 
 def order_list_from_bb(
@@ -86,8 +86,7 @@ def plot_list_satellite_images(
         for j in range(n_col):
             axs[i, j].set_axis_off()
 
-    # Show the plot
-    plt.show()
+    return plt.gcf()
 
 
 def plot_list_segmentation_labeled_satellite_image(
@@ -170,12 +169,11 @@ def plot_list_segmentation_labeled_satellite_image(
     ax[1].imshow(output_mask)
     ax[1].set_title("Output Image")
     ax[1].set_axis_off()
-    plt.show()
+
+    return plt.gcf()
 
 
-def plot_infrared_simple_mask(
-    satellite_image: SatelliteImage,
-):
+def plot_infrared_simple_mask(satellite_image: SatelliteImage):
     """Plot the infrared mask based on threshold on the infrared median.
 
     Args:
@@ -199,9 +197,10 @@ def plot_infrared_simple_mask(
         black = np.ones(shape, dtype=float)
         white = np.zeros(shape, dtype=float)
 
-        # Creation of the mask : all the infrared prixels below the threshold
-        # will be black and all the infrared prixels above the threshold will
-        # be white.
+        # Creation of the mask : all the infrared prixels below the threshold \
+        # will be black and all the infrared prixels above the threshold \
+        # will be white.
+
         mask = np.where(img[:, :, 3] > threshold, white, black)
 
         # Return to the right shape
@@ -212,11 +211,9 @@ def plot_infrared_simple_mask(
         plt.show()
 
 
-def plot_infrared_patch_mask(
-    satellite_image: SatelliteImage,
-):
-    """Plot the infrared mask based on patch-by-patch thresholding on the
-    infrared median of the patch. 250 patches.
+def plot_infrared_patch_mask(satellite_image: SatelliteImage):
+    """Plot the infrared mask based on patch-by-patch thresholding
+        on the infrared median of the patch. 250 patches.
 
     Args:
         satellite_image (SatelliteImage): A satellite image with 4 bands.
@@ -244,9 +241,10 @@ def plot_infrared_patch_mask(
             black = np.ones(shape[0:2], dtype=float)
             white = np.zeros(shape[0:2], dtype=float)
 
-            # Creation of the mask : all the infrared prixels below the
-            # threshold will be black and all the infrared prixels above
-            # the threshold will be white.
+            # Creation of the mask : all the infrared prixels below \
+            # the threshold will be \ black and all the infrared prixels \
+            # above the threshold will be white.
+
             mask = np.where(img[:, :, 3] > threshold, white, black)
 
             # Return to the right shape
@@ -282,11 +280,9 @@ def plot_infrared_patch_mask(
         plt.show()
 
 
-def plot_infrared_complex_mask(
-    satellite_image: SatelliteImage,
-):
-    """Plot the infrared mask based on thresholding on infrared, green and blue
-    to recover certain shades of infrared.
+def plot_infrared_complex_mask(satellite_image: SatelliteImage):
+    """Plot the infrared mask based on thresholding on infrared,
+     green and blue to recover certain shades of infrared.
 
     Args:
         satellite_image (SatelliteImage): A satellite image with 4 bands.
@@ -306,8 +302,8 @@ def plot_infrared_complex_mask(
 
         mask = np.empty(shape, dtype=float)
 
-        # We go through all the pixels and we modify them according to
-        # the threshold
+        # We go through all the pixels and we modify \
+        # them according to the threshold
         for row in range(img.shape[0]):
             for col in range(img.shape[1]):
                 b = img[row, col, 1]
@@ -316,24 +312,20 @@ def plot_infrared_complex_mask(
                 mini = min(b, g)
                 maxi = max(b, g)
 
-                # Step 1
-                if maxi - mini <= 20:
-                    # Step 2
+                if maxi - mini <= 20:  # step 1
                     if (
                         r > 200 / 255
                         and mini >= 110 / 255
                         and r >= (20 / 255 + mini)
                     ):
+                        # step 2
                         mask[row, col] = 1.0  # white
-                    # Step 3
-                    elif r >= (20 / 255 + mini) and r >= 110 / 255:
+                    elif r >= (20 / 255 + mini) and r >= 110 / 255:  # step 3
                         mask[row, col] = 0.0  # black
-                    # Step 4
-                    else:
+                    else:  # step 4
                         mask[row, col] = 1.0  # white
 
-                # Step 4
-                else:
+                else:  # step 4
                     mask[row, col] = 1.0  # white
 
         mask = mask.transpose(1, 0)
@@ -348,29 +340,29 @@ def plot_square_images(
     satellite_image: SatelliteImage = None,
     filepath_center_image: str = None,
 ):
-    """Plot all the images surrounding the image we give. This image will be
-    in the middle and we specify who much images we want to have around. For
-    example, if we give a distance of 2, we will plot all the images with that
-    are maximum 2 images far from the center image. It will return a square
-    5x5. The arguments can be either a SatteliteImage or the filepath of the
-    center image.
+    """Plot all the images surrounding the image we give. This image will
+    be in the middle and we specify who much images we want to have around.
+    For example, if we give a distance of 2, we will plot all the images
+    with that are maximum 2 images far from the center image.
+    It will return a square 5x5.
+    The arguments can be either a SatteliteImage
+    or the filepath of the center image.
 
     Args:
-        bands_indice (list):
-            The list of the band indices we want to plot.
-        distance (int):
-            The distance of the images from the center image we want.
-        satellite_image (SatelliteImage):
-            The center SatelliteImage.
-        filepath_center_image (str):
-            The filepath of the center image.
+        bands_indice (list): the list of the band indices we want to plot.
+        distance (int): the distance of the images
+        from the center image we want.
+        satellite_image (SatelliteImage): the center SatelliteImage.
+        filepath_center_image (str): the filepath of the center image.
 
     Returns:
         The square of the images surrounding the center image.
 
     Example:
-        >>> plot_square_images([0,1,2], 1 , None ,'../data/PLEIADES/2017/
-        MARTINIQUE/72-2017-0711-1619-U20N-0M50-RVB-E100.jp2')
+        >>> plot_square_images(
+            [0,1,2], 1 , None ,
+            '../data/PLEIADES/2017/MARTINIQUE/72-2017-0711-1619-U20N-0M50-RVB-E100.jp2'
+            )
     """
 
     environment = get_environment()
@@ -381,13 +373,14 @@ def plot_square_images(
     split_filepath_center = re.split(pattern, filepath_center_image)
 
     folder_path = pattern.join(split_filepath_center[0:5])
-    year = (satellite_image.date).year
-    dep = num_dep_to_name_dep[satellite_image.dep].lower()
 
     if satellite_image is not None:
-        folder_path = "../" + environment["local-path"]["PLEIADES"][year][dep]
-        filepath_center_image = folder_path + "/" + satellite_image.filename
+        name_dep = num_dep_to_name_dep[satellite_image.dep].lower()
+        year = (satellite_image.date).year
+        path = environment["local-path"]["PLEIADES"][year][name_dep]
 
+        folder_path = "../" + path
+        filepath_center_image = folder_path + "/" + satellite_image.filename
     else:
         # Retrieve the year and the department
         annee = split_filepath_center[3]
@@ -413,10 +406,14 @@ def plot_square_images(
 
             left = float(split_filename[2]) * 1000.0
             top = float(split_filename[3]) * 1000.0
-            dist = float(distance) * 1000.0
 
-            if left_center - dist <= left <= left_center + dist:
-                if top_center - dist <= top <= top_center + dist:
+            limit_left_r = left_center + distance * 1000.0
+            limit_top_r = top_center + distance * 1000.0
+            limit_left_l = left_center - distance * 1000.0
+            limit_top_l = top_center - distance * 1000.0
+
+            if limit_left_l <= left <= limit_left_r:
+                if limit_top_l <= top <= limit_top_r:
                     image = SatelliteImage.from_raster(
                         folder_path + "/" + filename,
                         date=date.fromisoformat(annee + "-01-01"),
