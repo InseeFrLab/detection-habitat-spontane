@@ -22,8 +22,8 @@ from classes.optim.optimizer import generate_optimization_elements
 from data.components.dataset import PleiadeDataset
 from models.components.segmentation_models import DeepLabv3Module
 from models.segmentation_module import SegmentationModule
-from train_pipeline_utils.download_data import load_pleiade_data
-from train_pipeline_utils.prepare_data import write_splitted_images_masks
+from train_pipeline_utils.download_data import load_satellite_data
+from train_pipeline_utils.prepare_data import write_splitted_images_masks, check_labelled_images, split_images, filter_images, label_images, save_images_and_masks
 from train_pipeline_utils.handle_dataset import (
     generate_transform,
     split_dataset
@@ -45,13 +45,13 @@ def download_data(config):
     config_data = config["donnees"]
     list_output_dir = []
 
-    if config_data["source train"] == "PLEIADE":
-        years = config_data["year"]
-        deps = config_data["dep"]
+    years = config_data["year"]
+    deps = config_data["dep"]
+    src = config_data["source train"]
 
-        for year, dep in zip(years, deps):
-            output_dir = load_pleiade_data(year, dep)
-            list_output_dir.append(output_dir)
+    for year, dep in zip(years, deps):
+        output_dir = load_satellite_data(year, dep, src)
+        list_output_dir.append(output_dir)
 
     return list_output_dir
 
@@ -72,30 +72,54 @@ def prepare_data(config, list_data_dir):
         the output directories containing the 
         preprocessed tile and mask image files.
     """
+    print('Entre dans la fonction prepare_data')
     # load labeler
     config_data = config["donnees"]
 
     years = config_data["year"]
     deps = config_data["dep"]
+    src = config_data["source train"]
 
     list_output_dir = []
     for i, (year, dep) in enumerate(zip(years, deps)):
-        if config_data["type labeler"] == "RIL":
+        if config_data["type labeler"] == 'RIL':
             buffer_size = config_data["buffer size"]
             date = datetime.strptime(str(year) + "0101", "%Y%m%d")
 
             labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
+        # TODO: labeler pour BDTOPO ?
 
-        output_dir = "train_data" + dep + "-" + str(year) + "/"
+        output_dir = "train_data" + "-" + src + "-" + dep + "-" + str(year) + "/"
 
-        write_splitted_images_masks(
-            list_data_dir[i],
-            output_dir,
-            labeler,
-            config_data["tile size"],
-            config_data["n channels train"],
-            dep,
-        )
+        # Implémenter les ~3 fonctions suivantes à la place de
+        # write_splitted_images_masks
+        # Dans split, on regarde si les images sont déjà de la taille
+        # souhaitée. Si oui on passe à l'annotation directement
+        # check() # on vérifie qu'on a pas déjà les données annotées disponibles
+        # split_images(config): List[SatelliteImage]
+        # filter_images(config): List[SatelliteImage]
+        # label_images(config): List[LabeledSatelliteImage]
+        # save()
+
+        if not check_labelled_images(output_dir):
+            list_splitted_images = split_images(list_data_dir[i], config_data["n channels train"])
+            if src == 'PLEIADES':
+                list_filtered_splitted_images = filter_images(list_splitted_images)
+            elif src == 'SENTINEL2':
+                list_filtered_splitted_images = list_splitted_images
+            list_filtered_splitted_labeled_images, list_masks = label_images(list_filtered_splitted_images, labeler)
+            liste_images, liste_masques = save_images_and_masks(list_filtered_splitted_labeled_images, list_masks, output_dir)
+            # output_directory_name = save_images_and_masks(list_filtered_splitted_labeled_images, list_masks, output_dir)
+
+        # write_splitted_images_masks(
+        #     list_data_dir[i],
+        #     output_dir,
+        #     labeler,
+        #     config_data["tile size"],
+        #     config_data["n channels train"],
+        #     dep,
+        # )
+
         list_output_dir.append(output_dir)
 
     return list_output_dir
@@ -342,7 +366,10 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         config = yaml.load(f, Loader=SafeLoader)
 
     list_data_dir = download_data(config)
+    # list_data_dir = ['/home/onyxia/work/detection-habitat-spontane/data/PLEIADES/2022/MARTINIQUE']
     list_output_dir = prepare_data(config, list_data_dir)
+    print(list_output_dir)
+    return
 
     model = instantiate_model(config)
 
