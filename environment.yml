@@ -1,85 +1,86 @@
 bucket: "projet-slums-detection"
 
 sources:
-  PLEIADES: 
-      2022: 
-          guadeloupe: Donnees/PLEIADES/GUADELOUPE/2022/MOSA/
-          martinique: Donnees/PLEIADES/MARTINIQUE/2022/MOSA/
-          #reunion: NA
-          guyane: Donnees/PLEIADES/Cayenne_200722/16bits/ORT_2022072050325085_U22N/
-          mayotte: Donnees/PLEIADES/MAYOTTE/2022/MOSA/
-          
+  PAPERS:
+    S2Looking: Donnees/PAPERS/S2Looking
+    LEVIR_CD: Donnees/PAPERS/LEVIR_CD
+  PLEIADES:
+      2022:
+          "971": Donnees/PLEIADES/GUADELOUPE/2022/MOSA
+          "972": Donnees/PLEIADES/MARTINIQUE/2022/MOSA
+          #reunion"974" NA
+          "973": Donnees/PLEIADES/Cayenne_200722/16bits/ORT_2022072050325085_U22N
+          "976": Donnes/PLEIADES/MAYOTTE/2022/MOSA
+
       2020:
-          #guadeloupe: NA
-          #martinique: NA
-          #reunion: NA
-          #guyane: NA
-          mayotte: Donnees/PLEIADES/MAYOTTE/2020/MOSA/
+          #"971": NA
+          #"972": NA
+          #"974": NA
+          #"973": NA
+          "976": Donnees/PLEIADES/MAYOTTE/2020/MOSA
       2019:
-          #guadeloupe: NA
-          #martinique: NA
-          #reunion: NA
-          #guyane: NA
-          mayotte: Donnees/PLEIADES/MAYOTTE/2019/MOSA/
+          #"971": NA
+          #"972": NA
+          #"974": NA
+          #"973": NA
+          "976": Donnees/PLEIADES/MAYOTTE/2019/MOSA
       2018:
-          #guadeloupe: NA
-          #martinique: NA
-          reunion: Donnees/PLEIADES/REUNION/2018/MOSA/
-          #guyane: NA
-          #mayotte: 
+          #"971": NA
+          #"972": NA
+          "974": Donnees/PLEIADES/REUNION/2018/MOSA
+          #"973": NA
+          #"976":
       2017:
-          #guadeloupe: NA
-          martinique: Donnees/PLEIADES/MARTINIQUE/2017-2018/MOSA/
-          #reunion: NA
-          #guyane: NA
-          mayotte: Donnees/PLEIADES/MAYOTTE/2017/MOSA/
-                    
-          
-          
+          #"971": NA
+          "972": Donnees/PLEIADES/MARTINIQUE/2017-2018/MOSA
+          #"974": NA
+          #"973": NA
+          "976": Donnees/PLEIADES/MAYOTTE/2017/MOSA
+
   BDTOPO:
     2022:
-      guadeloupe: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D971_2022-03-15
-      martinique: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D972_2022-03-15
-      reunion: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGR92UTM40S_D974_2022-03-15
-      guyane: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_UTM22RGFG95_D973_2022-03-15
-      # guyane: Donnees/BDTOPO/BDTOPO_3-3_TOUSTHEMES_SHP_UTM22RGFG95_D973_2022-12-15
-      mayotte: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGM04UTM38S_D976_2022-03-15
+      "971": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D971_2022-03-15
+      "972": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D972_2022-03-15
+      "974": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGR92UTM40S_D974_2022-03-15
+      "973": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_UTM22RGFG95_D973_2022-03-15
+      #"973": Donnees/BDTOPO/BDTOPO_3-3_TOUSTHEMES_SHP_UTM22RGFG95_D973_2022-12-15
+      "976": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGM04UTM38S_D976_2022-03-15
     2021:
-      guadeloupe: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D971_2021-03-15
-      martinique: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D972_2021-03-15
-      reunion: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGR92UTM40S_D974_2021-03-15
-      guyane: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_UTM22RGFG95_D973_2021-03-15
-      mayotte: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGM04UTM38S_D976_2021-03-15
+      "971": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D971_2021-03-15
+      "972": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D972_2021-03-15
+      "974": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGR92UTM40S_D974_2021-03-15
+      "973": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_UTM22RGFG95_D973_2021-03-15
+      "976": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGM04UTM38S_D976_2021-03-15
     2020:
-      guadeloupe: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D971_2020-06-15
-      martinique: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D972_2020-06-15
-      reunion: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGR92UTM40S_D974_2020-06-15
-      guyane: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_UTM22RGFG95_D973_2020-06-15
-      mayotte: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGM04UTM38S_D976_2020-06-15
+      "971": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D971_2020-06-15
+      "972": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D972_2020-06-15
+      "974": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGR92UTM40S_D974_2020-06-15
+      "973": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_UTM22RGFG95_D973_2020-06-15
+      "976": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGM04UTM38S_D976_2020-06-15
     2019:
-      guadeloupe: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D971_2019-03-15
-      martinique: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D972_2019-03-15
-      reunion: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGR92UTM40S_D974_2019-03-15
-      guyane: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_UTM22RGFG95_D973_2019-03-15
-      mayotte: Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGM04UTM38S_D976_2019-03-15
+      "971": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D971_2019-03-15
+      "972": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D972_2019-03-15
+      "974": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGR92UTM40S_D974_2019-03-15
+      "973": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_UTM22RGFG95_D973_2019-03-15
+      "976": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGM04UTM38S_D976_2019-03-15
     2018:
-      guadeloupe: Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_UTM20W84GUAD_D971_2018-03-28
-      martinique: Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_UTM20W84MART_D972_2018-03-28
-      reunion: Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_RGR92UTM40S_D974_2018-03-28
-      guyane: Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_UTM22RGFG95_D973_2018-03-28
-      mayotte: Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_RGM04UTM38S_D976_2018-03-28
+      "971": Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_UTM20W84GUAD_D971_2018-03-28
+      "972": Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_UTM20W84MART_D972_2018-03-28
+      "974": Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_RGR92UTM40S_D974_2018-03-28
+      "973": Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_UTM22RGFG95_D973_2018-03-28
+      "976": Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_RGM04UTM38S_D976_2018-03-28
     2017:
-      guadeloupe: Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_UTM20W84GUAD_D971_2017-03-30
-      martinique: Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_UTM20W84MART_D972_2017-03-30
-      reunion: Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_RGR92UTM40S_D974_2017-03-30
-      guyane: Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_UTM22RGFG95_D973_2017-03-30
-      mayotte: Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_RGM04UTM38S_D976_2017-03-30
+      "971": Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_UTM20W84GUAD_D971_2017-03-30
+      "972": Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_UTM20W84MART_D972_2017-03-30
+      "974": Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_RGR92UTM40S_D974_2017-03-30
+      "973": Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_UTM22RGFG95_D973_2017-03-30
+      "976": Donnees/BDTOPO/BDTOPO_2-2_TOUSTHEMES_SHP_RGM04UTM38S_D976_2017-03-30
     2016:
-      guadeloupe: Donnees/BDTOPO/BDTOPO_2-1_TOUSTHEMES_SHP_UTM20W84GUAD_D971_2016-04-01
-      martinique: Donnees/BDTOPO/BDTOPO_2-1_TOUSTHEMES_SHP_UTM20W84MART_D972_2016-04-01
-      reunion: Donnees/BDTOPO/BDTOPO_2-1_TOUSTHEMES_SHP_RGR92UTM40S_D974_2016-04-01
-      guyane: Donnees/BDTOPO/BDTOPO_2-1_TOUSTHEMES_SHP_UTM22RGFG95_D973_2016-04-01
-      mayotte: Donnees/BDTOPO/BDTOPO_2-1_TOUSTHEMES_SHP_RGM04UTM38S_D976_2016-04-01
+      "971": Donnees/BDTOPO/BDTOPO_2-1_TOUSTHEMES_SHP_UTM20W84GUAD_D971_2016-04-01
+      "972": Donnees/BDTOPO/BDTOPO_2-1_TOUSTHEMES_SHP_UTM20W84MART_D972_2016-04-01
+      "974": Donnees/BDTOPO/BDTOPO_2-1_TOUSTHEMES_SHP_RGR92UTM40S_D974_2016-04-01
+      "973": Donnees/BDTOPO/BDTOPO_2-1_TOUSTHEMES_SHP_UTM22RGFG95_D973_2016-04-01
+      "976": Donnees/BDTOPO/BDTOPO_2-1_TOUSTHEMES_SHP_RGM04UTM38S_D976_2016-04-01
   RIL: Donnees/RIL/ril_data.parquet
   old_gr:
     "971": Donnees/RIL/old_gr/old_gr_971.geojson
@@ -99,38 +100,39 @@ sources:
     "978": Donnees/RIL/new_gr/new_gr_978.geojson
 
 local-path:
-  PLEIADES: 
-      2022: 
-          guadeloupe: data/PLEIADES/2022/GUADELOUPE
-          martinique: data/PLEIADES/2022/MARTINIQUE
-          #reunion: NA
-          guyane: data/PLEIADES/2022/GUYANE
-          mayotte: data/PLEIADES/2022/MAYOTTE
-          
+  PAPERS: data/paper_dataset
+  PLEIADES:
+      2022:
+          "971": data/PLEIADES/2022/GUADELOUPE
+          "972": data/PLEIADES/2022/MARTINIQUE
+          "974": NA
+          "973": data/PLEIADES/2022/GUYANE
+          "976": data/PLEIADES/2022/MAYOTTE
+
       2020:
-          #guadeloupe: NA
-          #martinique: NA
-          #reunion: NA
-          #guyane: NA
-          mayotte: data/PLEIADES/2020/MAYOTTE
+          #"971": NA
+          #"972": NA
+          #"974": NA
+          #"973": NA
+          m"976": data/PLEIADES/2020/MAYOTTE
       2019:
-          #guadeloupe: NA
-          #martinique: NA
-          #reunion: NA
-          #guyane: NA
-          mayotte: data/PLEIADES/2019/MAYOTTE
+          #"971": NA
+          #"972": NA
+          #"974": NA
+          #"973": NA
+          "976": data/PLEIADES/2019/MAYOTTE
       2018:
-          #guadeloupe: NA
-          #martinique: NA
-          reunion: data/PLEIADES/2018/REUNION
-          #guyane: NA
-          #mayotte: NA
+          #"971": NA
+          #"972": NA
+          r"974": data/PLEIADES/2018/REUNION
+          #"973": NA
+          #"976": NA
       2017:
-          #guadeloupe: NA
-          martinique: data/PLEIADES/2017/MARTINIQUE
-          #reunion: NA
-          #guyane: NA
-          mayotte: data/PLEIADES/2017/MAYOTTE
+          #"971": NA
+          "972": data/PLEIADES/2017/MARTINIQUE
+          "973":
+          "974": NA
+          "976": data/PLEIADES/2017/MAYOTTE
   BDTOPO:
       2022:
           #guyane: data/BDTOPO/BDTOPO_guyane_2022

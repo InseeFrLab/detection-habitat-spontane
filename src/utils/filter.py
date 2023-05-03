@@ -5,17 +5,17 @@ from typing import Literal, Union
 
 import geopandas as gpd
 import numpy as np
-from labeled_satellite_image import (
-    DetectionLabeledSatelliteImage,
-    SegmentationLabeledSatelliteImage,
-)
 from rasterio.features import rasterize, shapes
-from satellite_image import SatelliteImage
 from scipy.ndimage import label
 from shapely.geometry import Polygon, box
 from tqdm import tqdm
 
-from utils import get_environment, get_file_system
+from classes.data.labeled_satellite_image import (
+    DetectionLabeledSatelliteImage,
+    SegmentationLabeledSatelliteImage,
+)
+from classes.data.satellite_image import SatelliteImage
+from utils.utils import get_environment, get_file_system
 
 
 def is_too_black(
@@ -24,22 +24,18 @@ def is_too_black(
     """
     Determine if a satellite image is too black
     based on pixel values and black area proportion.
-
     This function converts a satellite image to grayscale and
     filters it based on the number of black pixels and their proportion.
     A pixel is considered black if its value is less than the specified
     threshold (black_value_threshold).
-
     The image is considered too black if the proportion of black pixels
     is greater than or equal to the specified threshold (black_area_threshold).
-
     Args:
         image (SatelliteImage): The input satellite image.
         black_value_threshold (int, optional): The threshold value
             for considering a pixel as black. Default is 100.
         black_area_threshold (float, optional): The threshold for
             the proportion of black pixels. Default is 0.5.
-
     Returns:
         bool: True if the proportion of black pixels is greater than or equal
             to the threshold, False otherwise.
@@ -60,22 +56,18 @@ def is_too_black(
 def is_too_black2(image: SatelliteImage, black_area=0.5) -> bool:
     """
     Determines if an image has too many black pixels.
-
     Parameters:
     -----------
     image (SatelliteImage) :
         A SatelliteImage object representing the image to analyze.
-
     black_area (float, optional) :
         A float representing the maximum percentage of black pixels allowed in
         the image. The default value is 0.5, which means that if more than 50%
         of the image is black, the function will return True.
-
     Returns:
     --------
     bool:
         True if the image has too many black pixels, False otherwise.
-
     Example:
         >>> filename = '../data/PLEIADES/2020/MAYOTTE/
         ORT_2020052526656219_0508_8599_U38S_8Bits.jp2'
@@ -119,7 +111,6 @@ def mask_cloud(
     Detects clouds in a SatelliteImage using a threshold-based approach
     (grayscale threshold and pixel cluster size threshold) and
     returns a binary mask of the detected clouds.
-
     Args:
         image (SatelliteImage):
             The input satellite image to process.
@@ -130,11 +121,9 @@ def mask_cloud(
         min_size (int):
             The minimum size (in pixels) of a cloud region to be
             considered valid.
-
     Returns:
         mask (np.ndarray):
             A binary mask of the detected clouds in the input image.
-
     Example:
         >>> filename_1 = '../data/PLEIADES/2020/MAYOTTE/
         ORT_2020052526656219_0508_8599_U38S_8Bits.jp2'
@@ -193,7 +182,6 @@ def mask_full_cloud(
     Masks out clouds in a SatelliteImage using two thresholds for cloud
     coverage, and returns the resulting cloud mask as a rasterized
     GeoDataFrame.
-
     Parameters:
     -----------
     image (SatelliteImage):
@@ -214,14 +202,12 @@ def mask_full_cloud(
         that will be retained in the output mask.
         Defaults to 50,000 (2,000*2,000 = 4,000,000 pixels and we want to
         detect clouds that occupy > 1.25% of the image).
-
     Returns:
     --------
     rasterized (np.ndarray):
         A numpy array representing the rasterized version of the cloud mask.
         Pixels with a value of 1 are classified as cloud-free, while pixels
         with a value of 0 are classified as cloud-covered.
-
     Example:
         >>> filename_1 = '../data/PLEIADES/2020/MAYOTTE/
         ORT_2020052526656219_0508_8599_U38S_8Bits.jp2'
@@ -241,7 +227,7 @@ def mask_full_cloud(
     cloud_center = mask_cloud(image, threshold_center, min_size)
     cloud_full = mask_cloud(image, threshold_full, min_size)
 
-    height, width = image.array.shape
+    height, width = image.array.shape[1:]
 
     # Create a list of polygons from the masked center clouds in order
     # to obtain a GeoDataFrame from it
@@ -299,12 +285,10 @@ def has_cloud(
 ) -> bool:
     """
     Determines if an image contains cloud(s) or not.
-
     Parameters:
     -----------
     image (SatelliteImage):
         A SatelliteImage object representing the image to analyze.
-
     threshold (int, optional):
         An integer representing the threshold for coverage of the center of
         clouds in the image. Pixels with a cloud coverage value higher than
@@ -315,13 +299,10 @@ def has_cloud(
         region that will be retained in the output mask. Defaults to 50,000
         (2,000*2,000 = 4,000,000 pixels and we want to detect clouds that
         occupy > 1.25% of the image).
-
-
     Returns:
     --------
     bool
         True if the image contains cloud(s), False otherwise.
-
     Example:
         >>> filename_1 = '../data/PLEIADES/2020/MAYOTTE/
         ORT_2020052526656219_0508_8599_U38S_8Bits.jp2'
@@ -370,7 +351,6 @@ def patch_nocloud(
     """
     Splits a SatelliteImage into patches and returns a list of patches
     that do not contain clouds.
-
     Args:
         image (SatelliteImage):
             An instance of the SatelliteImage class representing
@@ -380,13 +360,11 @@ def patch_nocloud(
             is covered by clouds and 0 indicates it is not.
         nb_patch (int):
             The number of patches to split the image into.
-
     Returns:
     --------
         list[SatelliteImage]:
             A list of SatelliteImage instances representing the patches
             that do not contain clouds.
-
     Example:
         >>> filename_1 = '../data/PLEIADES/2020/MAYOTTE/
         ORT_2020052526656219_0508_8599_U38S_8Bits.jp2'
@@ -453,7 +431,6 @@ class RILFilter:
     ):
         """
         Constructor.
-
         Args:
             dep (Literal): Departement.
             delta_threshold (int): Max number of days between label date and
@@ -487,7 +464,6 @@ class RILFilter:
     ):
         """
         Return True if labeled image passes all controls.
-
         Args:
             labeled_image (Union[SegmentationLabeledSatelliteImage,
                 DetectionLabeledSatelliteImage]): Labeled image.
@@ -504,7 +480,6 @@ class RILFilter:
     ):
         """
         Return True if labeled image passes date controls.
-
         Args:
             labeled_image (Union[SegmentationLabeledSatelliteImage,
                 DetectionLabeledSatelliteImage]): Labeled image.
@@ -527,7 +502,6 @@ class RILFilter:
     ):
         """
         Return True if labeled image passes rotation group controls.
-
         Args:
             labeled_image (Union[SegmentationLabeledSatelliteImage,
                 DetectionLabeledSatelliteImage]): Labeled image.
