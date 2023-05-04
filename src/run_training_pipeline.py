@@ -16,18 +16,18 @@ from pytorch_lightning.callbacks import (
 from torch.utils.data import DataLoader
 from yaml.loader import SafeLoader
 
-from classes.labelers.labeler import RILLabeler
+from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
 from classes.optim.losses import CrossEntropy
 from classes.optim.optimizer import generate_optimization_elements
+from data.components.change_detection_dataset import ChangeIsEverywhereDataset
 from data.components.dataset import PleiadeDataset
 from models.components.segmentation_models import DeepLabv3Module
 from models.segmentation_module import SegmentationModule
 from train_pipeline_utils.download_data import load_pleiade_data
-from train_pipeline_utils.prepare_data import write_splitted_images_masks
 from train_pipeline_utils.handle_dataset import (
-    generate_transform,
-    split_dataset
+    generate_transform, split_dataset
 )
+from train_pipeline_utils.prepare_data import write_splitted_images_masks
 from utils.utils import update_storage_access
 
 
@@ -36,7 +36,7 @@ def download_data(config):
     Downloads data based on the given configuration.
 
     Args:
-        config: a dictionary representing the 
+        config: a dictionary representing the
         configuration information for data download.
 
     Returns:
@@ -45,7 +45,7 @@ def download_data(config):
     config_data = config["donnees"]
     list_output_dir = []
 
-    if config_data["source train"] == "PLEIADE":
+    if config_data["source train"] == "PLEIADES":
         years = config_data["year"]
         deps = config_data["dep"]
 
@@ -58,18 +58,18 @@ def download_data(config):
 
 def prepare_data(config, list_data_dir):
     """
-    Preprocesses and splits the raw input images 
-    into tiles and corresponding masks, 
-    and saves them in the specified output directories. 
-    
+    Preprocesses and splits the raw input images
+    into tiles and corresponding masks,
+    and saves them in the specified output directories.
+
     Args:
         config: A dictionary representing the configuration settings.
         list_data_dir: A list of strings representing the paths
         to the directories containing the raw input image files.
-    
+
     Returns:
-        A list of strings representing the paths to 
-        the output directories containing the 
+        A list of strings representing the paths to
+        the output directories containing the
         preprocessed tile and mask image files.
     """
     # load labeler
@@ -86,6 +86,10 @@ def prepare_data(config, list_data_dir):
 
             labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
 
+        if config_data["type labeler"] == "BDTOPO":
+            date = datetime.strptime(str(year) + "0101", "%Y%m%d")
+            labeler = BDTOPOLabeler(date, dep=dep)
+
         output_dir = "train_data" + dep + "-" + str(year) + "/"
 
         write_splitted_images_masks(
@@ -93,7 +97,7 @@ def prepare_data(config, list_data_dir):
             output_dir,
             labeler,
             config_data["tile size"],
-            config_data["n channels train"],
+            config_data["n bands"],
             dep,
         )
         list_output_dir.append(output_dir)
@@ -105,19 +109,24 @@ def intantiate_dataset(config, list_path_images, list_path_labels):
     """
     Instantiates the appropriate dataset object
     based on the configuration settings.
-    
+
     Args:
         config: A dictionary representing the configuration settings.
         list_path_images: A list of strings representing
         the paths to the preprocessed tile image files.
         list_path_labels: A list of strings representing
         the paths to the corresponding preprocessed mask image files.
-    
+
     Returns:
         A dataset object of the specified type.
     """
-    dataset_dict = {"PLEIADE": PleiadeDataset}
-    dataset_type = config["donnees"]["source train"]
+
+    dataset_dict = {
+        "pleiadeDataset": PleiadeDataset,
+        "changeIsEverywhere": ChangeIsEverywhereDataset,
+    }
+
+    dataset_type = config["donnees"]["dataset"]
 
     # inqtanciation du dataset comple
     if dataset_type not in dataset_dict:
@@ -134,54 +143,58 @@ def intantiate_dataloader(config, list_output_dir):
     """
     Instantiates and returns the data loaders for
     training, validation, and testing datasets.
-    
+
     Args:
     - config (dict): A dictionary containing the configuration parameters
     for data loading and processing.
     - list_output_dir (list): A list of strings containing the paths to
     the directories that contain the training data.
-    
+
     Returns:
     - train_dataloader (torch.utils.data.DataLoader):
     The data loader for the training dataset.
-    - valid_dataloader (torch.utils.data.DataLoader): 
+    - valid_dataloader (torch.utils.data.DataLoader):
     The data loader for the validation dataset.
-    - test_dataloader (torch.utils.data.DataLoader): 
+    - test_dataloader (torch.utils.data.DataLoader):
     The data loader for the testing dataset.
-    
+
     The function first generates the paths for the image and label data
     based on the data source (Sentinel, PLEIADES) vs pre-annotated datasets.
     It then instantiates the required dataset class
     (using the `intantiate_dataset` function) and splits the full dataset
     into training and validation datasets based on the validation proportion
     specified in the configuration parameters.
-    
+
     Next, the appropriate transformations are applied to the training
     and validation datasets using the `generate_transform` function.
-    
-    Finally, the data loaders for the training and validation datasets 
-    are created using the `DataLoader` class from the PyTorch library, 
+
+    Finally, the data loaders for the training and validation datasets
+    are created using the `DataLoader` class from the PyTorch library,
     and the data loader for the testing dataset is set to `None`.
     """
     # génération des paths en fonction du type de Données
     # (Sentinel, PLEIADES) VS Dataset préannotés
 
-    if config["donnees"]["source train"] in ["PLEIADE", "SENTINEL2"]:
+    if config["donnees"]["source train"] in ["PLEIADES", "SENTINEL2"]:
         list_path_labels = []
         list_path_images = []
         for dir in list_output_dir:
             labels = os.listdir(dir + "/labels")
             images = os.listdir(dir + "/images")
 
-            list_path_labels = np.concatenate((
-                list_path_labels,
-                np.sort([dir + "/labels/" + name for name in labels])
-            ))
-            
-            list_path_images = np.concatenate((
-                list_path_images,
-                np.sort([dir + "/images/" + name for name in images])
-            ))
+            list_path_labels = np.concatenate(
+                (
+                    list_path_labels,
+                    np.sort([dir + "/labels/" + name for name in labels]),
+                )
+            )
+
+            list_path_images = np.concatenate(
+                (
+                    list_path_images,
+                    np.sort([dir + "/images/" + name for name in images]),
+                )
+            )
 
     # récupération de la classe de Dataset souhaitée
     full_dataset = intantiate_dataset(
@@ -237,15 +250,12 @@ def instantiate_model(config):
     if module_type not in module_dict:
         raise ValueError("Invalid module type")
 
-    if module_type == "deeplabv3":
-        return module_dict[module_type](nchannel)
-    else:
-        return module_dict[module_type]()
+    return module_dict[module_type](nchannel)
 
 
 def instantiate_loss(config):
     """
-    intantiates an optimizer object with the parameters 
+    intantiates an optimizer object with the parameters
     specified in the configuration file.
 
     Args:
@@ -293,7 +303,7 @@ def instantiate_lightning_module(config, model):
 
 def instantiate_trainer(config, lightning_module):
     """
-    Create a PyTorch Lightning module for segmentation with 
+    Create a PyTorch Lightning module for segmentation with
     the given model and optimization configuration.
 
     Args:
@@ -330,7 +340,7 @@ def instantiate_trainer(config, lightning_module):
 def run_pipeline(remote_server_uri, experiment_name, run_name):
     """
     Runs the segmentation pipeline u
-    sing the configuration specified in `config.yml` 
+    sing the configuration specified in `config.yml`
     and the provided MLFlow parameters.
     Args:
         None
@@ -358,19 +368,15 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     gc.collect()
 
     if config["mlflow"]:
-
         update_storage_access()
         os.environ["MLFLOW_S3_ENDPOINT_URL"] = "https://minio.lab.sspcloud.fr"
         mlflow.end_run()
         mlflow.set_tracking_uri(remote_server_uri)
         mlflow.set_experiment(experiment_name)
-      #  mlflow.pytorch.autolog()
-        
+        #  mlflow.pytorch.autolog()
+
         with mlflow.start_run(run_name=run_name):
-            mlflow.log_artifact(
-                "../config.yml",
-                artifact_path="config.yml"
-            )
+            mlflow.log_artifact("../config.yml", artifact_path="config.yml")
             trainer.fit(light_module, train_dl, valid_dl)
             # trainer.test(light_module, test_dl)
     else:
@@ -385,11 +391,14 @@ if __name__ == "__main__":
     run_name = sys.argv[3]
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
-   
+# python run_training_pipeline.py \
+# https://projet-slums-detection-175819.user.lab.sspcloud.fr \
+# changedetect testframework
 
-#remote_server_uri = "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
-#experiment_name = "segmentation"
-#run_name = "testclem"
+# remote_server_uri = \
+#  "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
+# experiment_name = "segmentation"
+# run_name = "testclem"
 
 # TO DO :
 # préparer Test exemples
@@ -402,7 +411,7 @@ if __name__ == "__main__":
 
 # import os
 
-# list_data_dir = ["../data/PLEIADES/2022/GUADELOUPE/",
+# list_data_dir = ["../data/PLEIADES/2022/MARTINIQUE/"],
 # "../data/PLEIADES/2022/MARTINIQUE/"]
 
 # len(os.listdir(list_data_dir[0]))
@@ -410,16 +419,15 @@ if __name__ == "__main__":
 
 
 # def delete_files_in_dir(dir_path,length_delete):
-#    # Get a list of all the files in the directory
-#  files = os.listdir(dir_path)[:length_delete]
 
-    # Loop through the files and delete them
-#    for file in files:
-#        file_path = os.path.join(dir_path, file)
-#        if os.path.isfile(file_path):
+#   files = os.listdir(dir_path)[:length_delete]
+
+#  for file in files:
+#     file_path = os.path.join(dir_path, file)
+#    if os.path.isfile(file_path):
 #            os.remove(file_path)
 
 
-# delete_files_in_dir(list_data_dir[0], 600)
+# delete_files_in_dir(list_data_dir[0], 1376)
 # delete_files_in_dir(list_data_dir[1], 1350)
 # optimisation filtrage

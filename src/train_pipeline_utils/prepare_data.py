@@ -7,10 +7,7 @@ from tqdm import tqdm
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import Labeler
 from utils.filter import (
-    has_cloud,
-    is_too_black2,
-    mask_full_cloud,
-    patch_nocloud
+    has_cloud, is_too_black2, mask_full_cloud, patch_nocloud
 )
 
 
@@ -38,7 +35,7 @@ def write_splitted_images_masks(
         bands in the input image.
         dep: a string representing the department of the input image, \
         or None if not applicable.
-   
+
     Returns:
         str: The name of the output directory.
     """
@@ -69,7 +66,7 @@ def write_splitted_images_masks(
         if boolean:
             mask_full = mask_full_cloud(big_satellite_image)
             list_patch_filtered = patch_nocloud(
-                big_satellite_image, mask_full, nb_patch=250
+                big_satellite_image, mask_full, size_patch=250
             )
             list_satellite_image = [
                 patch
