@@ -60,6 +60,8 @@ def is_too_black(
 def is_too_black2(image: SatelliteImage, black_area=0.5) -> bool:
     """
     Determines if an image has too many black pixels.
+    This function works on RGB images in the format (C x H x W)
+    encoded in float.
 
     Parameters:
     -----------
@@ -92,11 +94,8 @@ def is_too_black2(image: SatelliteImage, black_area=0.5) -> bool:
 
     # Extract the array from the image to get the pixel values
     img = image.array.copy()
-
     img = img[[0, 1, 2], :, :]
-
     img = (img * 255).astype(np.uint8)
-
     img = img.transpose(1, 2, 0)
 
     # Find all black pixels
@@ -113,12 +112,14 @@ def is_too_black2(image: SatelliteImage, black_area=0.5) -> bool:
 
 
 def mask_cloud(
-    image: SatelliteImage, threshold: int, min_size: int
+    image: SatelliteImage, threshold: int = 250, min_size: int = 50000
 ) -> np.ndarray:
     """
     Detects clouds in a SatelliteImage using a threshold-based approach
     (grayscale threshold and pixel cluster size threshold) and
     returns a binary mask of the detected clouds.
+    This function works on RGB images in the format (C x H x W)
+    encoded in float.
 
     Args:
         image (SatelliteImage):
@@ -127,9 +128,11 @@ def mask_cloud(
             The threshold value to use for detecting clouds on the image
             transformed into grayscale. A pixel is considered part of a
             cloud if its value is greater than this threshold.
+            Default to 250.
         min_size (int):
             The minimum size (in pixels) of a cloud region to be
             considered valid.
+            Default to 50000.
 
     Returns:
         mask (np.ndarray):
@@ -145,17 +148,14 @@ def mask_cloud(
                                     n_bands = 3,
                                     dep = "976"
                                 )
-        >>> mask = mask_cloud(image, 250, 20000)
+        >>> mask = mask_cloud(image)
         >>> fig, ax = plt.subplots(figsize=(10, 10))
         >>> ax.imshow(np.transpose(image_1.array, (1, 2, 0))[:,:,:3])
         >>> ax.imshow(mask, alpha=0.3)
     """
     image = image.array.copy()
-
     image = image[[0, 1, 2], :, :]
-
     image = (image * 255).astype(np.uint8)
-
     image = image.transpose(1, 2, 0)
 
     # Convert the RGB image to grayscale
@@ -164,7 +164,7 @@ def mask_cloud(
     # Find clusters of white pixels that correspond to 5% or more of the image
     labeled, num_features = label(grayscale > threshold)
 
-    region_sizes = np.bincount(labeled.flat)[:]
+    region_sizes = np.bincount(labeled.flat)
 
     # Trier les labels de région en fonction de leur taille décroissante
     sorted_labels = np.argsort(-region_sizes)
@@ -186,13 +186,12 @@ def mask_cloud(
 def mask_full_cloud(
     image: SatelliteImage,
     threshold_center: int = 250,
-    threshold_full: int = 340,
+    threshold_full: int = 130,
     min_size: int = 50000,
 ) -> np.ndarray:
     """
     Masks out clouds in a SatelliteImage using two thresholds for cloud
-    coverage, and returns the resulting cloud mask as a rasterized
-    GeoDataFrame.
+    coverage, and returns the resulting cloud mask as a numpy array.
 
     Parameters:
     -----------
@@ -337,11 +336,8 @@ def has_cloud(
     """
 
     image = image.array.copy()
-
     image = image[[0, 1, 2], :, :]
-
     image = (image * 255).astype(np.uint8)
-
     image = image.transpose(1, 2, 0)
 
     # Convert the RGB image to grayscale
@@ -365,7 +361,7 @@ def has_cloud(
 def patch_nocloud(
     image: SatelliteImage,
     mask_full_cloud: np.ndarray,
-    nb_patch: int,
+    size_patch: int,
 ) -> list[SatelliteImage]:
     """
     Splits a SatelliteImage into patches and returns a list of patches
@@ -378,8 +374,8 @@ def patch_nocloud(
         mask_full_cloud (np.ndarray):
             An array representing a cloud mask, where 1 indicates a pixel
             is covered by clouds and 0 indicates it is not.
-        nb_patch (int):
-            The number of patches to split the image into.
+        size_patch (int):
+            The requested patch size.
 
     Returns:
     --------
@@ -398,7 +394,7 @@ def patch_nocloud(
                                     dep = "976"
                                 )
         >>> mask_full = mask_full_cloud(image_1)
-        >>> list_nocloud = patch_nocloud(image_1, mask_full, nb_patch = 250)
+        >>> list_nocloud = patch_nocloud(image_1, mask_full, size_patch = 250)
     """
 
     # Create an RGB mask from the input cloud mask
@@ -426,8 +422,8 @@ def patch_nocloud(
     )
 
     # Split the image and cloud mask into patches
-    list_images_cloud = image_cloud.split(nb_patch)
-    list_images = image.split(nb_patch)
+    list_images_cloud = image_cloud.split(size_patch)
+    list_images = image.split(size_patch)
     list_patch_nocloud = []
 
     # Loop through each patch
