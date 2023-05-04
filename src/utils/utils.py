@@ -12,10 +12,7 @@ import rasterio
 import yaml
 from affine import Affine
 from s3fs import S3FileSystem
-from utils.mappings import (
-    dep_to_crs,
-    num_dep_to_name_dep
-    )
+from utils.mappings import dep_to_crs
 
 
 def get_root_path() -> Path:
@@ -162,7 +159,7 @@ def load_ril(
     return gdf
 
 
-def load_bdtopo(    
+def load_bdtopo(
     millesime: Literal["2016", "2017", "2018", "2019",
                        "2020", "2021", "2022", "2023"],
     dep: Literal["971", "972", "973", "974", "976", "977", "978"],
@@ -177,31 +174,47 @@ def load_bdtopo(
     Returns:
         gpd.GeoDataFrame: BDTOPO GeoDataFrame.
     """
-    dep = num_dep_to_name_dep[str(dep)].lower()
     root_path = get_root_path()
     environment = get_environment()
 
+    bucket = environment["bucket"]
+    path_s3 = environment["sources"]["BDTOPO"][int(millesime)][dep]
     dir_path = os.path.join(
         root_path,
         environment["local-path"]["BDTOPO"][int(millesime)][dep],
     )
-    
+
+    if os.path.exists(dir_path):
+        print(
+            "Le téléchargement de cette version de la \
+            BDTOPO a déjà été effectué"
+            )
+    else:
+        update_storage_access()
+        fs = S3FileSystem(
+            client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"}
+        )
+        print("download " + dep + " " + str(millesime) + " in " + dir_path)
+        fs.download(
+            rpath=f"{bucket}/{path_s3}", lpath=f"{dir_path}", recursive=True
+        )
+
     file_path = None
-    
+
     if int(millesime) >= 2019:
         for root, dirs, files in os.walk(dir_path):
             if "BATIMENT.shp" in files:
                 file_path = os.path.join(root, "BATIMENT.shp")
         if not file_path:
             raise ValueError("No valid `BATIMENT.shp` file found.")
-            
+
     elif int(millesime) < 2019: 
         for root, dirs, files in os.walk(dir_path):
             if "BATI_INDIFFERENCIE.SHP" in files:
                 file_path = os.path.join(root, "BATI_INDIFFERENCIE.SHP")
         if not file_path:
             raise ValueError("No valid `BATI_INDIFFERENCIE.SHP` file found.")
-        
+
     df = gpd.read_file(file_path)
 
     return df
