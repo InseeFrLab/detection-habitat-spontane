@@ -12,8 +12,10 @@ import rasterio
 import yaml
 from affine import Affine
 from s3fs import S3FileSystem
-
-from mappings import (dep_to_crs, num_dep_to_name_dep)
+from utils.mappings import (
+    dep_to_crs,
+    num_dep_to_name_dep
+    )
 
 
 def get_root_path() -> Path:
@@ -23,7 +25,7 @@ def get_root_path() -> Path:
     Returns:
         Path: Root path.
     """
-    return Path(__file__).parent.parent
+    return Path(__file__).parent.parent.parent
 
 
 def get_file_system() -> S3FileSystem:
@@ -161,7 +163,8 @@ def load_ril(
 
 
 def load_bdtopo(    
-    millesime: Literal["2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"],
+    millesime: Literal["2016", "2017", "2018", "2019",
+                       "2020", "2021", "2022", "2023"],
     dep: Literal["971", "972", "973", "974", "976", "977", "978"],
 ) -> gpd.GeoDataFrame:
     """
@@ -247,5 +250,3 @@ def update_storage_access():
         del os.environ["AWS_SESSION_TOKEN"]
     except KeyError:
         pass
-    
-    

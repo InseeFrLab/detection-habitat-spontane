@@ -1,0 +1,20 @@
+donnees:
+  source train: "PLEIADE"
+  year: [2022, 2022]
+  dep: ["972","971"]
+  type labeler: "RIL"
+  buffer size: 10
+  n channels train: 3
+  tile size: 250
+  augmentation: True
+
+optim:
+  loss: "crossentropy"
+  lr: 0.0001
+  momentum: 0.9
+  module: "deeplabv3"
+  batch size: 5
+  max epochs: 100
+  val prop: 0.2
+
+mlflow: True
