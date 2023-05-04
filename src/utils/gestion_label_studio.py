@@ -68,5 +68,7 @@ def create_mask_from_label_studio_export(
 
     # Show the plot
     plt.show()
-
-    np.save(name_output, mask)
+    directory = "../export/"
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+    np.save(directory+name_output, mask)

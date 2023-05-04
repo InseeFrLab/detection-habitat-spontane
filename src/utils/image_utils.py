@@ -2,11 +2,11 @@ import os
 import re
 from typing import List
 
-from mappings import dep_to_crs, name_dep_to_num_dep
+from utils.mappings import dep_to_crs, name_dep_to_num_dep
 from pyproj import Transformer
-from satellite_image import SatelliteImage
+from classes.data.satellite_image import SatelliteImage
 
-from utils import get_environment
+from utils.utils import get_environment
 
 
 def crs_to_gps_image(
