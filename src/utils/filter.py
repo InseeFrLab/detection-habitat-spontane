@@ -92,11 +92,8 @@ def is_too_black2(image: SatelliteImage, black_area=0.5) -> bool:
 
     # Extract the array from the image to get the pixel values
     img = image.array.copy()
-
     img = img[[0, 1, 2], :, :]
-
     img = (img * 255).astype(np.uint8)
-
     img = img.transpose(1, 2, 0)
 
     # Find all black pixels
@@ -151,11 +148,8 @@ def mask_cloud(
         >>> ax.imshow(mask, alpha=0.3)
     """
     image = image.array.copy()
-
     image = image[[0, 1, 2], :, :]
-
     image = (image * 255).astype(np.uint8)
-
     image = image.transpose(1, 2, 0)
 
     # Convert the RGB image to grayscale
@@ -186,7 +180,7 @@ def mask_cloud(
 def mask_full_cloud(
     image: SatelliteImage,
     threshold_center: int = 250,
-    threshold_full: int = 340,
+    threshold_full: int = 140,
     min_size: int = 50000,
 ) -> np.ndarray:
     """
@@ -458,8 +452,8 @@ class RILFilter:
             dep (Literal): Departement.
             delta_threshold (int): Max number of days between label date and
                 image date.
-            area_pct_threshold (float): Min percentage area that should be
-                included in the RIL rotation group.
+            area_pct_thresh: Min percentage area that should be
+                included in the RIL rotation grold (float)oup.
         """
         self.dep = dep
         self.delta_threshold = delta_threshold
