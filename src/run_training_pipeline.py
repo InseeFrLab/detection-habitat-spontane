@@ -23,7 +23,7 @@ from data.components.change_detection_dataset import ChangeIsEverywhereDataset
 from data.components.dataset import PleiadeDataset
 from models.components.segmentation_models import DeepLabv3Module
 from models.segmentation_module import SegmentationModule
-from train_pipeline_utils.download_data import load_pleiade_data
+from train_pipeline_utils.download_data import load_pleiade_data, load_donnees_test
 from train_pipeline_utils.handle_dataset import (
     generate_transform, split_dataset
 )
@@ -52,6 +52,8 @@ def download_data(config):
         for year, dep in zip(years, deps):
             output_dir = load_pleiade_data(year, dep)
             list_output_dir.append(output_dir)
+
+    load_donnees_test(config_data["task"])
 
     return list_output_dir
 
