@@ -6,17 +6,10 @@ from tqdm import tqdm
 
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import Labeler
-from utils.filter import (
-    has_cloud,
-    is_too_black2,
-    mask_full_cloud,
-    patch_nocloud
-)
+from utils.filter import has_cloud, is_too_black2, mask_full_cloud, patch_nocloud
 
 
-def check_labelled_images(
-    output_directory_name
-):
+def check_labelled_images(output_directory_name):
     """
     checks that there is not already a directory with images and their mask.
     if it doesn't exist, it is created.
@@ -24,32 +17,34 @@ def check_labelled_images(
     Args:
         output_directory_name: a string representing the path to the directory \
         that may already contain data and masks.
-   
+
     Returns:
         boolean: True if the directory exists and is not empty. \
             False if the directory doesn't exist or is empty.
     """
 
-    print('Entre dans la fonction check_labelled_images')
+    print("Entre dans la fonction check_labelled_images")
     output_images_path = output_directory_name + "/images"
     output_masks_path = output_directory_name + "/labels"
-    if ((os.path.exists(output_masks_path)) and (len(os.listdir(output_masks_path)) != 0)):
-        print('Option 1')
+    if (os.path.exists(output_masks_path)) and (
+        len(os.listdir(output_masks_path)) != 0
+    ):
+        print("The directory already exists and is not empty.")
         return True
-    elif ((os.path.exists(output_masks_path)) and (len(os.listdir(output_masks_path)) == 0)):
-        print('Option 2')
+    elif (os.path.exists(output_masks_path)) and (
+        len(os.listdir(output_masks_path)) == 0
+    ):
+        print("The directory exists but is empty.")
         return False
     else:
-        print('Option 3')
+        print("The directory doesn't exist and is going to be created.")
         os.makedirs(output_images_path)
         os.makedirs(output_masks_path)
+        print("Directory created")
         return False
 
 
-def split_images(
-    file_path,
-    n_bands
-):
+def split_images(file_path, n_bands):
     """
     splits the images if they are not already at the expected size.
 
@@ -58,64 +53,95 @@ def split_images(
         that contains the data to be splitted.
         n_bands: an integer representing the number of \
         bands in the input images.
-   
+
     Returns:
         list[SatelliteImage] : the list containing the splitted data.
     """
 
-    print('Entre dans la fonction split_images')
+    print("Entre dans la fonction split_images")
     list_name = os.listdir(file_path)
     list_path = [file_path + "/" + name for name in list_name]
-    
-    satellite_image_test = SatelliteImage.from_raster(
-        file_path=list_path[0], dep=None, date=None, n_bands=n_bands
-    )
-    
-    if satellite_image_test.array.shape[1] != 250:
-        list_splitted_images = []
-        for path, file_name in zip(list_path, tqdm(list_name)):  # tqdm ici
-            big_satellite_image = SatelliteImage.from_raster(
-                file_path=path, dep=None, date=None, n_bands=n_bands
-            )
-            splitted_images = big_satellite_image.split(250)
-            for im in splitted_images:
-                list_splitted_images.append(im)
+
+    list_images = [
+        SatelliteImage.from_raster(
+            file_path=path, dep=None, date=None, n_bands=n_bands
+        )
+        for path in tqdm(list_path)
+    ]
+
+    if list_images[0].array.shape[1] != 250:
+        list_splitted_images = [image.split(250) for image in list_images]
+        list_splitted_images = sum(list_splitted_images, [])
     else:
-        list_splitted_images = list_path
+        list_splitted_images = list_images
+
     print("Nombre d'images splitées : ", len(list_splitted_images))
     return list_splitted_images
 
 
-def filter_images(
-    list_images
-):
+def filter_images(src, list_images):
     """
-    filters the images that are too dark and/or contain clouds.
+    calls the appropriate function according to the data type.
+
+    Args:
+        src : the string that specifies the data type.
+        list_images : the list containing the splitted data to be filtered.
+
+    Returns:
+        function : a call to the appopriate filter function according to\
+            the data type.
+    """
+
+    print("Entre dans la fonction filter_images")
+    if src == "PLEIADES":
+        return filter_images_pleiades(list_images)
+    elif src == "SENTINEL2":
+        return filter_images_sentinel2(list_images)
+
+
+def filter_images_pleiades(list_images):
+    """
+    filters the Pleiades images that are too dark and/or contain clouds.
 
     Args:
         list_images : the list containing the splitted data to be filtered.
-   
+
     Returns:
         list[SatelliteImage] : the list containing the splitted and filtered data.
     """
 
-    print('Entre dans la fonction filter_images')
+    print("Entre dans la fonction filter_images_pleiades")
     list_filtered_splitted_images = []
 
     for splitted_image in tqdm(list_images):
-        # has_cloud = has_cloud(splitted_image)
-
         if not has_cloud(splitted_image):
             if not is_too_black2(splitted_image):
                 list_filtered_splitted_images.append(splitted_image)
-    print("Nombre d'images splitées et filtrées (nuages et sombres) : ", len(list_filtered_splitted_images))
+
+    print(
+        "Nombre d'images splitées et filtrées (nuages et sombres) : ",
+        len(list_filtered_splitted_images),
+    )
     return list_filtered_splitted_images
 
 
-def label_images(
-    list_images,
-    labeler
-):
+def filter_images_sentinel2(list_images):
+    """
+    filters the Sentinel2 images.
+
+    Args:
+        list_images : the list containing the splitted data to be filtered.
+
+    Returns:
+        list[SatelliteImage] : the list containing the splitted and\
+            filtered data.
+    """
+
+    print("Entre dans la fonction filter_images_sentinel2")
+    return list_images
+
+
+def label_images(list_images, labeler):
     """
     labels the images according to type of labeler desired.
 
@@ -124,13 +150,13 @@ def label_images(
             to be labeled.
         labeler : a Labeler object representing the labeler \
             used to create segmentation labels.
-   
+
     Returns:
         list[SatelliteImage] : the list containing the splitted and \
             filtered data with a not-empty mask and the associated masks.
     """
 
-    print('Entre dans la fonction label_images')
+    print("Entre dans la fonction label_images")
     list_masks = []
     list_filtered_splitted_labeled_images = []
 
@@ -139,15 +165,12 @@ def label_images(
         if np.sum(mask) != 0:
             list_filtered_splitted_labeled_images.append(satellite_image)
             list_masks.append(mask)
+
     print(len(list_filtered_splitted_labeled_images), len(list_masks))
     return list_filtered_splitted_labeled_images, list_masks
 
 
-def save_images_and_masks(
-    list_images,
-    list_masks,
-    output_directory_name
-):
+def save_images_and_masks(list_images, list_masks, output_directory_name):
     """
     write the couple images/masks into a specific folder.
 
@@ -157,13 +180,12 @@ def save_images_and_masks(
         list_masks : the list containing the masks to be saved.
         a string representing the name of the output \
             directory where the split images and their masks should be saved.
-   
+
     Returns:
         str: The name of the output directory.
     """
 
-    print('Entre dans la fonction save_images_and_masks')
-
+    print("Entre dans la fonction save_images_and_masks")
     output_images_path = output_directory_name + "/images"
     output_masks_path = output_directory_name + "/labels"
 
@@ -171,20 +193,16 @@ def save_images_and_masks(
     for image, mask in zip(tqdm(list_images), list_masks):
         i += 1
         filename = str(i)
-        print(image.filename, filename)
         try:
-            image.to_raster(
-                output_images_path, filename + ".jp2"
-            )
+            image.to_raster(output_images_path, filename + ".jp2")
             np.save(output_masks_path + "/" + filename + ".npy", mask)
-            print("ok")
-        except :
-            print("erreur ecriture")
+        except rasterio._err.CPLE_AppDefinedError:
+            print("Writing error")
             continue
-    
-    print(str(len(os.listdir(output_directory_name + "/images"))) + " couples images/masques retenus")
-    return os.listdir(output_images_path), os.listdir(output_masks_path)
-    # return output_directory_name
+
+    nb = len(os.listdir(output_directory_name + "/images"))
+    print(str(nb) + " couples images/masques retenus")
+    return output_directory_name
 
 
 def write_splitted_images_masks(
@@ -211,7 +229,7 @@ def write_splitted_images_masks(
         bands in the input image.
         dep: a string representing the department of the input image, \
         or None if not applicable.
-   
+
     Returns:
         str: The name of the output directory.
     """
@@ -240,10 +258,12 @@ def write_splitted_images_masks(
         boolean = has_cloud(big_satellite_image)
 
         if boolean:
-            mask_full = mask_full_cloud(big_satellite_image) #Retourne un array avec 1 si pas nuage et 0 si nuage
+            mask_full = mask_full_cloud(
+                big_satellite_image
+            )  # Retourne un array avec 1 si pas nuage et 0 si nuage
             list_patch_filtered = patch_nocloud(
                 big_satellite_image, mask_full, nb_patch=250
-            ) #Retourne une liste des patch de taille de 250 de l'image qui ne contiennent pas de nuage
+            )  # Retourne une liste des patch de taille de 250 de l'image qui ne contiennent pas de nuage
             list_satellite_image = [
                 patch
                 for patch in list_patch_filtered
