@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from classes.data.satellite_image import SatelliteImage
-from utils.mappings import name_dep_to_num_dep, num_dep_to_name_dep
+from utils.mappings import name_dep_to_num_dep
 from utils.utils import get_environment
 
 
@@ -143,7 +143,7 @@ def plot_list_segmentation_labeled_satellite_image(
     for i in range(0, height - tile_size + 1, stride):
         for j in range(0, width - tile_size + 1, stride):
             output_image[
-                i: i + tile_size, j: j + tile_size, :
+                i : i + tile_size, j : j + tile_size, :
             ] = np.transpose(
                 mat_list_images[compteur_ligne, compteur_col].array,
                 (1, 2, 0),
@@ -155,7 +155,7 @@ def plot_list_segmentation_labeled_satellite_image(
             show_mask = np.zeros((label.shape[0], label.shape[1], 3))
             show_mask[label == 1, :] = [255, 255, 255]
             show_mask = show_mask.astype(np.uint8)
-            output_mask[i: i + tile_size, j: j + tile_size, :] = show_mask
+            output_mask[i : i + tile_size, j : j + tile_size, :] = show_mask
             compteur_col += 1
 
         compteur_col = 0
@@ -375,7 +375,7 @@ def plot_square_images(
     folder_path = pattern.join(split_filepath_center[0:5])
 
     if satellite_image is not None:
-        name_dep = num_dep_to_name_dep[satellite_image.dep].lower()
+        name_dep = str(satellite_image.dep)
         year = (satellite_image.date).year
         path = environment["local-path"]["PLEIADES"][year][name_dep]
 
