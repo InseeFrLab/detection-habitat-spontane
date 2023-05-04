@@ -13,8 +13,9 @@ import torch
 from albumentations import Compose
 from torch.utils.data import Dataset
 
-from utils.change_detection_triplet import ChangedetectionTripletS2Looking
-from utils.satellite_image import SatelliteImage
+from classes.data.change_detection_triplet \
+    import ChangedetectionTripletS2Looking
+from classes.data.satellite_image import SatelliteImage
 
 
 class ChangeIsEverywhereDataset(Dataset):
