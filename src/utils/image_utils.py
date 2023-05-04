@@ -2,7 +2,7 @@ import os
 import re
 from typing import List
 
-from mappings import dep_to_crs, name_dep_to_num_dep, num_dep_to_name_dep
+from mappings import dep_to_crs, name_dep_to_num_dep
 from pyproj import Transformer
 from satellite_image import SatelliteImage
 
@@ -36,9 +36,9 @@ def crs_to_gps_image(
     """
     environment = get_environment()
 
-    if satellite_image is not None:
+    if satellite_image:  # is not None
         year = (satellite_image.date).year
-        dep = num_dep_to_name_dep[satellite_image.dep].lower()
+        dep = str(satellite_image.dep)
         folder_path = "../" + environment["local-path"]["PLEIADES"][year][dep]
         filepath = folder_path + "/" + satellite_image.filename
 
@@ -206,7 +206,7 @@ def find_image_different_years(
 
     if satellite_image is not None:
         year = (satellite_image.date).year
-        dep = num_dep_to_name_dep[satellite_image.dep].lower()
+        dep = str(satellite_image.dep)
         folder_path = "../" + environment["local-path"]["PLEIADES"][year][dep]
         filepath = folder_path + "/" + satellite_image.filename
 
@@ -216,7 +216,7 @@ def find_image_different_years(
     split_folder = re.split(pattern, filepath)
 
     departement_base = split_folder[4]
-    dep = departement_base.lower()
+    dep = name_dep_to_num_dep[departement_base.upper()]
     year = different_year
 
     folder_path = "../" + environment["local-path"]["PLEIADES"][year][dep]

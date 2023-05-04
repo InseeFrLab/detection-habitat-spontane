@@ -5,17 +5,17 @@ from typing import Literal, Union
 
 import geopandas as gpd
 import numpy as np
-from labeled_satellite_image import (
-    DetectionLabeledSatelliteImage,
-    SegmentationLabeledSatelliteImage,
-)
 from rasterio.features import rasterize, shapes
-from satellite_image import SatelliteImage
 from scipy.ndimage import label
 from shapely.geometry import Polygon, box
 from tqdm import tqdm
 
-from utils import get_environment, get_file_system
+from classes.data.labeled_satellite_image import (
+    DetectionLabeledSatelliteImage,
+    SegmentationLabeledSatelliteImage,
+)
+from classes.data.satellite_image import SatelliteImage
+from utils.utils import get_environment, get_file_system
 
 
 def is_too_black(
@@ -95,7 +95,7 @@ def is_too_black2(image: SatelliteImage, black_area=0.5) -> bool:
     # Extract the array from the image to get the pixel values
     img = image.array.copy()
     img = img[[0, 1, 2], :, :]
-    img = (img * 255).astype(np.uint8)
+    img = img.astype(np.uint8)
     img = img.transpose(1, 2, 0)
 
     # Find all black pixels
@@ -109,6 +109,73 @@ def is_too_black2(image: SatelliteImage, black_area=0.5) -> bool:
         return True
     else:
         return False
+
+
+def has_cloud(
+    image: SatelliteImage,
+    threshold: int = 250,
+    min_size: int = 50000,
+) -> bool:
+    """
+    Determines if an image contains cloud(s) or not.
+
+    Parameters:
+    -----------
+    image (SatelliteImage):
+        A SatelliteImage object representing the image to analyze.
+
+    threshold (int, optional):
+        An integer representing the threshold for coverage of the center of
+        clouds in the image. Pixels with a cloud coverage value higher than
+        this threshold are classified as covered by clouds.
+        Defaults to 250 (white pixels).
+    min_size (int, optional):
+        An integer representing the minimum size (in pixels) of a cloud
+        region that will be retained in the output mask. Defaults to 50,000
+        (2,000*2,000 = 4,000,000 pixels and we want to detect clouds that
+        occupy > 1.25% of the image).
+
+
+    Returns:
+    --------
+    bool
+        True if the image contains cloud(s), False otherwise.
+
+    Example:
+        >>> filename_1 = '../data/PLEIADES/2020/MAYOTTE/
+        ORT_2020052526656219_0508_8599_U38S_8Bits.jp2'
+        >>> date_1 = date.fromisoformat('2020-01-01')
+        >>> image_1 = SatelliteImage.from_raster(
+                                    filename_1,
+                                    date = date_1,
+                                    n_bands = 3,
+                                    dep = "976"
+                                )
+        >>> has_cloud(image_1)
+        True
+    """
+
+    image = image.array.copy()
+    image = image[[0, 1, 2], :, :]
+    image = image.astype(np.uint8)
+    image = image.transpose(1, 2, 0)
+
+    # Convert the RGB image to grayscale
+    grayscale = np.mean(image, axis=2)
+
+    # Find clusters of white pixels that correspond to 5% or more of the image
+    labeled, num_features = label(grayscale > threshold)
+
+    if num_features >= 1:
+        region_sizes = np.bincount(labeled.flat)[1:]
+        max_size_feature = max(region_sizes)
+
+        # Check if the size of the largest region of white pixels
+        # exceeds the minimum size threshold
+        if max_size_feature >= min_size:
+            return True
+
+    return False
 
 
 def mask_cloud(
@@ -155,7 +222,7 @@ def mask_cloud(
     """
     image = image.array.copy()
     image = image[[0, 1, 2], :, :]
-    image = (image * 255).astype(np.uint8)
+    image = image.astype(np.uint8)
     image = image.transpose(1, 2, 0)
 
     # Convert the RGB image to grayscale
@@ -240,7 +307,7 @@ def mask_full_cloud(
     cloud_center = mask_cloud(image, threshold_center, min_size)
     cloud_full = mask_cloud(image, threshold_full, min_size)
 
-    height, width = image.array.shape
+    nchannel, height, width = image.array.shape
 
     # Create a list of polygons from the masked center clouds in order
     # to obtain a GeoDataFrame from it
@@ -289,73 +356,6 @@ def mask_full_cloud(
         )
 
     return rasterized
-
-
-def has_cloud(
-    image: SatelliteImage,
-    threshold: int = 250,
-    min_size: int = 50000,
-) -> bool:
-    """
-    Determines if an image contains cloud(s) or not.
-
-    Parameters:
-    -----------
-    image (SatelliteImage):
-        A SatelliteImage object representing the image to analyze.
-
-    threshold (int, optional):
-        An integer representing the threshold for coverage of the center of
-        clouds in the image. Pixels with a cloud coverage value higher than
-        this threshold are classified as covered by clouds.
-        Defaults to 250 (white pixels).
-    min_size (int, optional):
-        An integer representing the minimum size (in pixels) of a cloud
-        region that will be retained in the output mask. Defaults to 50,000
-        (2,000*2,000 = 4,000,000 pixels and we want to detect clouds that
-        occupy > 1.25% of the image).
-
-
-    Returns:
-    --------
-    bool
-        True if the image contains cloud(s), False otherwise.
-
-    Example:
-        >>> filename_1 = '../data/PLEIADES/2020/MAYOTTE/
-        ORT_2020052526656219_0508_8599_U38S_8Bits.jp2'
-        >>> date_1 = date.fromisoformat('2020-01-01')
-        >>> image_1 = SatelliteImage.from_raster(
-                                    filename_1,
-                                    date = date_1,
-                                    n_bands = 3,
-                                    dep = "976"
-                                )
-        >>> has_cloud(image_1)
-        True
-    """
-
-    image = image.array.copy()
-    image = image[[0, 1, 2], :, :]
-    image = (image * 255).astype(np.uint8)
-    image = image.transpose(1, 2, 0)
-
-    # Convert the RGB image to grayscale
-    grayscale = np.mean(image, axis=2)
-
-    # Find clusters of white pixels that correspond to 5% or more of the image
-    labeled, num_features = label(grayscale > threshold)
-
-    if num_features >= 1:
-        region_sizes = np.bincount(labeled.flat)[1:]
-        max_size_feature = max(region_sizes)
-
-        # Check if the size of the largest region of white pixels
-        # exceeds the minimum size threshold
-        if max_size_feature >= min_size:
-            return True
-
-    return False
 
 
 def patch_nocloud(
