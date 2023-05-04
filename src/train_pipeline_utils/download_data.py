@@ -1,11 +1,10 @@
 import os
+
 import s3fs
-from utils.utils import (
-    get_environment,
-    get_root_path,
-    update_storage_access
-)
- 
+
+from utils.utils import get_environment, get_root_path, update_storage_access
+
+
 def load_satellite_data(year: int, dep: str, src: str):
     """
     Load satellite data for a given year and territory and a given source of satellite images.
@@ -24,6 +23,8 @@ def load_satellite_data(year: int, dep: str, src: str):
         str: The local path where the data is downloaded.
     """
 
+    print("Entre dans la fonction load_satellite_data")
+
     update_storage_access()
     root_path = get_root_path()
     environment = get_environment()
@@ -35,12 +36,15 @@ def load_satellite_data(year: int, dep: str, src: str):
     )
 
     if os.path.exists(path_local):
+        print("Le dossier existe déjà")
         return path_local
 
     fs = s3fs.S3FileSystem(
         client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"}
     )
-    print("download " + src + " " + dep + " " + str(year) + " in " + path_local)
+    print(
+        "download " + src + " " + dep + " " + str(year) + " in " + path_local
+    )
     fs.download(
         rpath=f"{bucket}/{path_s3}", lpath=f"{path_local}", recursive=True
     )

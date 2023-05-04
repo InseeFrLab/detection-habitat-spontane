@@ -215,7 +215,7 @@ class SatelliteImage:
         n_bands = self.n_bands
 
         metadata = {
-            "dtype": data.dtype,
+            "dtype": "uint16",
             "count": n_bands,
             "width": data.shape[2],
             "height": data.shape[1],
