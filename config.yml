@@ -9,6 +9,7 @@ donnees:
   n bands: 3
   tile size: 250
   augmentation: True
+  task: "segmentation"
 
 optim:
   loss: "crossentropy"

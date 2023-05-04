@@ -1,6 +1,9 @@
 bucket: "projet-slums-detection"
 
 sources:
+  TEST:  
+    segmentation: donnees-test/segmentation
+    change-detection: donnees-test/change_detection
   PAPERS:
     S2Looking: Donnees/PAPERS/S2Looking
     LEVIR_CD: Donnees/PAPERS/LEVIR_CD
@@ -100,6 +103,10 @@ sources:
     "978": Donnees/RIL/new_gr/new_gr_978.geojson
 
 local-path:
+  TEST:  
+    segmentation: donnees-test/segmentation
+    change-detection: donnees-test/change-detection
+
   PAPERS: data/paper_dataset
   PLEIADES:
       2022:
