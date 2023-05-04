@@ -3,7 +3,7 @@ from albumentations.pytorch.transforms import ToTensorV2
 from torch.utils.data import random_split
 
 
-def instanciate_dataset_test(config):
+def instantiate_dataset_test(config):
     # charger les exemples tests sur le datalab
     # change detection ou segmentation et / Sentinele 2 / PLeiade  et ho
     # récupérer tout le jeu de test
