@@ -155,9 +155,12 @@ def has_cloud(
         True
     """
 
+    if not image.normalized:
+        image.normalize()
+    
     image = image.array.copy()
     image = image[[0, 1, 2], :, :]
-    image = image.astype(np.uint8)
+    image = (image*255).astype(np.uint8)
     image = image.transpose(1, 2, 0)
 
     # Convert the RGB image to grayscale
@@ -215,14 +218,17 @@ def mask_cloud(
                                     n_bands = 3,
                                     dep = "976"
                                 )
-        >>> mask = mask_cloud(image)
+        >>> mask = mask_cloud(image_1)
         >>> fig, ax = plt.subplots(figsize=(10, 10))
         >>> ax.imshow(np.transpose(image_1.array, (1, 2, 0))[:,:,:3])
         >>> ax.imshow(mask, alpha=0.3)
     """
+    if not image.normalized:
+        image.normalize()
+    
     image = image.array.copy()
     image = image[[0, 1, 2], :, :]
-    image = image.astype(np.uint8)
+    image = (image*255).astype(np.uint8)
     image = image.transpose(1, 2, 0)
 
     # Convert the RGB image to grayscale
