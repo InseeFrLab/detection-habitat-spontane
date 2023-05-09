@@ -1,11 +1,11 @@
 donnees:
   source train: "PLEIADES"
-  dataset: "changeIsEverywhere"
+  dataset: "PLEIADE"
   year: [2022]
   dep: ["972"]
   type labeler: "BDTOPO"
   buffer size: None
-  n channels train: 6
+  n channels train: 3
   n bands: 3
   tile size: 250
   augmentation: True
@@ -17,6 +17,7 @@ optim:
   momentum: 0.9
   module: "deeplabv3"
   batch size: 5
+  batch size test: 8
   max epochs: 100
   val prop: 0.2
 
