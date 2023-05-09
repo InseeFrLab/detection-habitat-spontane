@@ -3,8 +3,8 @@ donnees:
   dataset: "PLEIADE"
   year: [2022]
   dep: ["972"]
-  type labeler: "BDTOPO"
-  buffer size: None
+  type labeler: "RIL"
+  buffer size: 10
   n channels train: 3
   n bands: 3
   tile size: 250

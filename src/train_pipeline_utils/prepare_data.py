@@ -40,8 +40,8 @@ def write_splitted_images_masks(
         str: The name of the output directory.
     """
 
-    output_images_path = output_directory_name + "/images"
-    output_masks_path = output_directory_name + "/labels"
+    output_images_path = output_directory_name + "images/"
+    output_masks_path = output_directory_name + "labels/"
 
     if os.path.exists(output_images_path):
         print("fichiers déjà écrits")
@@ -60,9 +60,9 @@ def write_splitted_images_masks(
         big_satellite_image = SatelliteImage.from_raster(
             file_path=path, dep=None, date=None, n_bands=3
         )
-
+        
         boolean = has_cloud(big_satellite_image)
-
+        
         if boolean:
             mask_full = mask_full_cloud(big_satellite_image)
             list_patch_filtered = patch_nocloud(
@@ -73,6 +73,7 @@ def write_splitted_images_masks(
                 for patch in list_patch_filtered
                 if not is_too_black2(patch)
             ]
+            
         else:
             list_patch_filtered = big_satellite_image.split(250)
             list_satellite_image = [
@@ -86,7 +87,7 @@ def write_splitted_images_masks(
             file_name_i = file_name.split(".")[0] + "_" + str(i)
             if np.sum(mask) == 0:  # je dégage les masques vides j'écris pas
                 continue
-            try:
+            try:            
                 satellite_image.to_raster(
                     output_images_path, file_name_i + ".jp2"
                 )
