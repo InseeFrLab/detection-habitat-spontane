@@ -6,12 +6,15 @@ from typing import List
 import matplotlib.pyplot as plt
 import numpy as np
 
-from utils.mappings import name_dep_to_num_dep, num_dep_to_name_dep
 from classes.data.satellite_image import SatelliteImage
+from utils.mappings import name_dep_to_num_dep
 from utils.utils import get_environment
 
 
-def order_list_from_bb(list_bounding_box: List, list_to_order: List):
+def order_list_from_bb(
+    list_bounding_box: List,
+    list_to_order: List,
+):
     """Order a given List according to the X,Y coordinates
     of the list of bounding boxes taken as input
 
@@ -35,7 +38,10 @@ def order_list_from_bb(list_bounding_box: List, list_to_order: List):
     return list_to_order
 
 
-def plot_list_satellite_images(list_images: List, bands_indices: List):
+def plot_list_satellite_images(
+    list_images: List,
+    bands_indices: List,
+):
     """Plot a list of SatelliteImage (with a subset of bands) into a grid
     following the coordinates of the SatelliteImage.
     The list of SatelliteImages taken as input when represented
@@ -84,7 +90,8 @@ def plot_list_satellite_images(list_images: List, bands_indices: List):
 
 
 def plot_list_segmentation_labeled_satellite_image(
-    list_labeled_image: List, bands_indices: List
+    list_labeled_image: List,
+    bands_indices: List,
 ):
     """Plot a list of SegmentationLabeledSatelliteImage:
     (with a subset of bands) into 2 pictures, one with the satelliteImage,
@@ -136,7 +143,7 @@ def plot_list_segmentation_labeled_satellite_image(
     for i in range(0, height - tile_size + 1, stride):
         for j in range(0, width - tile_size + 1, stride):
             output_image[
-                i: i + tile_size, j: j + tile_size, :
+                i : i + tile_size, j : j + tile_size, :
             ] = np.transpose(
                 mat_list_images[compteur_ligne, compteur_col].array,
                 (1, 2, 0),
@@ -148,7 +155,7 @@ def plot_list_segmentation_labeled_satellite_image(
             show_mask = np.zeros((label.shape[0], label.shape[1], 3))
             show_mask[label == 1, :] = [255, 255, 255]
             show_mask = show_mask.astype(np.uint8)
-            output_mask[i: i + tile_size, j: j + tile_size, :] = show_mask
+            output_mask[i : i + tile_size, j : j + tile_size, :] = show_mask
             compteur_col += 1
 
         compteur_col = 0
@@ -329,7 +336,7 @@ def plot_infrared_complex_mask(satellite_image: SatelliteImage):
 
 def plot_square_images(
     bands_indices: list,
-    distance=1,
+    distance: int = 1,
     satellite_image: SatelliteImage = None,
     filepath_center_image: str = None,
 ):
@@ -368,7 +375,7 @@ def plot_square_images(
     folder_path = pattern.join(split_filepath_center[0:5])
 
     if satellite_image is not None:
-        name_dep = num_dep_to_name_dep[satellite_image.dep].lower()
+        name_dep = str(satellite_image.dep)
         year = (satellite_image.date).year
         path = environment["local-path"]["PLEIADES"][year][name_dep]
 
