@@ -269,8 +269,8 @@ def instantiate_dataloader(config, list_output_dir):
 
     # Gestion datset test
     output_test = "../test-data"
-    output_images_path = output_test + "/images"
-    output_labels_path = output_test  + "/labels"
+    output_images_path = output_test + "/images/"
+    output_labels_path = output_test  + "/labels/"
 
     list_name_image = os.listdir(output_images_path)
     list_name_label = os.listdir(output_labels_path)
@@ -281,6 +281,8 @@ def instantiate_dataloader(config, list_output_dir):
     dataset_test = instantiate_dataset(
         config, list_path_images, list_path_labels
     )
+    
+    dataset_test.transforms =  t_preproc
     
     batch_size_test = config["optim"]["batch size test"]
     test_dataloader = DataLoader(
