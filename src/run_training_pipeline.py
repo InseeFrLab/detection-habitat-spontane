@@ -88,6 +88,10 @@ def prepare_data(config, list_data_dir):
             date = datetime.strptime(str(year) + "0101", "%Y%m%d")
 
             labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
+            
+        if config_data["type labeler"] == "BDTOPO":
+            date = datetime.strptime(str(year) + "0101", "%Y%m%d")
+            labeler = BDTOPOLabeler(date, dep=dep)
 
         output_dir = "train_data" + dep + "-" + str(year) + "/"
 
@@ -182,7 +186,7 @@ def instantiate_dataset(config, list_path_images, list_path_labels):
     return full_dataset
 
 
-def intantiate_dataloader(config, list_output_dir):
+def instantiate_dataloader(config, list_output_dir):
     """
     Instantiates and returns the data loaders for
     training, validation, and testing datasets.
@@ -218,7 +222,7 @@ def intantiate_dataloader(config, list_output_dir):
     # génération des paths en fonction du type de Données
     # (Sentinel, PLEIADES) VS Dataset préannotés
 
-    if config["donnees"]["source train"] in ["PLEIADE", "SENTINEL2"]:
+    if config["donnees"]["source train"] in ["PLEIADES", "SENTINEL2"]:
         list_path_labels = []
         list_path_images = []
         for dir in list_output_dir:
@@ -236,7 +240,7 @@ def intantiate_dataloader(config, list_output_dir):
             ))
 
     # récupération de la classe de Dataset souhaitée
-    full_dataset = intantiate_dataset(
+    full_dataset = instantiate_dataset(
         config, list_path_images, list_path_labels
     )
     train_dataset, valid_dataset = split_dataset(
@@ -278,7 +282,7 @@ def intantiate_dataloader(config, list_output_dir):
         config, list_path_images, list_path_labels
     )
     
-    batch_size_test = config["batch size test"]
+    batch_size_test = config["optim"]["batch size test"]
     test_dataloader = DataLoader(
             dataset_test,
             batch_size=batch_size_test,

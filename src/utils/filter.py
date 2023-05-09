@@ -154,11 +154,23 @@ def has_cloud(
         >>> has_cloud(image_1)
         True
     """
-
-    if not image.normalized:
-        image.normalize()
     
-    image = image.array.copy()
+    copy_image = SatelliteImage( 
+        array = image.array.copy(),
+        crs = image.crs,
+        bounds = image.bounds,
+        transform = image.transform,
+        n_bands = image.n_bands,
+        filename = image.filename,
+        dep = image.dep,
+        date = image.date,
+        normalized = image.normalized
+    )
+    
+    if not copy_image.normalized:
+        copy_image.normalize()
+    
+    image = copy_image.array
     image = image[[0, 1, 2], :, :]
     image = (image*255).astype(np.uint8)
     image = image.transpose(1, 2, 0)
@@ -223,10 +235,22 @@ def mask_cloud(
         >>> ax.imshow(np.transpose(image_1.array, (1, 2, 0))[:,:,:3])
         >>> ax.imshow(mask, alpha=0.3)
     """
-    if not image.normalized:
-        image.normalize()
+    copy_image = SatelliteImage( 
+        array = image.array.copy(),
+        crs = image.crs,
+        bounds = image.bounds,
+        transform = image.transform,
+        n_bands = image.n_bands,
+        filename = image.filename,
+        dep = image.dep,
+        date = image.date,
+        normalized = image.normalized
+    )
     
-    image = image.array.copy()
+    if not copy_image.normalized:
+        copy_image.normalize()
+    
+    image = copy_image.array
     image = image[[0, 1, 2], :, :]
     image = (image*255).astype(np.uint8)
     image = image.transpose(1, 2, 0)
