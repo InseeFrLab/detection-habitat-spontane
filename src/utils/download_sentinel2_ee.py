@@ -37,7 +37,8 @@ def get_s2_sr_cld_col(aoi, start_date, end_date):
         .filterDate(start_date, end_date)
     )
 
-    # Join the filtered s2cloudless collection to the SR collection by the 'system:index' property.
+    # Join the filtered s2cloudless collection to the SR collection
+    # by the 'system:index' property.
     return ee.ImageCollection(
         ee.Join.saveFirst("s2cloudless").apply(
             **{
@@ -69,7 +70,8 @@ def add_shadow_bands(img):
     # Identify water pixels from the SCL band.
     not_water = img.select("SCL").neq(6)
 
-    # Identify dark NIR pixels that are not water (potential cloud shadow pixels).
+    # Identify dark NIR pixels that are not water
+    # (potential cloud shadow pixels).
     SR_BAND_SCALE = 1e4
     dark_pixels = (
         img.select("B8")
@@ -78,12 +80,14 @@ def add_shadow_bands(img):
         .rename("dark_pixels")
     )
 
-    # Determine the direction to project cloud shadow from clouds (assumes UTM projection).
+    # Determine the direction to project cloud shadow from clouds
+    # (assumes UTM projection).
     shadow_azimuth = ee.Number(90).subtract(
         ee.Number(img.get("MEAN_SOLAR_AZIMUTH_ANGLE"))
     )
 
-    # Project shadows from clouds for the distance specified by the CLD_PRJ_DIST input.
+    # Project shadows from clouds for the distance specified
+    # by the CLD_PRJ_DIST input.
     cld_proj = (
         img.select("clouds")
         .directionalDistanceTransform(shadow_azimuth, CLD_PRJ_DIST * 10)
@@ -114,8 +118,11 @@ def add_cld_shdw_mask(img):
         .gt(0)
     )
 
-    # Remove small cloud-shadow patches and dilate remaining pixels by BUFFER input.
-    # 20 m scale is for speed, and assumes clouds don't require 10 m precision.
+    # Remove small cloud-shadow patches and
+    # dilate remaining pixels by BUFFER input.
+
+    # 20 m scale is for speed,
+    # and assumes clouds don't require 10 m precision.
     is_cld_shdw = (
         is_cld_shdw.focalMin(2)
         .focalMax(BUFFER * 2 / 20)
@@ -166,7 +173,8 @@ def export_s2_no_cloud(
 
     upload_satelliteImages(
         f"{DOM}_{start_date[0:4]}",
-        f"projet-slums-detection/Donnees/SENTINEL2/{DOM.upper()}/TUILES_{start_date[0:4]}",
+        f"projet-slums-detection/Donnees/SENTINEL2/{DOM.upper()}/TUILES_{start_date[0:4]}",  # noqa: E501
+        DEPs[DOM],
         250,
     )
 
@@ -205,14 +213,14 @@ def exportToMinio(image, rpath):
     return fs.put(image, rpath, True)
 
 
-def upload_satelliteImages(lpath, rpath, dim):
+def upload_satelliteImages(lpath, rpath, dep, dim):
     images_paths = os.listdir(lpath)
 
     for i in range(len(images_paths)):
         images_paths[i] = lpath + "/" + images_paths[i]
 
     list_satelliteImages = [
-        SatelliteImage.from_raster(filename, dep="973", n_bands=13)
+        SatelliteImage.from_raster(filename, dep=dep, n_bands=12)
         for filename in tqdm(images_paths)
     ]
 
@@ -287,8 +295,15 @@ EPSGs = {
     "Guyane": "4235",
 }
 
-START_DATE = "2022-05-01"
-END_DATE = "2022-09-01"
+DEPs = {
+    "Guadeloupe": "971",
+    "Martinique": "972",
+    "Mayotte": "976",
+    "Guyane": "973",
+}
+
+START_DATE = "2021-08-01"
+END_DATE = "2021-09-01"
 CLOUD_FILTER = 60
 CLD_PRB_THRESH = 40
 NIR_DRK_THRESH = 0.15
@@ -309,18 +324,18 @@ BUFFER = 50
 #     BUFFER,
 # )
 
-export_s2_no_cloud(
-    "Martinique",
-    AOIs,
-    EPSGs,
-    START_DATE,
-    END_DATE,
-    CLOUD_FILTER,
-    CLD_PRB_THRESH,
-    NIR_DRK_THRESH,
-    CLD_PRJ_DIST,
-    BUFFER,
-)
+# export_s2_no_cloud(
+#     "Martinique",
+#     AOIs,
+#     EPSGs,
+#     START_DATE,
+#     END_DATE,
+#     CLOUD_FILTER,
+#     CLD_PRB_THRESH,
+#     NIR_DRK_THRESH,
+#     CLD_PRJ_DIST,
+#     BUFFER,
+# )
 
 # export_s2_no_cloud(
 #     "Mayotte",
