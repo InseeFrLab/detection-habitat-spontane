@@ -129,9 +129,17 @@ def download_prepare_test(config):
     
     if not os.path.exists(output_labels_path):
         os.makedirs(output_labels_path)
-
+        
+    for label_path, label_name, image_path, image_name in zip(list_labels_path, list_name_label, list_images_path, list_name_image):
+        if label_name[0] == ".":
+            os.remove(label_path)
+            list_labels_path.remove(label_path)
+            
+        if image_name[0] == ".":
+            os.remove(image_path)
+            list_images_path.remove(image_path)
+        
     for image_path, label_path, name in zip(list_images_path, list_labels_path, list_name_image):
-
         si = SatelliteImage.from_raster(
             file_path=image_path, dep=None, date=None, n_bands=n_bands
         )
@@ -153,8 +161,6 @@ def download_prepare_test(config):
                     output_images_path, file_name_i + ".jp2"
                     )
                 np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
-
-
 
 
 def instantiate_dataset(config, list_path_images, list_path_labels):
@@ -462,7 +468,7 @@ if __name__ == "__main__":
 
    
 
-# remote_server_uri = "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
+#remote_server_uri = "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
 #experiment_name = "segmentation"
 #run_name = "testclem"
 
