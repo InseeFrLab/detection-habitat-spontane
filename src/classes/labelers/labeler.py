@@ -167,7 +167,9 @@ class BDTOPOLabeler(Labeler):
             dep (Literal): Departement.
         """
         super(BDTOPOLabeler, self).__init__(labeling_date, dep)
-        self.labeling_data = load_bdtopo(str(self.labeling_date.year), self.dep)
+        self.labeling_data = load_bdtopo(
+            millesime=str(self.labeling_date.year), dep=self.dep
+        )
 
     def create_segmentation_label(
         self, satellite_image: SatelliteImage
@@ -322,5 +324,5 @@ class RIL_BDTOPOLabeler(Labeler):
                 default_value=1,
                 dtype=None,
             )
-                
+
         return rasterized
