@@ -210,7 +210,7 @@ def load_bdtopo(
         if not file_path:
             raise ValueError("No valid `BATIMENT.shp` file found.")
 
-    elif int(millesime) < 2019: 
+    elif int(millesime) < 2019:
         for root, dirs, files in os.walk(dir_path):
             if "BATI_INDIFFERENCIE.SHP" in files:
                 file_path = os.path.join(root, "BATI_INDIFFERENCIE.SHP")
