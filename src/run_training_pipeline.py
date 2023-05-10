@@ -462,7 +462,7 @@ if __name__ == "__main__":
 
    
 
-#remote_server_uri = "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
+# remote_server_uri = "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
 #experiment_name = "segmentation"
 #run_name = "testclem"
 
