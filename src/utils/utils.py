@@ -12,7 +12,8 @@ import rasterio
 import yaml
 from affine import Affine
 from s3fs import S3FileSystem
-from utils.mappings import dep_to_crs
+
+from .mappings import dep_to_crs
 
 
 def get_root_path() -> Path:
@@ -138,6 +139,7 @@ def load_ril(
     Returns:
         gpd.GeoDataFrame: RIL GeoDataFrame.
     """
+    update_storage_access()
     environment = get_environment()
     fs = get_file_system()
 

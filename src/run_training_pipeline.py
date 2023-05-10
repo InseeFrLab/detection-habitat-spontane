@@ -2,7 +2,7 @@ import gc
 import os
 import sys
 from datetime import datetime
-
+from tqdm import tqdm
 import mlflow
 import numpy as np
 import pytorch_lightning as pl
@@ -16,7 +16,8 @@ from pytorch_lightning.callbacks import (
 from torch.utils.data import DataLoader
 from yaml.loader import SafeLoader
 
-from classes.labelers.labeler import RILLabeler
+from classes.data.satellite_image import SatelliteImage
+from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
 from classes.optim.losses import CrossEntropy
 from classes.optim.optimizer import generate_optimization_elements
 from data.components.dataset import PleiadeDataset
@@ -32,7 +33,7 @@ from train_pipeline_utils.handle_dataset import (
 from classes.data.satellite_image import SatelliteImage
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
 from utils.utils import update_storage_access
-
+from rasterio.errors import RasterioIOError
 
 def download_data(config):
     """
@@ -45,16 +46,18 @@ def download_data(config):
     Returns:
         A list of output directories for each downloaded dataset.
     """
+
+    print("Entre dans la fonction download_data")
     config_data = config["donnees"]
     list_output_dir = []
 
-    if config_data["source train"] == "PLEIADES":
-        years = config_data["year"]
-        deps = config_data["dep"]
+    years = config_data["year"]
+    deps = config_data["dep"]
+    src = config_data["source train"]
 
-        for year, dep in zip(years, deps):
-            output_dir = load_pleiade_data(year, dep)
-            list_output_dir.append(output_dir)
+    for year, dep in zip(years, deps):
+        output_dir = load_satellite_data(year, dep, src)
+        list_output_dir.append(output_dir)
 
     return list_output_dir
 
@@ -75,34 +78,67 @@ def prepare_data(config, list_data_dir):
         the output directories containing the 
         preprocessed tile and mask image files.
     """
-    # load labeler
+
+    print("Entre dans la fonction prepare_data")
     config_data = config["donnees"]
 
     years = config_data["year"]
     deps = config_data["dep"]
+    src = config_data["source train"]
+    labeler = config_data["type labeler"]
 
     list_output_dir = []
-    for i, (year, dep) in enumerate(zip(years, deps)):
-        if config_data["type labeler"] == "RIL":
-            buffer_size = config_data["buffer size"]
-            date = datetime.strptime(str(year) + "0101", "%Y%m%d")
 
+    for i, (year, dep) in enumerate(zip(years, deps)):
+        # i, year , dep= 0,years[0],deps[0]
+        date = datetime.strptime(str(year) + "0101", "%Y%m%d")
+        if labeler == "RIL":
+            buffer_size = config_data["buffer size"]
             labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
-            
-        if config_data["type labeler"] == "BDTOPO":
-            date = datetime.strptime(str(year) + "0101", "%Y%m%d")
+        elif labeler == "BDTOPO":
             labeler = BDTOPOLabeler(date, dep=dep)
 
-        output_dir = "train_data" + dep + "-" + str(year) + "/"
-
-        write_splitted_images_masks(
-            list_data_dir[i],
-            output_dir,
-            labeler,
-            config_data["tile size"],
-            config_data["n channels train"],
-            dep,
+        output_dir = (
+            "train_data" + "-" + src + "-" + dep + "-" + str(year) + "/"
         )
+
+        if not check_labelled_images(output_dir):
+            
+            # list_splitted_images = split_images(
+            #     list_data_dir[i], config_data["n channels train"]
+            # )
+            dir = list_data_dir[i]
+            list_path = [dir + "/" + filename for filename in os.listdir(dir)]
+            
+            for path in tqdm(list_path):
+                # path = list_path[0]
+                try:
+                    si = SatelliteImage.from_raster(
+                        file_path=path,
+                        dep=dep,
+                        date=date,
+                        n_bands=config_data["n channels train"]
+                    )
+                
+                except RasterioIOError:
+                    print("Errerur de lecture du fichier " + path)
+                    continue
+
+                else:
+                    list_splitted_images = si.split(config_data["tile size"]) 
+                    
+                    list_filtered_splitted_images = filter_images(
+                        config_data["source train"], list_splitted_images
+                    )
+
+                    list_filtered_splitted_labeled_images, list_masks = label_images(
+                        list_filtered_splitted_images, labeler
+                    )
+
+                    save_images_and_masks(
+                        list_filtered_splitted_labeled_images, list_masks, output_dir
+                    )
+
         list_output_dir.append(output_dir)
 
     return list_output_dir
@@ -423,8 +459,13 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         config = yaml.load(f, Loader=SafeLoader)
 
     list_data_dir = download_data(config)
+    # list_data_dir = ['/home/onyxia/work/detection-habitat-spontane/data/PLEIADES/2022/MARTINIQUE']
+    # list_data_dir = ['/home/onyxia/work/detection-habitat-spontane/data/SENTINEL2/MAYOTTE/TUILES_2022']
+    # list_data_dir = [
+    #     "/home/onyxia/work/detection-habitat-spontane/data/PLEIADES/2022/GUYANE"
+    # ]
     list_output_dir = prepare_data(config, list_data_dir)
-
+  
     model = instantiate_model(config)
 
     train_dl, valid_dl, test_dl = intantiate_dataloader(
@@ -445,8 +486,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         mlflow.end_run()
         mlflow.set_tracking_uri(remote_server_uri)
         mlflow.set_experiment(experiment_name)
-      #  mlflow.pytorch.autolog()
-        
+        # mlflow.pytorch.autolog()
+
         with mlflow.start_run(run_name=run_name):
             mlflow.log_artifact(
                 "../config.yml",
@@ -466,11 +507,10 @@ if __name__ == "__main__":
     run_name = sys.argv[3]
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
-   
 
-#remote_server_uri = "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
-#experiment_name = "segmentation"
-#run_name = "testclem"
+# remote_server_uri = "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
+# experiment_name = "segmentation"
+# run_name = "testclem"
 
 # TO DO :
 # préparer Test exemples
@@ -494,7 +534,7 @@ if __name__ == "__main__":
 #    # Get a list of all the files in the directory
 #  files = os.listdir(dir_path)[:length_delete]
 
-    # Loop through the files and delete them
+# Loop through the files and delete them
 #    for file in files:
 #        file_path = os.path.join(dir_path, file)
 #        if os.path.isfile(file_path):
