@@ -21,4 +21,4 @@ optim:
   max epochs: 100
   val prop: 0.2
 
-mlflow: True
+mlflow: False
