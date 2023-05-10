@@ -2,7 +2,7 @@ import gc
 import os
 import sys
 from datetime import datetime
-
+from tqdm import tqdm
 import mlflow
 import numpy as np
 import pytorch_lightning as pl
@@ -36,7 +36,7 @@ from train_pipeline_utils.prepare_data import (  # , write_splitted_images_mask
     split_images,
 )
 from utils.utils import update_storage_access
-
+from rasterio.errors import RasterioIOError
 
 def download_data(config):
     """
@@ -113,28 +113,34 @@ def prepare_data(config, list_data_dir):
             dir = list_data_dir[i]
             list_path = [dir + "/" + filename for filename in os.listdir(dir)]
             
-            for path in list_path:
+            for path in tqdm(list_path):
                 # path = list_path[0]
-                si = SatelliteImage.from_raster(
-                    file_path=path,
-                    dep=dep,
-                    date=date,
-                    n_bands=config_data["n channels train"]
-                )
+                try:
+                    si = SatelliteImage.from_raster(
+                        file_path=path,
+                        dep=dep,
+                        date=date,
+                        n_bands=config_data["n channels train"]
+                    )
                 
-                list_splitted_images = si.split(config_data["tile size"]) 
-                
-                list_filtered_splitted_images = filter_images(
-                    config_data["source train"], list_splitted_images
-                )
+                except RasterioIOError:
+                    print("Errerur de lecture du fichier " + path)
+                    continue
 
-                list_filtered_splitted_labeled_images, list_masks = label_images(
-                    list_filtered_splitted_images, labeler
-                )
+                else:
+                    list_splitted_images = si.split(config_data["tile size"]) 
+                    
+                    list_filtered_splitted_images = filter_images(
+                        config_data["source train"], list_splitted_images
+                    )
 
-                save_images_and_masks(
-                    list_filtered_splitted_labeled_images, list_masks, output_dir
-                )
+                    list_filtered_splitted_labeled_images, list_masks = label_images(
+                        list_filtered_splitted_images, labeler
+                    )
+
+                    save_images_and_masks(
+                        list_filtered_splitted_labeled_images, list_masks, output_dir
+                    )
 
         list_output_dir.append(output_dir)
 
