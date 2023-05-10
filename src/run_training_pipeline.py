@@ -16,6 +16,7 @@ from pytorch_lightning.callbacks import (
 from torch.utils.data import DataLoader
 from yaml.loader import SafeLoader
 
+from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
 from classes.optim.losses import CrossEntropy
 from classes.optim.optimizer import generate_optimization_elements
@@ -90,7 +91,9 @@ def prepare_data(config, list_data_dir):
     labeler = config_data["type labeler"]
 
     list_output_dir = []
+
     for i, (year, dep) in enumerate(zip(years, deps)):
+        # i, year , dep= 0,years[0],deps[0]
         date = datetime.strptime(str(year) + "0101", "%Y%m%d")
         if labeler == "RIL":
             buffer_size = config_data["buffer size"]
@@ -103,21 +106,35 @@ def prepare_data(config, list_data_dir):
         )
 
         if not check_labelled_images(output_dir):
-            list_splitted_images = split_images(
-                list_data_dir[i], config_data["n channels train"]
-            )
+            
+            # list_splitted_images = split_images(
+            #     list_data_dir[i], config_data["n channels train"]
+            # )
+            dir = list_data_dir[i]
+            list_path = [dir + "/" + filename for filename in os.listdir(dir)]
+            
+            for path in list_path:
+                # path = list_path[0]
+                si = SatelliteImage.from_raster(
+                    file_path=path,
+                    dep=dep,
+                    date=date,
+                    n_bands=config_data["n channels train"]
+                )
+                
+                list_splitted_images = si.split(config_data["tile size"]) 
+                
+                list_filtered_splitted_images = filter_images(
+                    config_data["source train"], list_splitted_images
+                )
 
-            list_filtered_splitted_images = filter_images(
-                config_data["source train"], list_splitted_images
-            )
+                list_filtered_splitted_labeled_images, list_masks = label_images(
+                    list_filtered_splitted_images, labeler
+                )
 
-            list_filtered_splitted_labeled_images, list_masks = label_images(
-                list_filtered_splitted_images, labeler
-            )
-
-            save_images_and_masks(
-                list_filtered_splitted_labeled_images, list_masks, output_dir
-            )
+                save_images_and_masks(
+                    list_filtered_splitted_labeled_images, list_masks, output_dir
+                )
 
         list_output_dir.append(output_dir)
 
@@ -368,16 +385,14 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     with open("../config.yml") as f:
         config = yaml.load(f, Loader=SafeLoader)
 
-    # list_data_dir = download_data(config)
+    list_data_dir = download_data(config)
     # list_data_dir = ['/home/onyxia/work/detection-habitat-spontane/data/PLEIADES/2022/MARTINIQUE']
     # list_data_dir = ['/home/onyxia/work/detection-habitat-spontane/data/SENTINEL2/MAYOTTE/TUILES_2022']
-    list_data_dir = [
-        "/home/onyxia/work/detection-habitat-spontane/data/PLEIADES/2022/GUYANE"
-    ]
+    # list_data_dir = [
+    #     "/home/onyxia/work/detection-habitat-spontane/data/PLEIADES/2022/GUYANE"
+    # ]
     list_output_dir = prepare_data(config, list_data_dir)
-    print(list_output_dir)
-    return
-
+  
     model = instantiate_model(config)
 
     train_dl, valid_dl, test_dl = intantiate_dataloader(

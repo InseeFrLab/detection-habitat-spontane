@@ -1,7 +1,7 @@
 donnees:
   source train: "PLEIADES"
   year: [2022]
-  dep: ["973"]
+  dep: ["972"]
   type labeler: "RIL"
   buffer size: 10
   n channels train: 3
