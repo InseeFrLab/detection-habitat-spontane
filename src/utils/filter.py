@@ -24,18 +24,22 @@ def is_too_black(
     """
     Determine if a satellite image is too black
     based on pixel values and black area proportion.
+
     This function converts a satellite image to grayscale and
     filters it based on the number of black pixels and their proportion.
     A pixel is considered black if its value is less than the specified
     threshold (black_value_threshold).
+
     The image is considered too black if the proportion of black pixels
     is greater than or equal to the specified threshold (black_area_threshold).
+
     Args:
         image (SatelliteImage): The input satellite image.
         black_value_threshold (int, optional): The threshold value
             for considering a pixel as black. Default is 100.
         black_area_threshold (float, optional): The threshold for
             the proportion of black pixels. Default is 0.5.
+
     Returns:
         bool: True if the proportion of black pixels is greater than or equal
             to the threshold, False otherwise.
@@ -56,18 +60,24 @@ def is_too_black(
 def is_too_black2(image: SatelliteImage, black_area=0.5) -> bool:
     """
     Determines if an image has too many black pixels.
+    This function works on RGB images in the format (C x H x W)
+    encoded in float.
+
     Parameters:
     -----------
     image (SatelliteImage) :
         A SatelliteImage object representing the image to analyze.
+
     black_area (float, optional) :
         A float representing the maximum percentage of black pixels allowed in
         the image. The default value is 0.5, which means that if more than 50%
         of the image is black, the function will return True.
+
     Returns:
     --------
     bool:
         True if the image has too many black pixels, False otherwise.
+
     Example:
         >>> filename = '../data/PLEIADES/2020/MAYOTTE/
         ORT_2020052526656219_0508_8599_U38S_8Bits.jp2'
@@ -84,11 +94,8 @@ def is_too_black2(image: SatelliteImage, black_area=0.5) -> bool:
 
     # Extract the array from the image to get the pixel values
     img = image.array.copy()
-
     img = img[[0, 1, 2], :, :]
-
-    img = (img * 255).astype(np.uint8)
-
+    img = img.astype(np.uint8)
     img = img.transpose(1, 2, 0)
 
     # Find all black pixels
@@ -104,26 +111,36 @@ def is_too_black2(image: SatelliteImage, black_area=0.5) -> bool:
         return False
 
 
-def mask_cloud(
-    image: SatelliteImage, threshold: int, min_size: int
-) -> np.ndarray:
+def has_cloud(
+    image: SatelliteImage,
+    threshold: int = 250,
+    min_size: int = 50000,
+) -> bool:
     """
-    Detects clouds in a SatelliteImage using a threshold-based approach
-    (grayscale threshold and pixel cluster size threshold) and
-    returns a binary mask of the detected clouds.
-    Args:
-        image (SatelliteImage):
-            The input satellite image to process.
-        threshold (int):
-            The threshold value to use for detecting clouds on the image
-            transformed into grayscale. A pixel is considered part of a
-            cloud if its value is greater than this threshold.
-        min_size (int):
-            The minimum size (in pixels) of a cloud region to be
-            considered valid.
+    Determines if an image contains cloud(s) or not.
+
+    Parameters:
+    -----------
+    image (SatelliteImage):
+        A SatelliteImage object representing the image to analyze.
+
+    threshold (int, optional):
+        An integer representing the threshold for coverage of the center of
+        clouds in the image. Pixels with a cloud coverage value higher than
+        this threshold are classified as covered by clouds.
+        Defaults to 250 (white pixels).
+    min_size (int, optional):
+        An integer representing the minimum size (in pixels) of a cloud
+        region that will be retained in the output mask. Defaults to 50,000
+        (2,000*2,000 = 4,000,000 pixels and we want to detect clouds that
+        occupy > 1.25% of the image).
+
+
     Returns:
-        mask (np.ndarray):
-            A binary mask of the detected clouds in the input image.
+    --------
+    bool
+        True if the image contains cloud(s), False otherwise.
+
     Example:
         >>> filename_1 = '../data/PLEIADES/2020/MAYOTTE/
         ORT_2020052526656219_0508_8599_U38S_8Bits.jp2'
@@ -134,17 +151,13 @@ def mask_cloud(
                                     n_bands = 3,
                                     dep = "976"
                                 )
-        >>> mask = mask_cloud(image, 250, 20000)
-        >>> fig, ax = plt.subplots(figsize=(10, 10))
-        >>> ax.imshow(np.transpose(image_1.array, (1, 2, 0))[:,:,:3])
-        >>> ax.imshow(mask, alpha=0.3)
+        >>> has_cloud(image_1)
+        True
     """
+
     image = image.array.copy()
-
     image = image[[0, 1, 2], :, :]
-
-    image = (image * 255).astype(np.uint8)
-
+    image = image.astype(np.uint8)
     image = image.transpose(1, 2, 0)
 
     # Convert the RGB image to grayscale
@@ -153,7 +166,72 @@ def mask_cloud(
     # Find clusters of white pixels that correspond to 5% or more of the image
     labeled, num_features = label(grayscale > threshold)
 
-    region_sizes = np.bincount(labeled.flat)[:]
+    if num_features >= 1:
+        region_sizes = np.bincount(labeled.flat)[1:]
+        max_size_feature = max(region_sizes)
+
+        # Check if the size of the largest region of white pixels
+        # exceeds the minimum size threshold
+        if max_size_feature >= min_size:
+            return True
+
+    return False
+
+
+def mask_cloud(
+    image: SatelliteImage, threshold: int = 250, min_size: int = 50000
+) -> np.ndarray:
+    """
+    Detects clouds in a SatelliteImage using a threshold-based approach
+    (grayscale threshold and pixel cluster size threshold) and
+    returns a binary mask of the detected clouds.
+    This function works on RGB images in the format (C x H x W)
+    encoded in float.
+
+    Args:
+        image (SatelliteImage):
+            The input satellite image to process.
+        threshold (int):
+            The threshold value to use for detecting clouds on the image
+            transformed into grayscale. A pixel is considered part of a
+            cloud if its value is greater than this threshold.
+            Default to 250.
+        min_size (int):
+            The minimum size (in pixels) of a cloud region to be
+            considered valid.
+            Default to 50000.
+
+    Returns:
+        mask (np.ndarray):
+            A binary mask of the detected clouds in the input image.
+
+    Example:
+        >>> filename_1 = '../data/PLEIADES/2020/MAYOTTE/
+        ORT_2020052526656219_0508_8599_U38S_8Bits.jp2'
+        >>> date_1 = date.fromisoformat('2020-01-01')
+        >>> image_1 = SatelliteImage.from_raster(
+                                    filename_1,
+                                    date = date_1,
+                                    n_bands = 3,
+                                    dep = "976"
+                                )
+        >>> mask = mask_cloud(image)
+        >>> fig, ax = plt.subplots(figsize=(10, 10))
+        >>> ax.imshow(np.transpose(image_1.array, (1, 2, 0))[:,:,:3])
+        >>> ax.imshow(mask, alpha=0.3)
+    """
+    image = image.array.copy()
+    image = image[[0, 1, 2], :, :]
+    image = image.astype(np.uint8)
+    image = image.transpose(1, 2, 0)
+
+    # Convert the RGB image to grayscale
+    grayscale = np.mean(image, axis=2)
+
+    # Find clusters of white pixels that correspond to 5% or more of the image
+    labeled, num_features = label(grayscale > threshold)
+
+    region_sizes = np.bincount(labeled.flat)
 
     # Trier les labels de région en fonction de leur taille décroissante
     sorted_labels = np.argsort(-region_sizes)
@@ -175,13 +253,13 @@ def mask_cloud(
 def mask_full_cloud(
     image: SatelliteImage,
     threshold_center: int = 250,
-    threshold_full: int = 340,
+    threshold_full: int = 130,
     min_size: int = 50000,
 ) -> np.ndarray:
     """
     Masks out clouds in a SatelliteImage using two thresholds for cloud
-    coverage, and returns the resulting cloud mask as a rasterized
-    GeoDataFrame.
+    coverage, and returns the resulting cloud mask as a numpy array.
+
     Parameters:
     -----------
     image (SatelliteImage):
@@ -202,12 +280,14 @@ def mask_full_cloud(
         that will be retained in the output mask.
         Defaults to 50,000 (2,000*2,000 = 4,000,000 pixels and we want to
         detect clouds that occupy > 1.25% of the image).
+
     Returns:
     --------
     rasterized (np.ndarray):
         A numpy array representing the rasterized version of the cloud mask.
         Pixels with a value of 1 are classified as cloud-free, while pixels
         with a value of 0 are classified as cloud-covered.
+
     Example:
         >>> filename_1 = '../data/PLEIADES/2020/MAYOTTE/
         ORT_2020052526656219_0508_8599_U38S_8Bits.jp2'
@@ -227,7 +307,7 @@ def mask_full_cloud(
     cloud_center = mask_cloud(image, threshold_center, min_size)
     cloud_full = mask_cloud(image, threshold_full, min_size)
 
-    height, width = image.array.shape[1:]
+    nchannel, height, width = image.array.shape
 
     # Create a list of polygons from the masked center clouds in order
     # to obtain a GeoDataFrame from it
@@ -278,79 +358,15 @@ def mask_full_cloud(
     return rasterized
 
 
-def has_cloud(
-    image: SatelliteImage,
-    threshold: int = 250,
-    min_size: int = 50000,
-) -> bool:
-    """
-    Determines if an image contains cloud(s) or not.
-    Parameters:
-    -----------
-    image (SatelliteImage):
-        A SatelliteImage object representing the image to analyze.
-    threshold (int, optional):
-        An integer representing the threshold for coverage of the center of
-        clouds in the image. Pixels with a cloud coverage value higher than
-        this threshold are classified as covered by clouds.
-        Defaults to 250 (white pixels).
-    min_size (int, optional):
-        An integer representing the minimum size (in pixels) of a cloud
-        region that will be retained in the output mask. Defaults to 50,000
-        (2,000*2,000 = 4,000,000 pixels and we want to detect clouds that
-        occupy > 1.25% of the image).
-    Returns:
-    --------
-    bool
-        True if the image contains cloud(s), False otherwise.
-    Example:
-        >>> filename_1 = '../data/PLEIADES/2020/MAYOTTE/
-        ORT_2020052526656219_0508_8599_U38S_8Bits.jp2'
-        >>> date_1 = date.fromisoformat('2020-01-01')
-        >>> image_1 = SatelliteImage.from_raster(
-                                    filename_1,
-                                    date = date_1,
-                                    n_bands = 3,
-                                    dep = "976"
-                                )
-        >>> has_cloud(image_1)
-        True
-    """
-
-    image = image.array.copy()
-
-    image = image[[0, 1, 2], :, :]
-
-    image = (image * 255).astype(np.uint8)
-
-    image = image.transpose(1, 2, 0)
-
-    # Convert the RGB image to grayscale
-    grayscale = np.mean(image, axis=2)
-
-    # Find clusters of white pixels that correspond to 5% or more of the image
-    labeled, num_features = label(grayscale > threshold)
-
-    if num_features >= 1:
-        region_sizes = np.bincount(labeled.flat)[1:]
-        max_size_feature = max(region_sizes)
-
-        # Check if the size of the largest region of white pixels
-        # exceeds the minimum size threshold
-        if max_size_feature >= min_size:
-            return True
-
-    return False
-
-
 def patch_nocloud(
     image: SatelliteImage,
     mask_full_cloud: np.ndarray,
-    nb_patch: int,
+    size_patch: int,
 ) -> list[SatelliteImage]:
     """
     Splits a SatelliteImage into patches and returns a list of patches
     that do not contain clouds.
+
     Args:
         image (SatelliteImage):
             An instance of the SatelliteImage class representing
@@ -358,13 +374,15 @@ def patch_nocloud(
         mask_full_cloud (np.ndarray):
             An array representing a cloud mask, where 1 indicates a pixel
             is covered by clouds and 0 indicates it is not.
-        nb_patch (int):
-            The number of patches to split the image into.
+        size_patch (int):
+            The requested patch size.
+
     Returns:
     --------
         list[SatelliteImage]:
             A list of SatelliteImage instances representing the patches
             that do not contain clouds.
+
     Example:
         >>> filename_1 = '../data/PLEIADES/2020/MAYOTTE/
         ORT_2020052526656219_0508_8599_U38S_8Bits.jp2'
@@ -376,7 +394,7 @@ def patch_nocloud(
                                     dep = "976"
                                 )
         >>> mask_full = mask_full_cloud(image_1)
-        >>> list_nocloud = patch_nocloud(image_1, mask_full, nb_patch = 250)
+        >>> list_nocloud = patch_nocloud(image_1, mask_full, size_patch = 250)
     """
 
     # Create an RGB mask from the input cloud mask
@@ -404,8 +422,8 @@ def patch_nocloud(
     )
 
     # Split the image and cloud mask into patches
-    list_images_cloud = image_cloud.split(nb_patch)
-    list_images = image.split(nb_patch)
+    list_images_cloud = image_cloud.split(size_patch)
+    list_images = image.split(size_patch)
     list_patch_nocloud = []
 
     # Loop through each patch
@@ -431,6 +449,7 @@ class RILFilter:
     ):
         """
         Constructor.
+
         Args:
             dep (Literal): Departement.
             delta_threshold (int): Max number of days between label date and
@@ -464,6 +483,7 @@ class RILFilter:
     ):
         """
         Return True if labeled image passes all controls.
+
         Args:
             labeled_image (Union[SegmentationLabeledSatelliteImage,
                 DetectionLabeledSatelliteImage]): Labeled image.
@@ -480,6 +500,7 @@ class RILFilter:
     ):
         """
         Return True if labeled image passes date controls.
+
         Args:
             labeled_image (Union[SegmentationLabeledSatelliteImage,
                 DetectionLabeledSatelliteImage]): Labeled image.
@@ -502,6 +523,7 @@ class RILFilter:
     ):
         """
         Return True if labeled image passes rotation group controls.
+
         Args:
             labeled_image (Union[SegmentationLabeledSatelliteImage,
                 DetectionLabeledSatelliteImage]): Labeled image.
