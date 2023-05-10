@@ -23,11 +23,19 @@ from classes.optim.optimizer import generate_optimization_elements
 from data.components.dataset import PleiadeDataset
 from models.components.segmentation_models import DeepLabv3Module
 from models.segmentation_module import SegmentationModule
-from train_pipeline_utils.download_data import load_pleiade_data, load_donnees_test
+from train_pipeline_utils.download_data import load_satellite_data, load_donnees_test
 from train_pipeline_utils.prepare_data import write_splitted_images_masks
 from train_pipeline_utils.handle_dataset import (
     generate_transform,
     split_dataset
+)
+
+
+from train_pipeline_utils.prepare_data import(
+    filter_images,
+    label_images,
+    save_images_and_masks,
+    check_labelled_images
 )
 
 from classes.data.satellite_image import SatelliteImage
@@ -146,7 +154,7 @@ def prepare_data(config, list_data_dir):
 
 def download_prepare_test(config):
 
-    out_dir  = load_donnees_test(type = config["donnees"]["task"])
+    out_dir = load_donnees_test(type=config["donnees"]["task"])
     images_path = out_dir + "/images"
     labels_path = out_dir + "/masks"
 
@@ -158,7 +166,7 @@ def download_prepare_test(config):
 
     output_test = "../test-data"
     output_images_path = output_test + "/images"
-    output_labels_path = output_test  + "/labels"
+    output_labels_path = output_test + "/labels"
 
     n_bands = config["donnees"]["n bands"]
     tile_size = config["donnees"]["tile size"]
@@ -166,7 +174,12 @@ def download_prepare_test(config):
     if not os.path.exists(output_labels_path):
         os.makedirs(output_labels_path)
         
-    for label_path, label_name, image_path, image_name in zip(list_labels_path, list_name_label, list_images_path, list_name_image):
+    for label_path, label_name, image_path, image_name in zip(
+        list_labels_path,
+        list_name_label,
+        list_images_path,
+        list_name_image
+    ):
         if label_name[0] == ".":
             os.remove(label_path)
             list_labels_path.remove(label_path)
@@ -175,28 +188,27 @@ def download_prepare_test(config):
             os.remove(image_path)
             list_images_path.remove(image_path)
         
-    for image_path, label_path, name in zip(list_images_path, list_labels_path, list_name_image):
-        si = SatelliteImage.from_raster(
-            file_path=image_path, dep=None, date=None, n_bands=n_bands
-        )
-        mask = np.load(label_path)
-
-        list_satellite_image  = si.split(tile_size)
+    for image_path, label_path, name in zip(
+        list_images_path,
+        list_labels_path,
+        list_name_image
+        ):
 
         si = SatelliteImage.from_raster(
             file_path=image_path, dep=None, date=None, n_bands=n_bands
         )
         mask = np.load(label_path)
-        lsi = SegmentationLabeledSatelliteImage(si,mask,"","")
+
+        lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
         list_lsi = lsi.split(tile_size)
 
         for i, lsi in enumerate(list_lsi):
-                file_name_i = name.split(".")[0] + "_" + str(i)
-                #if !os.path.exists(""):
-                lsi.satellite_image.to_raster(
-                    output_images_path, file_name_i + ".jp2"
-                    )
-                np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
+            file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+
+            lsi.satellite_image.to_raster(
+                output_images_path, file_name_i + ".jp2"
+                )
+            np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
 
 
 def instantiate_dataset(config, list_path_images, list_path_labels):
@@ -312,7 +324,7 @@ def instantiate_dataloader(config, list_output_dir):
     # Gestion datset test
     output_test = "../test-data"
     output_images_path = output_test + "/images/"
-    output_labels_path = output_test  + "/labels/"
+    output_labels_path = output_test + "/labels/"
 
     list_name_image = os.listdir(output_images_path)
     list_name_label = os.listdir(output_labels_path)
@@ -468,7 +480,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
   
     model = instantiate_model(config)
 
-    train_dl, valid_dl, test_dl = intantiate_dataloader(
+    train_dl, valid_dl, test_dl = instantiate_dataloader(
         config, list_output_dir
     )
 
