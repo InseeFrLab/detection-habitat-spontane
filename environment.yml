@@ -39,6 +39,41 @@ sources:
           #"974": NA
           #"973": NA
           "976": Donnees/PLEIADES/MAYOTTE/2017/MOSA
+  NUAGESPLEIADES:
+      2022:
+          "971": Donnees/NUAGESPLEIADES/2022/GUADELOUPE
+          "972": Donnees/NUAGESPLEIADES/2022/MARTINIQUE
+          #"974""974" NA
+          "973": Donnees/NUAGESPLEIADES/2022/GUYANE
+          "976": Donnees/NUAGESPLEIADES/2022/MAYOTTE
+
+      2020:
+          #"971": NA
+          #"972": NA
+          #"974": NA
+          #"973": NA
+          "976": Donnees/NUAGESPLEIADES/2020/MAYOTTE
+      2019:
+          #"971": NA
+          #"972": NA
+          #"974": NA
+          #"973": NA
+          "976": Donnees/NUAGESPLEIADES/2019/MAYOTTE
+      2018:
+          #"971": NA
+          #"972": NA
+          "974": Donnees/NUAGESPLEIADES/2018/REUNION
+          #"973": NA
+          #"976":
+      2017:
+          #"971": NA
+          "972": Donnees/NUAGESPLEIADES/2017/MARTINIQUE
+          #"974": NA
+          #"973": NA
+          "976": Donnees/NUAGESPLEIADES/2017/MAYOTTE
+
+        
+        
   BDTOPO:
       2022:
         "971": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D971_2022-03-15/BDTOPO/1_DONNEES_LIVRAISON_2022-03-00081/BDT_3-0_SHP_RGAF09UTM20_D971-ED2022-03-15
@@ -141,6 +176,39 @@ local-path:
           "973":
           "974": NA
           "976": data/PLEIADES/2017/MAYOTTE
+  
+  NUAGESPLEIADES:
+      2022:
+          "971": data/NUAGESPLEIADES/2022/GUADELOUPE
+          "972": data/NUAGESPLEIADES/2022/MARTINIQUE
+          #"974""974" NA
+          "973": data/NUAGESPLEIADES/2022/GUYANE
+          "976": data/NUAGESPLEIADES/2022/MAYOTTE
+
+      2020:
+          #"971": NA
+          #"972": NA
+          #"974": NA
+          #"973": NA
+          "976": data/NUAGESPLEIADES/2020/MAYOTTE
+      2019:
+          #"971": NA
+          #"972": NA
+          #"974": NA
+          #"973": NA
+          "976": data/NUAGESPLEIADES/2019/MAYOTTE
+      2018:
+          #"971": NA
+          #"972": NA
+          "974": data/NUAGESPLEIADES/2018/REUNION
+          #"973": NA
+          #"976":
+      2017:
+          #"971": NA
+          "972": data/NUAGESPLEIADES/2017/MARTINIQUE
+          #"974": NA
+          #"973": NA
+          "976": data/NUAGESPLEIADES/2017/MAYOTTE
 
   BDTOPO:
       2022:
