@@ -29,7 +29,7 @@ from train_pipeline_utils.handle_dataset import (
     generate_transform,
     split_dataset
 )
-
+from train_pipeline_utils.prepare_data import split_mask_cloud
 
 from train_pipeline_utils.prepare_data import(
     filter_images,
@@ -40,8 +40,9 @@ from train_pipeline_utils.prepare_data import(
 
 from classes.data.satellite_image import SatelliteImage
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
-from utils.utils import update_storage_access
+from utils.utils import update_storage_access, split_array
 from rasterio.errors import RasterioIOError
+
 
 def download_data(config):
     """
@@ -58,7 +59,8 @@ def download_data(config):
     print("Entre dans la fonction download_data")
     config_data = config["donnees"]
     list_output_dir = []
-
+    list_masks_cloud_dir = []
+    
     years = config_data["year"]
     deps = config_data["dep"]
     src = config_data["source train"]
@@ -67,10 +69,14 @@ def download_data(config):
         output_dir = load_satellite_data(year, dep, src)
         list_output_dir.append(output_dir)
 
-    return list_output_dir
+        if src == "PLEIADES":
+            cloud_dir = load_satellite_data(year, dep, "NUAGESPLEIADES")
+            list_masks_cloud_dir.append(cloud_dir)
+
+    return list_output_dir, list_masks_cloud_dir
 
 
-def prepare_data(config, list_data_dir):
+def prepare_data(config, list_data_dir, list_masks_cloud_dir):
     """
     Preprocesses and splits the raw input images 
     into tiles and corresponding masks, 
@@ -98,7 +104,7 @@ def prepare_data(config, list_data_dir):
     list_output_dir = []
 
     for i, (year, dep) in enumerate(zip(years, deps)):
-        # i, year , dep= 0,years[0],deps[0]
+        # i, year , dep = 0,years[0],deps[0]
         date = datetime.strptime(str(year) + "0101", "%Y%m%d")
         if labeler == "RIL":
             buffer_size = config_data["buffer size"]
@@ -112,14 +118,16 @@ def prepare_data(config, list_data_dir):
 
         if not check_labelled_images(output_dir):
             
-            # list_splitted_images = split_images(
-            #     list_data_dir[i], config_data["n channels train"]
-            # )
+            if src == "PLEIADES":
+                cloud_dir = list_masks_cloud_dir[i]
+                list_name_cloud = [path.split("/")[-1].split(".")[0] for path in os.listdir(cloud_dir)]
+            
             dir = list_data_dir[i]
             list_path = [dir + "/" + filename for filename in os.listdir(dir)]
             
             for path in tqdm(list_path):
                 # path = list_path[0]
+                # path  = dir + "/"+ "ORT_2022_0691_1641_U20N_8Bits.jp2"
                 try:
                     si = SatelliteImage.from_raster(
                         file_path=path,
@@ -127,16 +135,23 @@ def prepare_data(config, list_data_dir):
                         date=date,
                         n_bands=config_data["n channels train"]
                     )
-                
+                    
                 except RasterioIOError:
-                    print("Errerur de lecture du fichier " + path)
+                    print("Erreur de lecture du fichier " + path)
                     continue
 
                 else:
+                    filename = path.split("/")[-1].split(".")[0] 
+                    
+                    if filename in list_name_cloud:
+                        mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
+                        list_splitted_mask_cloud = split_array(mask_full_cloud, config_data["tile size"])
+                        
                     list_splitted_images = si.split(config_data["tile size"]) 
                     
                     list_filtered_splitted_images = filter_images(
-                        config_data["source train"], list_splitted_images
+                        config_data["source train"], list_splitted_images # TO COMPLETE WITH LIST8SPLITTED _MASK CLOUD + PROBLEME d'IMPORT
+
                     )
 
                     list_filtered_splitted_labeled_images, list_masks = label_images(
@@ -470,13 +485,14 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     with open("../config.yml") as f:
         config = yaml.load(f, Loader=SafeLoader)
 
-    list_data_dir = download_data(config)
+    list_data_dir, list_masks_cloud_dir = download_data(config)
     # list_data_dir = ['/home/onyxia/work/detection-habitat-spontane/data/PLEIADES/2022/MARTINIQUE']
     # list_data_dir = ['/home/onyxia/work/detection-habitat-spontane/data/SENTINEL2/MAYOTTE/TUILES_2022']
     # list_data_dir = [
     #     "/home/onyxia/work/detection-habitat-spontane/data/PLEIADES/2022/GUYANE"
     # ]
-    list_output_dir = prepare_data(config, list_data_dir)
+
+    list_output_dir = prepare_data(config, list_data_dir, list_masks_cloud_dir)
   
     model = instantiate_model(config)
 

@@ -16,6 +16,18 @@ from s3fs import S3FileSystem
 from .mappings import dep_to_crs
 
 
+def split_array(array, tile_length):
+
+    m = array.shape[0]
+    n = array.shape[1]
+    
+    indices = get_indices_from_tile_length(m, n, tile_length)
+    
+    list_array = [array[rows[0] : rows[1], cols[0] : cols[1]] for rows, cols in indices]
+
+    return list_array
+
+
 def get_root_path() -> Path:
     """
     Return root path of project.
@@ -265,3 +277,4 @@ def update_storage_access():
         del os.environ["AWS_SESSION_TOKEN"]
     except KeyError:
         pass
+
