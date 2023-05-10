@@ -84,7 +84,12 @@ def write_splitted_images_masks(
 
         for i, satellite_image in enumerate(list_satellite_image):
             mask = labeler.create_segmentation_label(satellite_image)
-            file_name_i = file_name.split(".")[0] + "_" + str(i)
+            if i<10:
+                file_name_i = file_name.split(".")[0] + "_" + "0"+"0"+ str(i)
+            elif 10<=i<100: 
+                file_name_i = file_name.split(".")[0] + "_" + "0"+ str(i)
+            elif 100<=i:
+                file_name_i = file_name.split(".")[0] + "_" + str(i)
             if np.sum(mask) == 0:  # je dégage les masques vides j'écris pas
                 continue
             try:            
