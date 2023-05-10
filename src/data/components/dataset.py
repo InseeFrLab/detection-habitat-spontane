@@ -130,7 +130,7 @@ class PleiadeDataset(Dataset):
         else:
             img = torch.tensor(img.astype(float))
             img = img.permute([2, 0, 1])
-            label = torch.tensor(label)
+            #label = torch.tensor(label)
 
         img = img.type(torch.float)
         label = label.type(torch.LongTensor)

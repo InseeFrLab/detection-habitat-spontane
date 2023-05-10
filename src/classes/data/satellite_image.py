@@ -158,6 +158,21 @@ class SatelliteImage:
         plt.yticks([])
         plt.title(f"Dimension of image {self.array.shape[1:]}")
         plt.show()
+    
+    def copy(self):
+        copy_image = SatelliteImage( 
+                        array = self.array.copy(),
+                        crs = self.crs,
+                        bounds = self.bounds,
+                        transform = self.transform,
+                        n_bands = self.n_bands,
+                        filename = self.filename,
+                        dep = self.dep,
+                        date = self.date,
+                        normalized = self.normalized
+        )
+        
+        return copy_image
 
     @staticmethod
     def from_raster(
