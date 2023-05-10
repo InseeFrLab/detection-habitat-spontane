@@ -208,7 +208,7 @@ class BDTOPOLabeler(Labeler):
             )
 
         return rasterized
-    
+
     def create_segmentation_label_filtered(
         self, satellite_image: SatelliteImage
     ) -> np.array:
@@ -230,13 +230,13 @@ class BDTOPOLabeler(Labeler):
         # Filtering geometries from BDTOPO
         xmin, ymin, xmax, ymax = satellite_image.bounds
         patch = self.labeling_data.cx[xmin:xmax, ymin:ymax].copy()
-        
-        patch11 = patch[patch['USAGE1'] == 'Indifférencié'] 
+
+        patch11 = patch[patch['USAGE1'] == 'Indifférencié']
         patch12 = patch[patch['USAGE1'] == 'Résidentiel']
-        
+
         patch2 = pd.concat([patch11, patch12], ignore_index=True)
-        
-        #threshold
+
+        # threshold
         patch_petite_hab = patch2[patch2['HAUTEUR'] <= 7.0]
 
         if patch_petite_hab.empty:
@@ -276,7 +276,6 @@ class RIL_BDTOPOLabeler(Labeler):
         super(RIL_BDTOPOLabeler, self).__init__(labeling_date, dep)
         self.labeling_data_ril = load_ril(str(self.labeling_date.year), self.dep)
         self.labeling_data_bdtopo = load_bdtopo(str(self.labeling_date.year), self.dep)
-
 
     def create_segmentation_label(self, satellite_image: SatelliteImage) -> np.array:
         """
@@ -324,4 +323,4 @@ class RIL_BDTOPOLabeler(Labeler):
                 dtype=None,
             )
                 
-        return rasterized    
+        return rasterized
