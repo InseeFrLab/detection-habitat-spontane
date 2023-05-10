@@ -1,9 +1,18 @@
 import os
+import shutil
 
 import numpy as np
 import rasterio
 
 from utils.filter import has_cloud, is_too_black2
+from classes.data.satellite_image import SatelliteImage
+from classes.labelers.labeler import Labeler
+from utils.filter import (
+    has_cloud,
+    is_too_black2,
+    mask_full_cloud,
+    patch_nocloud,
+)
 
 
 def check_labelled_images(output_directory_name):
@@ -34,7 +43,6 @@ def check_labelled_images(output_directory_name):
         print("The directory exists but is empty.")
         return False
     else:
-        print("The directory doesn't exist and is going to be created.")
         os.makedirs(output_images_path)
         os.makedirs(output_masks_path)
         print("Directory created")
@@ -85,6 +93,10 @@ def filter_images_pleiades(list_images):
         # "Nombre d'images splitées et filtrées (nuages et sombres) : ",
         # len(list_filtered_splitted_images),
     # )
+    print(
+        "Nombre d'images splitées et filtrées (nuages et sombres) : ",
+        len(list_filtered_splitted_images),
+    )
     return list_filtered_splitted_images
 
 
@@ -129,7 +141,12 @@ def label_images(list_images, labeler):
             list_filtered_splitted_labeled_images.append(satellite_image)
             list_masks.append(mask)
 
-    # print(len(list_filtered_splitted_labeled_images), len(list_masks))
+    # print(
+    #     "Nombre d'images labelisées : ",
+    #     len(list_filtered_splitted_labeled_images),
+    #     ", Nombre de masques : ",
+    #     len(list_masks),
+    # )
     return list_filtered_splitted_labeled_images, list_masks
 
 
@@ -158,10 +175,20 @@ def save_images_and_masks(list_images, list_masks, output_directory_name):
         filename = str(int(bb[0])) + "_" + str(int(bb[1])) + "_" + str(i)
         i = i + 1
         try:
-            image.to_raster(output_images_path, filename + ".jp2")
-            np.save(output_masks_path + "/" + filename + ".npy", mask)
+            image.to_raster(
+                output_images_path, str(list_images.index(image)) + ".jp2"
+            )
+            np.save(
+                output_masks_path
+                + "/"
+                + str(list_images.index(image))
+                + ".npy",
+                mask,
+            )
+
         except rasterio._err.CPLE_AppDefinedError:
-            print("Writing error")
+            # except:
+            print("Writing error", image.filename)
             continue
 
     return None
