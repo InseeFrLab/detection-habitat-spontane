@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
-from utils.satellite_image import SatelliteImage
+from classes.data.satellite_image import SatelliteImage
 from utils.utils import get_indices_from_tile_length
 
 

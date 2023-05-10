@@ -20,6 +20,7 @@ from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
 from classes.optim.losses import CrossEntropy
 from classes.optim.optimizer import generate_optimization_elements
+from data.components.change_detection_dataset import ChangeIsEverywhereDataset
 from data.components.dataset import PleiadeDataset
 from models.components.segmentation_models import DeepLabv3Module
 from models.segmentation_module import SegmentationModule
@@ -162,8 +163,13 @@ def intantiate_dataset(config, list_path_images, list_path_labels):
     Returns:
         A dataset object of the specified type.
     """
-    dataset_dict = {"PLEIADE": PleiadeDataset}
-    dataset_type = config["donnees"]["source train"]
+
+    dataset_dict = {
+        "pleiadeDataset": PleiadeDataset,
+        "changeIsEverywhere": ChangeIsEverywhereDataset,
+    }
+
+    dataset_type = config["donnees"]["dataset"]
 
     # inqtanciation du dataset comple
     if dataset_type not in dataset_dict:
@@ -212,7 +218,7 @@ def intantiate_dataloader(config, list_output_dir):
     # génération des paths en fonction du type de Données
     # (Sentinel, PLEIADES) VS Dataset préannotés
 
-    if config["donnees"]["source train"] in ["PLEIADE", "SENTINEL2"]:
+    if config["donnees"]["source train"] in ["PLEIADES", "SENTINEL2"]:
         list_path_labels = []
         list_path_images = []
         for dir in list_output_dir:
@@ -287,10 +293,7 @@ def instantiate_model(config):
     if module_type not in module_dict:
         raise ValueError("Invalid module type")
 
-    if module_type == "deeplabv3":
-        return module_dict[module_type](nchannel)
-    else:
-        return module_dict[module_type]()
+    return module_dict[module_type](nchannel)
 
 
 def instantiate_loss(config):
@@ -452,7 +455,7 @@ if __name__ == "__main__":
 
 # import os
 
-# list_data_dir = ["../data/PLEIADES/2022/GUADELOUPE/",
+# list_data_dir = ["../data/PLEIADES/2022/MARTINIQUE/"],
 # "../data/PLEIADES/2022/MARTINIQUE/"]
 
 # len(os.listdir(list_data_dir[0]))
@@ -460,8 +463,6 @@ if __name__ == "__main__":
 
 
 # def delete_files_in_dir(dir_path,length_delete):
-#    # Get a list of all the files in the directory
-#  files = os.listdir(dir_path)[:length_delete]
 
 # Loop through the files and delete them
 #    for file in files:
@@ -470,6 +471,6 @@ if __name__ == "__main__":
 #            os.remove(file_path)
 
 
-# delete_files_in_dir(list_data_dir[0], 600)
+# delete_files_in_dir(list_data_dir[0], 1376)
 # delete_files_in_dir(list_data_dir[1], 1350)
 # optimisation filtrage
