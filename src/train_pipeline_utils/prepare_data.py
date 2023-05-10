@@ -7,7 +7,6 @@ from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import Labeler
 from utils.filter import has_cloud, is_too_black2, mask_full_cloud, patch_nocloud
 
-
 def check_labelled_images(output_directory_name):
     """
     checks that there is not already a directory with images and their mask.
@@ -77,7 +76,8 @@ def check_labelled_images(output_directory_name):
 #     # print("Nombre d'images splitées : ", len(list_splitted_images))
 #     return list_splitted_images
 
-
+# src = config_data["source train"]
+# list_images = list_splitted_images
 def filter_images(src, list_images):
     """
     calls the appropriate function according to the data type.
