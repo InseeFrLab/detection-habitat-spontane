@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 
-class CrossEntropy(nn.Module):
+class CrossEntropySelfmade(nn.Module):
     """
     PyTorch module that calculates the cross-entropy loss
     between the predicted output and the target output.

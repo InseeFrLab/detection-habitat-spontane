@@ -15,11 +15,11 @@ from pytorch_lightning.callbacks import (
 )
 from torch.utils.data import DataLoader
 from yaml.loader import SafeLoader
-from train_pipeline_utils.handle_dataset import select_indices_to_split_dataset
 
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
-from classes.optim.losses import CrossEntropy
+from classes.optim.losses import CrossEntropySelfmade
+from torch.nn import CrossEntropyLoss
 from classes.optim.optimizer import generate_optimization_elements
 from data.components.dataset import PleiadeDataset
 from models.components.segmentation_models import DeepLabv3Module
@@ -27,7 +27,7 @@ from models.segmentation_module import SegmentationModule
 from train_pipeline_utils.download_data import load_satellite_data, load_donnees_test
 from train_pipeline_utils.handle_dataset import (
     generate_transform,
-    split_dataset
+    select_indices_to_split_dataset
 )
 
 from train_pipeline_utils.prepare_data import(
@@ -403,7 +403,10 @@ def instantiate_loss(config):
         An optimizer object from the `torch.optim` module.
     """
     loss_type = config["optim"]["loss"]
-    loss_dict = {"crossentropy": CrossEntropy}
+    loss_dict = {
+                "crossentropy": CrossEntropyLoss,
+                "crossentropyselmade": CrossEntropySelfmade
+                }
 
     if loss_type not in loss_dict:
         raise ValueError("Invalid loss type")
