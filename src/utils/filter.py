@@ -155,17 +155,7 @@ def has_cloud(
         True
     """
     
-    copy_image = SatelliteImage( 
-        array = image.array.copy(),
-        crs = image.crs,
-        bounds = image.bounds,
-        transform = image.transform,
-        n_bands = image.n_bands,
-        filename = image.filename,
-        dep = image.dep,
-        date = image.date,
-        normalized = image.normalized
-    )
+    copy_image = image.copy()
     
     if not copy_image.normalized:
         copy_image.normalize()
@@ -235,17 +225,7 @@ def mask_cloud(
         >>> ax.imshow(np.transpose(image_1.array, (1, 2, 0))[:,:,:3])
         >>> ax.imshow(mask, alpha=0.3)
     """
-    copy_image = SatelliteImage( 
-        array = image.array.copy(),
-        crs = image.crs,
-        bounds = image.bounds,
-        transform = image.transform,
-        n_bands = image.n_bands,
-        filename = image.filename,
-        dep = image.dep,
-        date = image.date,
-        normalized = image.normalized
-    )
+    copy_image = image.copy()
     
     if not copy_image.normalized:
         copy_image.normalize()
@@ -270,7 +250,8 @@ def mask_cloud(
     mask = np.zeros_like(labeled)
 
     if num_features >= 1:
-        for i in tqdm(range(1, num_features + 1)):  # Display the progress bar
+        #for i in tqdm(range(1, num_features + 1)):  # Display the progress bar
+        for i in range(1, num_features + 1):
             if region_sizes[sorted_labels[i]] >= min_size:
                 mask[labeled == sorted_labels[i]] = 1
             else:
