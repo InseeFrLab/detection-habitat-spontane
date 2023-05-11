@@ -28,6 +28,9 @@ class CrossEntropy(nn.Module):
             torch.Tensor: The calculated cross-entropy loss.
 
         """
+        target = target.to("cpu")
+        output = output.to("cpu")
+
         target = torch.LongTensor(target)
         criterion = nn.CrossEntropyLoss()
         loss = criterion(output, target)

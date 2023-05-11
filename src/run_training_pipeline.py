@@ -24,7 +24,6 @@ from data.components.dataset import PleiadeDataset
 from models.components.segmentation_models import DeepLabv3Module
 from models.segmentation_module import SegmentationModule
 from train_pipeline_utils.download_data import load_satellite_data, load_donnees_test
-from train_pipeline_utils.prepare_data import write_splitted_images_masks
 from train_pipeline_utils.handle_dataset import (
     generate_transform,
     split_dataset
@@ -41,7 +40,7 @@ from classes.data.satellite_image import SatelliteImage
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
 from utils.utils import update_storage_access, split_array, remove_dot_file
 from rasterio.errors import RasterioIOError
-
+from classes.optim.evaluation_model import evaluer_modele_sur_jeu_de_test_segmentation_pleiade
 
 def download_data(config):
     """
@@ -147,6 +146,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                 else:
                     filename = path.split("/")[-1].split(".")[0] 
                     list_splitted_mask_cloud = None
+
                     if filename in list_name_cloud:
                         mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
                         list_splitted_mask_cloud = split_array(mask_full_cloud, config_data["tile size"])
@@ -520,7 +520,19 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 artifact_path="config.yml"
             )
             trainer.fit(light_module, train_dl, valid_dl)
-            # trainer.test(light_module, test_dl)
+            model = light_module.model
+            tile_size = config["donnees"]["tile size"]
+            batch_size_test = config["optim"]["batch size test"]
+            
+            evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
+                test_dl,
+                model,
+                tile_size,
+                batch_size_test,
+                config["mlflow"]
+                )
+    
+    
     else:
         trainer.fit(light_module, train_dl, valid_dl)
         # trainer.test(light_module, test_dl)
@@ -534,9 +546,9 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
-# remote_server_uri = "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
+# remote_server_uri = "https://projet-slums-detection-200178.user.lab.sspcloud.fr"
 # experiment_name = "segmentation"
-# run_name = "testclem"
+# run_name = "testclem2"
 
 # TO DO :
 # test routine sur S2Looking dataset
