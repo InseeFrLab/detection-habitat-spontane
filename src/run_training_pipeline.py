@@ -66,6 +66,7 @@ def download_data(config):
     src = config_data["source train"]
 
     for year, dep in zip(years, deps):
+        # year, dep = years[0], deps[0]
         output_dir = load_satellite_data(year, dep, src)
         list_output_dir.append(output_dir)
 
@@ -142,7 +143,7 @@ def prepare_data(config, list_data_dir, list_masks_cloud_dir):
 
                 else:
                     filename = path.split("/")[-1].split(".")[0] 
-                    
+                    list_splitted_mask_cloud = None
                     if filename in list_name_cloud:
                         mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
                         list_splitted_mask_cloud = split_array(mask_full_cloud, config_data["tile size"])
@@ -150,8 +151,9 @@ def prepare_data(config, list_data_dir, list_masks_cloud_dir):
                     list_splitted_images = si.split(config_data["tile size"]) 
                     
                     list_filtered_splitted_images = filter_images(
-                        config_data["source train"], list_splitted_images # TO COMPLETE WITH LIST8SPLITTED _MASK CLOUD + PROBLEME d'IMPORT
-
+                        config_data["source train"],
+                        list_splitted_images,
+                        list_splitted_mask_cloud # TO COMPLETE WITH LIST8SPLITTED _MASK CLOUD + PROBLEME d'IMPORT
                     )
 
                     list_filtered_splitted_labeled_images, list_masks = label_images(

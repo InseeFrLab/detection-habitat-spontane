@@ -78,7 +78,7 @@ def check_labelled_images(output_directory_name):
 
 # src = config_data["source train"]
 # list_images = list_splitted_images
-def filter_images(src, list_images):
+def filter_images(src, list_images, list_array_cloud):
     """
     calls the appropriate function according to the data type.
 
@@ -93,12 +93,12 @@ def filter_images(src, list_images):
 
     # print("Entre dans la fonction filter_images")
     if src == "PLEIADES":
-        return filter_images_pleiades(list_images)
+        return filter_images_pleiades(list_images,list_splitted_mask_cloud)
     elif src == "SENTINEL2":
         return filter_images_sentinel2(list_images)
 
 
-def filter_images_pleiades(list_images):
+def filter_images_pleiades(list_images, list_splitted_mask_cloud):
     """
     filters the Pleiades images that are too dark and/or contain clouds.
 
@@ -113,7 +113,11 @@ def filter_images_pleiades(list_images):
     list_filtered_splitted_images = []
 
     for splitted_image in list_images:
-        if not has_cloud(splitted_image):
+        if list_splitted_mask_cloud:
+            if not is_too_black2(splitted_image):
+                if not has_cloud(splitted_image):
+                    list_filtered_splitted_images.append(splitted_image)
+        else:
             if not is_too_black2(splitted_image):
                 list_filtered_splitted_images.append(splitted_image)
 
