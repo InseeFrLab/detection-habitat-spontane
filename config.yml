@@ -8,7 +8,7 @@ donnees:
   n channels train: 3
   n bands: 3
   tile size: 250
-  augmentation: True
+  augmentation: False
   task: "segmentation"
 
 optim:
@@ -16,9 +16,9 @@ optim:
   lr: 0.0001
   momentum: 0.9
   module: "deeplabv3"
-  batch size: 9
+  batch size: 10
   batch size test: 4
-  max epochs: 2
+  max epochs: 50
   val prop: 0.2
 
 mlflow: False
