@@ -33,7 +33,13 @@ def generate_transform(tile_size, augmentation):
     """
     image_size = (tile_size, tile_size)
 
-    transforms_augmentation = None
+    transforms_preprocessing = album.Compose(
+        [
+            album.Resize(*image_size, always_apply=True),
+            album.Normalize(),
+            ToTensorV2(),
+        ]
+    )
 
     if augmentation:
         transforms_augmentation = album.Compose(
@@ -48,13 +54,7 @@ def generate_transform(tile_size, augmentation):
                 ToTensorV2(),
             ]
         )
-
-    transforms_preprocessing = album.Compose(
-        [
-            album.Resize(*image_size, always_apply=True),
-            album.Normalize(),
-            ToTensorV2(),
-        ]
-    )
+    else:
+        transforms_augmentation = transforms_preprocessing
 
     return transforms_augmentation, transforms_preprocessing
