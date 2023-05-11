@@ -15,6 +15,7 @@ from pytorch_lightning.callbacks import (
 )
 from torch.utils.data import DataLoader
 from yaml.loader import SafeLoader
+from train_pipeline_utils.handle_dataset import select_indices_to_split_dataset
 
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
@@ -290,7 +291,8 @@ def instantiate_dataloader(config, list_output_dir):
         list_path_labels = []
         list_path_images = []
         for dir in list_output_dir:
-            labels = os.listdir(dir + "/labels")
+            # dir = list_output_dir[0]
+            labels = os.listdir(dir + "/labels") 
             images = os.listdir(dir + "/images")
 
             list_path_labels = np.concatenate((
@@ -303,12 +305,18 @@ def instantiate_dataloader(config, list_output_dir):
                 np.sort([dir + "/images/" + name for name in images])
             ))
 
+    train_idx, val_idx = select_indices_to_split_dataset(
+        len(list_path_images),
+        config["optim"]["val prop"]
+     )
+    
     # récupération de la classe de Dataset souhaitée
-    full_dataset = instantiate_dataset(
-        config, list_path_images, list_path_labels
+    train_dataset = instantiate_dataset(
+        config, list_path_images[train_idx], list_path_labels[train_idx]
     )
-    train_dataset, valid_dataset = split_dataset(
-        full_dataset, config["optim"]["val prop"]
+
+    valid_dataset = instantiate_dataset(
+        config, list_path_images[val_idx], list_path_labels[val_idx]
     )
 
     # on applique les transforms respectives
@@ -497,7 +505,6 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     light_module = instantiate_lightning_module(config, model)
     trainer = instantiate_trainer(config, light_module)
 
-    # trainer.test(lightning_module,test_dataloader) TO DO
     torch.cuda.empty_cache()
     gc.collect()
 
@@ -515,6 +522,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         # mlflow.pytorch.autolog()
 
         with mlflow.start_run(run_name=run_name):
+            mlflow.autolog()    
             mlflow.log_artifact(
                 "../config.yml",
                 artifact_path="config.yml"
