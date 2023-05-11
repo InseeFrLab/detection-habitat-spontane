@@ -16,6 +16,15 @@ from s3fs import S3FileSystem
 from .mappings import dep_to_crs
 
 
+def remove_dot_file(list_name):
+    #list_name = list_name_image
+    for filename in list_name:
+        if filename[0] == ".":
+            list_name.remove(filename)
+
+    return list_name
+            
+
 def split_array(array, tile_length):
 
     m = array.shape[0]
