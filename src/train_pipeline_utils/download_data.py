@@ -82,6 +82,7 @@ def load_donnees_test(type="segmentation"):
     )
 
     if os.path.exists(path_local):
+        print("le jeu de données test existe déjà")
         return path_local
 
     fs = s3fs.S3FileSystem(

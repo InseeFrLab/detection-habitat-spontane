@@ -93,12 +93,12 @@ def filter_images(src, list_images, list_array_cloud):
 
     # print("Entre dans la fonction filter_images")
     if src == "PLEIADES":
-        return filter_images_pleiades(list_images,list_splitted_mask_cloud)
+        return filter_images_pleiades(list_images,list_array_cloud)
     elif src == "SENTINEL2":
         return filter_images_sentinel2(list_images)
 
 
-def filter_images_pleiades(list_images, list_splitted_mask_cloud):
+def filter_images_pleiades(list_images, list_array_cloud):
     """
     filters the Pleiades images that are too dark and/or contain clouds.
 
@@ -108,16 +108,17 @@ def filter_images_pleiades(list_images, list_splitted_mask_cloud):
     Returns:
         list[SatelliteImage] : the list containing the splitted and filtered data.
     """
-
     # print("Entre dans la fonction filter_images_pleiades")
     list_filtered_splitted_images = []
 
-    for splitted_image in list_images:
-        if list_splitted_mask_cloud:
+    if list_array_cloud:
+        for splitted_image, array_cloud in zip(list_images, list_array_cloud):
             if not is_too_black2(splitted_image):
-                if not has_cloud(splitted_image):
+                prop_cloud = np.sum(array_cloud)/(array_cloud.shape[0])**2
+                if prop_cloud < 0.2:
                     list_filtered_splitted_images.append(splitted_image)
-        else:
+    else:
+        for splitted_image in list_images:
             if not is_too_black2(splitted_image):
                 list_filtered_splitted_images.append(splitted_image)
 
