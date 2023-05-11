@@ -1,32 +1,20 @@
 import albumentations as album
 from albumentations.pytorch.transforms import ToTensorV2
-from torch.utils.data import random_split
+import random
 
 
-def split_dataset(dataset, prop_val):
-    """
-    Splits a given dataset into training and 
-    validation sets based on a given proportion.
+def select_indices_to_split_dataset(len_dataset, prop_val):
 
-    Args:
-        dataset (torch.utils.data.Dataset): The dataset to split.
-        prop_val (float): The proportion of the dataset to use for validation,
-        should be between 0 and 1.
-
-    Returns:
-        (torch.utils.data.Dataset, torch.utils.data.Dataset):
-        A tuple containing the training and validation datasets.
-
-    """
-    val_size = int(prop_val * len(dataset))
-    train_size = len(dataset) - val_size
-
-    dataset_train, dataset_val = random_split(dataset, [train_size, val_size])
-
-    dataset_train = dataset_train.dataset
-    dataset_val = dataset_val.dataset
-
-    return dataset_train, dataset_val
+    num_val_indices = int(prop_val * len_dataset)
+    
+    all_indices = list(range(len_dataset))
+    random.shuffle(all_indices)
+    
+    # Split the shuffled list into train and validation indices
+    val_indices = all_indices[:num_val_indices]
+    train_indices = all_indices[num_val_indices:]
+    
+    return train_indices, val_indices
 
 
 def generate_transform(tile_size, augmentation):

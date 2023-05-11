@@ -6,6 +6,7 @@ from classes.data.labeled_satellite_image import \
 from utils.plot_utils import \
     plot_list_segmentation_labeled_satellite_image
 import os
+import mlflow
 # with open("../config.yml") as f:
 #     config = yaml.load(f, Loader=SafeLoader)
 
@@ -23,7 +24,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
     model,
     tile_size,
     batch_size,
-    mlflow=False
+    use_mlflow=False
 ):
     
     npatch = int((2000/tile_size)**2)
@@ -37,7 +38,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
     list_labeled_satellite_image = []
 
     for idx, batch in enumerate(test_dl):
-    # idx, batch = 0, next(iter(test_dl))   
+        # idx, batch = 0, next(iter(test_dl))   
         print(idx)
         images, label, dic = batch
         
@@ -83,7 +84,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
             fig1.savefig(plot_file)
             list_labeled_satellite_image = []
             
-            if mlflow:
+            if use_mlflow:
                 mlflow.log_artifact(plot_file, artifact_path="plots")
             
         del images, label, dic
