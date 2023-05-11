@@ -188,17 +188,19 @@ def save_images_and_masks(list_images, list_masks, output_directory_name):
     Returns:
         str: The name of the output directory.
     """
+    
 
     # print("Entre dans la fonction save_images_and_masks")
     output_images_path = output_directory_name + "/images"
     output_masks_path = output_directory_name + "/labels"
     i = 0
     for image, mask in zip(list_images, list_masks):
-
-        bb = image.bounds
-
-        filename = str(int(bb[0])) + "_" + str(int(bb[1])) + "_" \
-            + "{:03d}".format(i)
+        # image = list_images[0]
+        #bb = image.bounds
+        
+        #filename = str(bb[0]) + "_" + str(bb[1]) + "_" \
+        #   + "{:03d}".format(i)
+        filename = image.filename.split(".")[0] + "_" + "{:03d}".format(i)
         i = i + 1
         try:
             image.to_raster(output_images_path, filename + ".jp2")
