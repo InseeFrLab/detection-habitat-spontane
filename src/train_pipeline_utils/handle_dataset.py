@@ -3,16 +3,6 @@ from albumentations.pytorch.transforms import ToTensorV2
 from torch.utils.data import random_split
 
 
-def instantiate_dataset_test(config):
-    # charger les exemples tests sur le datalab
-    # change detection ou segmentation et / Sentinele 2 / PLeiade  et ho
-    # récupérer tout le jeu de test
-    # le splitter et le laisser dans l'ordre
-    # save les noms etc et s'arranger pour reconstruire les masques totaux
-    # sur grosses images
-    return None
-
-
 def split_dataset(dataset, prop_val):
     """
     Splits a given dataset into training and 

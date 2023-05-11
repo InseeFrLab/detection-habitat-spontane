@@ -2,7 +2,7 @@ import gc
 import os
 import sys
 from datetime import datetime
-
+from tqdm import tqdm
 import mlflow
 import numpy as np
 import pytorch_lightning as pl
@@ -16,23 +16,31 @@ from pytorch_lightning.callbacks import (
 from torch.utils.data import DataLoader
 from yaml.loader import SafeLoader
 
-from classes.labelers.labeler import RILLabeler
+from classes.data.satellite_image import SatelliteImage
+from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
 from classes.optim.losses import CrossEntropy
 from classes.optim.optimizer import generate_optimization_elements
 from data.components.dataset import PleiadeDataset
 from models.components.segmentation_models import DeepLabv3Module
 from models.segmentation_module import SegmentationModule
-from train_pipeline_utils.download_data import load_pleiade_data, load_donnees_test
-from train_pipeline_utils.prepare_data import write_splitted_images_masks
+from train_pipeline_utils.download_data import load_satellite_data, load_donnees_test
 from train_pipeline_utils.handle_dataset import (
     generate_transform,
     split_dataset
 )
 
+from train_pipeline_utils.prepare_data import(
+    filter_images,
+    label_images,
+    save_images_and_masks,
+    check_labelled_images
+)
+
 from classes.data.satellite_image import SatelliteImage
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
-from utils.utils import update_storage_access
-
+from utils.utils import update_storage_access, split_array, remove_dot_file
+from rasterio.errors import RasterioIOError
+from classes.optim.evaluation_model import evaluer_modele_sur_jeu_de_test_segmentation_pleiade
 
 def download_data(config):
     """
@@ -45,21 +53,33 @@ def download_data(config):
     Returns:
         A list of output directories for each downloaded dataset.
     """
+
+    print("Entre dans la fonction download_data")
     config_data = config["donnees"]
     list_output_dir = []
+    list_masks_cloud_dir = []
+    
+    years = config_data["year"]
+    deps = config_data["dep"]
+    src = config_data["source train"]
 
-    if config_data["source train"] == "PLEIADES":
-        years = config_data["year"]
-        deps = config_data["dep"]
+    for year, dep in zip(years, deps):
+        # year, dep = years[0], deps[0]
+        if src == "PLEIADES":
+            cloud_dir = load_satellite_data(year, dep, "NUAGESPLEIADES")
+            list_masks_cloud_dir.append(cloud_dir)
 
-        for year, dep in zip(years, deps):
-            output_dir = load_pleiade_data(year, dep)
-            list_output_dir.append(output_dir)
+        output_dir = load_satellite_data(year, dep, src)
+        list_output_dir.append(output_dir)
+    
+    print("chargement des données test")
+    test_dir = load_donnees_test(type=config["donnees"]["task"])
 
-    return list_output_dir
+    return list_output_dir, list_masks_cloud_dir, test_dir
 
 
-def prepare_data(config, list_data_dir):
+
+def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     """
     Preprocesses and splits the raw input images 
     into tiles and corresponding masks, 
@@ -75,92 +95,130 @@ def prepare_data(config, list_data_dir):
         the output directories containing the 
         preprocessed tile and mask image files.
     """
-    # load labeler
+
+    print("Entre dans la fonction prepare_data")
     config_data = config["donnees"]
 
     years = config_data["year"]
     deps = config_data["dep"]
+    src = config_data["source train"]
+    labeler = config_data["type labeler"]
 
     list_output_dir = []
-    for i, (year, dep) in enumerate(zip(years, deps)):
-        if config_data["type labeler"] == "RIL":
-            buffer_size = config_data["buffer size"]
-            date = datetime.strptime(str(year) + "0101", "%Y%m%d")
 
+    for i, (year, dep) in enumerate(zip(years, deps)):
+        # i, year , dep = 0,years[0],deps[0]
+        date = datetime.strptime(str(year) + "0101", "%Y%m%d")
+        if labeler == "RIL":
+            buffer_size = config_data["buffer size"]
             labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
-            
-        if config_data["type labeler"] == "BDTOPO":
-            date = datetime.strptime(str(year) + "0101", "%Y%m%d")
+        elif labeler == "BDTOPO":
             labeler = BDTOPOLabeler(date, dep=dep)
 
-        output_dir = "train_data" + dep + "-" + str(year) + "/"
-
-        write_splitted_images_masks(
-            list_data_dir[i],
-            output_dir,
-            labeler,
-            config_data["tile size"],
-            config_data["n channels train"],
-            dep,
+        output_dir = (
+            "../train_data" + "-" + src + "-" + dep + "-" + str(year) + "/"
         )
+
+        if not check_labelled_images(output_dir):
+            
+            if src == "PLEIADES":
+                cloud_dir = list_masks_cloud_dir[i]
+                list_name_cloud = [path.split("/")[-1].split(".")[0] for path in os.listdir(cloud_dir)]
+            
+            dir = list_data_dir[i]
+            list_path = [dir + "/" + filename for filename in os.listdir(dir)]
+            
+            for path in tqdm(list_path):
+                # path = list_path[0]
+                # path  = dir + "/"+ "ORT_2022_0691_1641_U20N_8Bits.jp2"
+                try:
+                    si = SatelliteImage.from_raster(
+                        file_path=path,
+                        dep=dep,
+                        date=date,
+                        n_bands=config_data["n channels train"]
+                    )
+                    
+                except RasterioIOError:
+                    print("Erreur de lecture du fichier " + path)
+                    continue
+
+                else:
+                    filename = path.split("/")[-1].split(".")[0] 
+                    list_splitted_mask_cloud = None
+
+                    if filename in list_name_cloud:
+                        mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
+                        list_splitted_mask_cloud = split_array(mask_full_cloud, config_data["tile size"])
+                        
+                    list_splitted_images = si.split(config_data["tile size"]) 
+                    
+                    list_filtered_splitted_images = filter_images(
+                        config_data["source train"],
+                        list_splitted_images,
+                        list_splitted_mask_cloud 
+                    )
+
+                    list_filtered_splitted_labeled_images, list_masks = label_images(
+                        list_filtered_splitted_images, labeler
+                    )
+
+                    save_images_and_masks(
+                        list_filtered_splitted_labeled_images, list_masks, output_dir
+                    )
+
         list_output_dir.append(output_dir)
 
     return list_output_dir
 
 
-def download_prepare_test(config):
+def prepare_test_data(config,test_dir):
 
-    out_dir  = load_donnees_test(type = config["donnees"]["task"])
-    images_path = out_dir + "/images"
-    labels_path = out_dir + "/masks"
+    images_path = test_dir + "/images"
+    labels_path = test_dir + "/masks"
 
-    list_name_image = np.sort(os.listdir(images_path))
-    list_name_label = np.sort(os.listdir(labels_path))
+    list_name_image = os.listdir(images_path)
+    list_name_label = os.listdir(labels_path)
+
+    list_name_image = np.sort(remove_dot_file(list_name_image))
+    list_name_label = np.sort(remove_dot_file(list_name_label))
 
     list_images_path = [images_path + "/" + name for name in list_name_image]
     list_labels_path = [labels_path + "/" + name for name in list_name_label]
-
+    
     output_test = "../test-data"
     output_images_path = output_test + "/images"
-    output_labels_path = output_test  + "/labels"
+    output_labels_path = output_test + "/labels"
 
     n_bands = config["donnees"]["n bands"]
     tile_size = config["donnees"]["tile size"]
     
     if not os.path.exists(output_labels_path):
         os.makedirs(output_labels_path)
-        
-    for label_path, label_name, image_path, image_name in zip(list_labels_path, list_name_label, list_images_path, list_name_image):
-        if label_name[0] == ".":
-            os.remove(label_path)
-            list_labels_path.remove(label_path)
-            
-        if image_name[0] == ".":
-            os.remove(image_path)
-            list_images_path.remove(image_path)
-        
-    for image_path, label_path, name in zip(list_images_path, list_labels_path, list_name_image):
-        si = SatelliteImage.from_raster(
-            file_path=image_path, dep=None, date=None, n_bands=n_bands
-        )
-        mask = np.load(label_path)
+    else:
+        return None
 
-        list_satellite_image  = si.split(tile_size)
+    for image_path, label_path, name in zip(
+        list_images_path,
+        list_labels_path,
+        list_name_image
+        ):
 
         si = SatelliteImage.from_raster(
             file_path=image_path, dep=None, date=None, n_bands=n_bands
         )
         mask = np.load(label_path)
-        lsi = SegmentationLabeledSatelliteImage(si,mask,"","")
+
+        lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
         list_lsi = lsi.split(tile_size)
 
         for i, lsi in enumerate(list_lsi):
-                file_name_i = name.split(".")[0] + "_" + str(i)
-                #if !os.path.exists(""):
-                lsi.satellite_image.to_raster(
-                    output_images_path, file_name_i + ".jp2"
-                    )
-                np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
+            file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+            
+            lsi.satellite_image.to_raster(
+                output_images_path, file_name_i + ".jp2"
+                )
+            np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
 
 
 def instantiate_dataset(config, list_path_images, list_path_labels):
@@ -276,7 +334,7 @@ def instantiate_dataloader(config, list_output_dir):
     # Gestion datset test
     output_test = "../test-data"
     output_images_path = output_test + "/images/"
-    output_labels_path = output_test  + "/labels/"
+    output_labels_path = output_test + "/labels/"
 
     list_name_image = os.listdir(output_images_path)
     list_name_label = os.listdir(output_labels_path)
@@ -288,7 +346,7 @@ def instantiate_dataloader(config, list_output_dir):
         config, list_path_images, list_path_labels
     )
     
-    dataset_test.transforms =  t_preproc
+    dataset_test.transforms = t_preproc
     
     batch_size_test = config["optim"]["batch size test"]
     test_dataloader = DataLoader(
@@ -422,12 +480,17 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     with open("../config.yml") as f:
         config = yaml.load(f, Loader=SafeLoader)
 
-    list_data_dir = download_data(config)
-    list_output_dir = prepare_data(config, list_data_dir)
+    list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
 
+    # list_data_dir = ["../data/PLEIADES/2022/MARTINIQUE"]
+    # list_masks_cloud_dir = ["../data/NUAGESPLEIADES/2022/MARTINIQUE"]
+    
+    list_output_dir = prepare_train_data(config, list_data_dir, list_masks_cloud_dir)
+    prepare_test_data(config, test_dir)
+    
     model = instantiate_model(config)
 
-    train_dl, valid_dl, test_dl = intantiate_dataloader(
+    train_dl, valid_dl, test_dl = instantiate_dataloader(
         config, list_output_dir
     )
 
@@ -438,6 +501,10 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     torch.cuda.empty_cache()
     gc.collect()
 
+    # remote_server_uri = "https://projet-slums-detection-200178.user.lab.sspcloud.fr"
+    # experiment_name = "segmentation"
+    # run_name = "testclem2"
+
     if config["mlflow"]:
 
         update_storage_access()
@@ -445,15 +512,27 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         mlflow.end_run()
         mlflow.set_tracking_uri(remote_server_uri)
         mlflow.set_experiment(experiment_name)
-      #  mlflow.pytorch.autolog()
-        
+        # mlflow.pytorch.autolog()
+
         with mlflow.start_run(run_name=run_name):
             mlflow.log_artifact(
                 "../config.yml",
                 artifact_path="config.yml"
             )
             trainer.fit(light_module, train_dl, valid_dl)
-            # trainer.test(light_module, test_dl)
+            model = light_module.model
+            tile_size = config["donnees"]["tile size"]
+            batch_size_test = config["optim"]["batch size test"]
+            
+            evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
+                test_dl,
+                model,
+                tile_size,
+                batch_size_test,
+                config["mlflow"]
+                )
+    
+    
     else:
         trainer.fit(light_module, train_dl, valid_dl)
         # trainer.test(light_module, test_dl)
@@ -466,41 +545,29 @@ if __name__ == "__main__":
     run_name = sys.argv[3]
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
-   
 
-#remote_server_uri = "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
-#experiment_name = "segmentation"
-#run_name = "testclem"
+# remote_server_uri = "https://projet-slums-detection-200178.user.lab.sspcloud.fr"
+# experiment_name = "segmentation"
+# run_name = "testclem2"
 
 # TO DO :
-# préparer Test exemples
-# indicateur nombre de zones détectées dans l'image
-# IOU
-# visu
 # test routine sur S2Looking dataset
 
 # diminution du nombre d'images DL : pour test
 
 # import os
 
-# list_data_dir = ["../data/PLEIADES/2022/GUADELOUPE/",
-# "../data/PLEIADES/2022/MARTINIQUE/"]
-
-# len(os.listdir(list_data_dir[0]))
-# len(os.listdir(list_data_dir[1]))
+# list_data_dir = ["../data/PLEIADES/2022/MARTINIQUE/"]
 
 
 # def delete_files_in_dir(dir_path,length_delete):
 #    # Get a list of all the files in the directory
 #  files = os.listdir(dir_path)[:length_delete]
 
-    # Loop through the files and delete them
-#    for file in files:
+#  for file in files:
 #        file_path = os.path.join(dir_path, file)
 #        if os.path.isfile(file_path):
 #            os.remove(file_path)
 
 
 # delete_files_in_dir(list_data_dir[0], 600)
-# delete_files_in_dir(list_data_dir[1], 1350)
-# optimisation filtrage

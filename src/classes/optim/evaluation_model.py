@@ -25,7 +25,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
     batch_size,
     mlflow=False
 ):
-
+    
     npatch = int((2000/tile_size)**2)
     nbatchforfullimage = int(npatch/batch_size)
 
@@ -37,10 +37,15 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
     list_labeled_satellite_image = []
 
     for idx, batch in enumerate(test_dl):
-       
+    # idx, batch = 0, next(iter(test_dl))   
+        print(idx)
         images, label, dic = batch
+        
+        model = model.to("cuda:0")
+        images = images.to("cuda:0")
+        
         output_model = model(images)
-        mask_pred = np.array(torch.argmax(output_model, axis=1))
+        mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
 
         for i in range(batch_size):
             pthimg = dic["pathimage"][i]

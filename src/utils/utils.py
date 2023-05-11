@@ -12,7 +12,29 @@ import rasterio
 import yaml
 from affine import Affine
 from s3fs import S3FileSystem
-from utils.mappings import dep_to_crs
+
+from .mappings import dep_to_crs
+
+
+def remove_dot_file(list_name):
+    #list_name = list_name_image
+    for filename in list_name:
+        if filename[0] == ".":
+            list_name.remove(filename)
+
+    return list_name
+            
+
+def split_array(array, tile_length):
+
+    m = array.shape[0]
+    n = array.shape[1]
+    
+    indices = get_indices_from_tile_length(m, n, tile_length)
+    
+    list_array = [array[rows[0] : rows[1], cols[0] : cols[1]] for rows, cols in indices]
+
+    return list_array
 
 
 def get_root_path() -> Path:
@@ -138,6 +160,7 @@ def load_ril(
     Returns:
         gpd.GeoDataFrame: RIL GeoDataFrame.
     """
+    update_storage_access()
     environment = get_environment()
     fs = get_file_system()
 
@@ -263,3 +286,4 @@ def update_storage_access():
         del os.environ["AWS_SESSION_TOKEN"]
     except KeyError:
         pass
+
