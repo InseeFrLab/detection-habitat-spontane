@@ -546,6 +546,17 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     
     else:
         trainer.fit(light_module, train_dl, valid_dl)
+        model = light_module.model
+        tile_size = config["donnees"]["tile size"]
+        batch_size_test = config["optim"]["batch size test"]
+            
+        evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
+                test_dl,
+                model,
+                tile_size,
+                batch_size_test,
+                config["mlflow"]
+            )
         # trainer.test(light_module, test_dl)
 
 
