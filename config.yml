@@ -1,9 +1,9 @@
 donnees:
-  source train: "SENTINEL2"
+  source train: "PLEIADES"
   dataset: "changeIsEverywhere"
   year: [2022]
   dep: ["972"]
-  type labeler: "RIL"
+  type labeler: "BDTOPO"
   buffer size: 10
   n channels train: 6
   n bands: 3

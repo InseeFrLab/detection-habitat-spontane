@@ -93,10 +93,6 @@ def filter_images_pleiades(list_images):
         # "Nombre d'images splitées et filtrées (nuages et sombres) : ",
         # len(list_filtered_splitted_images),
     # )
-    print(
-        "Nombre d'images splitées et filtrées (nuages et sombres) : ",
-        len(list_filtered_splitted_images),
-    )
     return list_filtered_splitted_images
 
 
@@ -176,12 +172,12 @@ def save_images_and_masks(list_images, list_masks, output_directory_name):
         i = i + 1
         try:
             image.to_raster(
-                output_images_path, str(list_images.index(image)) + ".jp2"
+                output_images_path, filename + ".jp2"
             )
             np.save(
                 output_masks_path
                 + "/"
-                + str(list_images.index(image))
+                + filename
                 + ".npy",
                 mask,
             )

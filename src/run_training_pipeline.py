@@ -401,8 +401,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     with open("../config.yml") as f:
         config = yaml.load(f, Loader=SafeLoader)
 
-    # list_data_dir = download_data(config)
-    list_data_dir = ['/home/onyxia/work/detection-habitat-spontane/data/SENTINEL2/MARTINIQUE/TUILES_2022']
+    list_data_dir = download_data(config)
     list_output_dir = prepare_data(config, list_data_dir)
     return list_output_dir
 
