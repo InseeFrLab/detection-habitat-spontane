@@ -1,18 +1,9 @@
 import os
-import shutil
 
 import numpy as np
 import rasterio
 
 from utils.filter import has_cloud, is_too_black2
-from classes.data.satellite_image import SatelliteImage
-from classes.labelers.labeler import Labeler
-from utils.filter import (
-    has_cloud,
-    is_too_black2,
-    mask_full_cloud,
-    patch_nocloud,
-)
 
 
 def check_labelled_images(output_directory_name):
@@ -89,10 +80,6 @@ def filter_images_pleiades(list_images):
             if not is_too_black2(splitted_image):
                 list_filtered_splitted_images.append(splitted_image)
 
-    # print(
-        # "Nombre d'images splitées et filtrées (nuages et sombres) : ",
-        # len(list_filtered_splitted_images),
-    # )
     return list_filtered_splitted_images
 
 
@@ -166,19 +153,13 @@ def save_images_and_masks(list_images, list_masks, output_directory_name):
     output_masks_path = output_directory_name + "/labels"
     i = 0
     for image, mask in zip(list_images, list_masks):
-
         bb = image.bounds
         filename = str(int(bb[0])) + "_" + str(int(bb[1])) + "_" + str(i)
         i = i + 1
         try:
-            image.to_raster(
-                output_images_path, filename + ".jp2"
-            )
+            image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
             np.save(
-                output_masks_path
-                + "/"
-                + filename
-                + ".npy",
+                output_masks_path + "/" + filename + ".npy",
                 mask,
             )
 

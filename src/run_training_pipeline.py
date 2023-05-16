@@ -2,7 +2,7 @@ import gc
 import os
 import sys
 from datetime import datetime
-from tqdm import tqdm
+
 import mlflow
 import numpy as np
 import pytorch_lightning as pl
@@ -13,11 +13,13 @@ from pytorch_lightning.callbacks import (
     LearningRateMonitor,
     ModelCheckpoint,
 )
+from rasterio.errors import RasterioIOError
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 from yaml.loader import SafeLoader
 
-from classes.data.satellite_image import SatelliteImage
 import train_pipeline_utils.handle_dataset as hd
+from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
 from classes.optim.losses import CrossEntropy
 from classes.optim.optimizer import generate_optimization_elements
@@ -33,7 +35,6 @@ from train_pipeline_utils.prepare_data import (
     save_images_and_masks,
 )
 from utils.utils import update_storage_access
-from rasterio.errors import RasterioIOError
 
 
 def download_data(config):
@@ -123,7 +124,7 @@ def prepare_data(config, list_data_dir):
                         file_path=path,
                         dep=dep,
                         date=date,
-                        n_bands=config_data["n bands"]
+                        n_bands=config_data["n bands"],
                     )
 
                 except RasterioIOError:
@@ -137,15 +138,15 @@ def prepare_data(config, list_data_dir):
                         config_data["source train"], list_splitted_images
                     )
 
-                    list_filtered_splitted_labeled_images, list_masks = \
-                        label_images(
-                            list_filtered_splitted_images, labeler
-                        )
+                    (
+                        list_filtered_splitted_labeled_images,
+                        list_masks,
+                    ) = label_images(list_filtered_splitted_images, labeler)
 
                     save_images_and_masks(
                         list_filtered_splitted_labeled_images,
                         list_masks,
-                        output_dir
+                        output_dir,
                     )
 
         list_output_dir.append(output_dir)
@@ -403,7 +404,6 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     list_data_dir = download_data(config)
     list_output_dir = prepare_data(config, list_data_dir)
-    return list_output_dir
 
     model = instantiate_model(config)
 
