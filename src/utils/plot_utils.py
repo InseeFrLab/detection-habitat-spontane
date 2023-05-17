@@ -425,3 +425,59 @@ def plot_square_images(
                     list_images_path.append(image.filename)
 
         plot_list_satellite_images(list_images, bands_indices)
+
+        
+def plot_list_images_square(folder_path, borne_inf,borne_sup):
+    
+    """
+    Plot a square grid of images from a folder. You must specify a lower limit and an upper limit,
+    to be able to display the images of the folder between these two limits. The difference of the
+    two bounds must be a square number to obtain a list of images of square length.
+
+    Args:
+        folder_path (str): Path to the folder containing the images.
+        borne_inf (int): Lower bound index for selecting images.
+        borne_sup (int): Upper bound index for selecting images.
+
+    Returns:
+        Plot of the images.
+    """
+    
+    list_filepaths = os.listdir(folder_path)[borne_inf:borne_sup+1]
+    size = int(math.sqrt(len(list_filepaths)))
+    bands_indices = [0,1,2]
+
+    list_images = []
+
+    for filepath in tqdm(list_filepaths):
+
+    # Retrieve left-top coordinates of all images
+            image = SatelliteImage.from_raster(
+                    folder_path + "/" + filepath,
+                    date = None, 
+                    n_bands = 3,
+                    dep =None
+                )
+            image.normalize()
+            list_images.append(image)
+
+    mat_list_images = np.transpose(np.array(list_images).reshape(size,size))
+
+
+    # Create a figure and axes
+    fig, axs = plt.subplots(nrows=size, ncols=size, figsize=(20,20))
+
+    # Iterate over the grid of masks and plot them
+    for i in range(size):
+        for j in range(size):
+            axs[i, j].imshow(
+                mat_list_images[i, j].array.transpose(1,2,0)
+            )
+
+    # Remove any unused axes
+    for i in range(size):
+        for j in range(size):
+            axs[i, j].set_axis_off()
+
+    # Show the plot
+    plt.show()
