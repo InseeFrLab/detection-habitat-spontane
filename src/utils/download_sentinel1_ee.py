@@ -93,10 +93,7 @@ def export_s1(DOM, AOIs, EPSGs, start_date, end_date):
     )
 
     upload_satelliteImages(
-        path_local,
-        f"{bucket}/{path_s3}",
-        f"{DEPs[DOM.upper()]}",
-        250,
+        path_local, f"{bucket}/{path_s3}", f"{DEPs[DOM.upper()]}", 250, 1
     )
 
     shutil.rmtree(path_local, ignore_errors=True)
@@ -124,7 +121,7 @@ def exportToMinio(image, rpath):
     return fs.put(image, rpath, True)
 
 
-def upload_satelliteImages(lpath, rpath, dep, dim):
+def upload_satelliteImages(lpath, rpath, dep, dim, n_bands):
     """
     Transforms a raster in a SatelliteImage and calls a function\
         that uploads it on MinIO and deletes it locally.
@@ -144,7 +141,7 @@ def upload_satelliteImages(lpath, rpath, dep, dim):
         images_paths[i] = lpath + "/" + images_paths[i]
 
     list_satellite_images = [
-        SatelliteImage.from_raster(filename, dep=dep, n_bands=1)
+        SatelliteImage.from_raster(filename, dep=dep, n_bands=n_bands)
         for filename in tqdm(images_paths)
     ]
 
