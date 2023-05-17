@@ -201,7 +201,11 @@ class SatelliteImage:
         )
 
     def to_raster(
-        self, directory_name: str, file_name: str, format: str, proj: None
+        self,
+        directory_name: str,
+        file_name: str,
+        format: str = "jp2",
+        proj=None,
     ) -> None:
         """
         calls a function to save a SatelliteImage Object into a raster file\
@@ -219,6 +223,8 @@ class SatelliteImage:
             to_raster_jp2(self, directory_name, file_name)
         elif format == "tif":
             to_raster_tif(self, directory_name, file_name, proj)
+        else:
+            raise ValueError('`format` must be either "jp2" or "tif"')
 
 
 def to_raster_jp2(self, directory_name: str, file_name: str):
