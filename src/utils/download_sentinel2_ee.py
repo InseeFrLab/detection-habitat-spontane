@@ -3,12 +3,10 @@ import shutil
 
 import ee
 import geemap
-import hvac
-import s3fs
-from osgeo import gdal
-from tqdm import tqdm
+from download_sentinel1_ee import upload_satelliteImages
 
-from classes.data.satellite_image import SatelliteImage
+import utils.mappings
+from utils.utils import get_environment, get_root_path, update_storage_access
 
 service_account = (
     "slums-detection-sa@ee-insee-sentinel.iam.gserviceaccount.com"
@@ -37,7 +35,8 @@ def get_s2_sr_cld_col(aoi, start_date, end_date):
         .filterDate(start_date, end_date)
     )
 
-    # Join the filtered s2cloudless collection to the SR collection by the 'system:index' property.
+    # Join the filtered s2cloudless collection to the SR collection
+    # by the 'system:index' property.
     return ee.ImageCollection(
         ee.Join.saveFirst("s2cloudless").apply(
             **{
@@ -69,7 +68,8 @@ def add_shadow_bands(img):
     # Identify water pixels from the SCL band.
     not_water = img.select("SCL").neq(6)
 
-    # Identify dark NIR pixels that are not water (potential cloud shadow pixels).
+    # Identify dark NIR pixels that are not water
+    # (potential cloud shadow pixels).
     SR_BAND_SCALE = 1e4
     dark_pixels = (
         img.select("B8")
@@ -78,12 +78,14 @@ def add_shadow_bands(img):
         .rename("dark_pixels")
     )
 
-    # Determine the direction to project cloud shadow from clouds (assumes UTM projection).
+    # Determine the direction to project cloud shadow from clouds
+    # (assumes UTM projection).
     shadow_azimuth = ee.Number(90).subtract(
         ee.Number(img.get("MEAN_SOLAR_AZIMUTH_ANGLE"))
     )
 
-    # Project shadows from clouds for the distance specified by the CLD_PRJ_DIST input.
+    # Project shadows from clouds for the distance specified
+    # by the CLD_PRJ_DIST input.
     cld_proj = (
         img.select("clouds")
         .directionalDistanceTransform(shadow_azimuth, CLD_PRJ_DIST * 10)
@@ -114,8 +116,11 @@ def add_cld_shdw_mask(img):
         .gt(0)
     )
 
-    # Remove small cloud-shadow patches and dilate remaining pixels by BUFFER input.
-    # 20 m scale is for speed, and assumes clouds don't require 10 m precision.
+    # Remove small cloud-shadow patches and
+    # dilate remaining pixels by BUFFER input.
+
+    # 20 m scale is for speed,
+    # and assumes clouds don't require 10 m precision.
     is_cld_shdw = (
         is_cld_shdw.focalMin(2)
         .focalMax(BUFFER * 2 / 20)
@@ -147,7 +152,43 @@ def export_s2_no_cloud(
     cld_prj_dist,
     buffer,
 ):
-    AOI = ee.Geometry.BBox(**AOIs[DOM])
+    """
+    Downloads the images locally and calls a function that\
+        uplaods them on MinIO.
+
+    Args:
+        DOM: name of the DOM.
+        AOIs: western, southern, eastern and northern boudaries of the DOMs.
+        EPSGs: EPSGs of the DOMs.
+        start_date: date from which the images can be downloaded.
+        end_date: date after which the images can no longer be downloaded.
+        cloud_filter: maximum image cloud cover percent allowed\
+            in image collection.
+        cloud_prb_thresh: cloud probability (%); values greater than\
+            are considered cloud.
+        nir_drk_thresh: near-infrared reflectance; values less than\
+            are considered potential cloud shadow.
+        cld_prj_dist: maximum distance (km) to search for cloud shadows\
+            from cloud edges.
+        buffer: distance (m) to dilate the edge of cloud-identified objects.
+    """
+
+    update_storage_access()
+    root_path = get_root_path()
+    environment = get_environment()
+
+    bucket = environment["bucket"]
+    path_s3 = environment["sources"]["SENTINEL2"][int(start_date[0:4])][
+        DEPs[DOM.upper()]
+    ]
+    path_local = os.path.join(
+        root_path,
+        environment["local-path"]["SENTINEL2"][int(start_date[0:4])][
+            DEPs[DOM.upper()]
+        ],
+    )
+
+    AOI = ee.Geometry.BBox(**AOIs[DOM.upper()])
     s2_sr_cld_col = get_s2_sr_cld_col(AOI, START_DATE, END_DATE)
     s2_sr_median = (
         s2_sr_cld_col.map(add_cld_shdw_mask).map(apply_cld_shdw_mask).median()
@@ -157,193 +198,81 @@ def export_s2_no_cloud(
     geemap.download_ee_image_tiles(
         s2_sr_median,
         fishnet,
-        f"{DOM}_{start_date[0:4]}/",
+        path_local,
         prefix="data_",
-        crs=f"EPSG:{EPSGs[DOM]}",
+        crs=f"EPSG:{EPSGs[DOM.upper()]}",
         scale=10,
         num_threads=50,
     )
 
     upload_satelliteImages(
-        f"{DOM}_{start_date[0:4]}",
-        f"projet-slums-detection/Donnees/SENTINEL2/{DOM.upper()}/TUILES_{start_date[0:4]}",
-        250,
+        path_local, f"{bucket}/{path_s3}", DEPs[DOM.upper()], 250, 12
     )
 
-    shutil.rmtree(f"{DOM}_{start_date[0:4]}", ignore_errors=True)
+    shutil.rmtree(path_local, ignore_errors=True)
 
 
-def exportToMinio(image, rpath):
-    client = hvac.Client(
-        url="https://vault.lab.sspcloud.fr", token=os.environ["VAULT_TOKEN"]
-    )
+if __name__ == "__main__":
+    EPSGs = utils.mappings.name_dep_to_crs
+    DEPs = utils.mappings.name_dep_to_num_dep
+    AOIs = utils.mappings.name_dep_to_aoi
 
-    secret = os.environ["VAULT_MOUNT"] + os.environ["VAULT_TOP_DIR"] + "/s3"
-    mount_point, secret_path = secret.split("/", 1)
-    secret_dict = client.secrets.kv.read_secret_version(
-        path=secret_path, mount_point=mount_point
-    )
+    START_DATE = "2021-05-01"
+    END_DATE = "2021-09-01"
+    CLOUD_FILTER = 60
+    CLD_PRB_THRESH = 40
+    NIR_DRK_THRESH = 0.15
+    CLD_PRJ_DIST = 2
+    BUFFER = 50
 
-    os.environ["AWS_ACCESS_KEY_ID"] = secret_dict["data"]["data"][
-        "ACCESS_KEY_ID"
-    ]
-    os.environ["AWS_SECRET_ACCESS_KEY"] = secret_dict["data"]["data"][
-        "SECRET_ACCESS_KEY"
-    ]
+    # export_s2_no_cloud(
+    #     "Guadeloupe",
+    #     AOIs,
+    #     EPSGs,
+    #     START_DATE,
+    #     END_DATE,
+    #     CLOUD_FILTER,
+    #     CLD_PRB_THRESH,
+    #     NIR_DRK_THRESH,
+    #     CLD_PRJ_DIST,
+    #     BUFFER,
+    # )
 
-    try:
-        del os.environ["AWS_SESSION_TOKEN"]
-    except KeyError:
-        pass
+    # export_s2_no_cloud(
+    #     "Martinique",
+    #     AOIs,
+    #     EPSGs,
+    #     START_DATE,
+    #     END_DATE,
+    #     CLOUD_FILTER,
+    #     CLD_PRB_THRESH,
+    #     NIR_DRK_THRESH,
+    #     CLD_PRJ_DIST,
+    #     BUFFER,
+    # )
 
-    fs = s3fs.S3FileSystem(
-        client_kwargs={"endpoint_url": "https://" + "minio.lab.sspcloud.fr"},
-        key=os.environ["AWS_ACCESS_KEY_ID"],
-        secret=os.environ["AWS_SECRET_ACCESS_KEY"],
-    )
+    # export_s2_no_cloud(
+    #     "Mayotte",
+    #     AOIs,
+    #     EPSGs,
+    #     START_DATE,
+    #     END_DATE,
+    #     CLOUD_FILTER,
+    #     CLD_PRB_THRESH,
+    #     NIR_DRK_THRESH,
+    #     CLD_PRJ_DIST,
+    #     BUFFER,
+    # )
 
-    return fs.put(image, rpath, True)
-
-
-def upload_satelliteImages(lpath, rpath, dim):
-    images_paths = os.listdir(lpath)
-
-    for i in range(len(images_paths)):
-        images_paths[i] = lpath + "/" + images_paths[i]
-
-    list_satelliteImages = [
-        SatelliteImage.from_raster(filename, dep="973", n_bands=13)
-        for filename in tqdm(images_paths)
-    ]
-
-    splitted_list_images = [
-        im
-        for sublist in tqdm(list_satelliteImages)
-        for im in sublist.split(dim)
-    ]
-
-    for i in range(len(splitted_list_images)):
-        image = splitted_list_images[i]
-
-        transf = image.transform
-        in_ds = gdal.Open(images_paths[1])
-        proj = in_ds.GetProjection()
-
-        array = image.array
-
-        driver = gdal.GetDriverByName("GTiff")
-        out_ds = driver.Create(
-            f"image{i}.tif",
-            array.shape[2],
-            array.shape[1],
-            array.shape[0],
-            gdal.GDT_Float64,
-        )
-        out_ds.SetGeoTransform(
-            [transf[2], transf[0], transf[1], transf[5], transf[3], transf[4]]
-        )
-        out_ds.SetProjection(proj)
-
-        for j in range(array.shape[0]):
-            out_ds.GetRasterBand(j + 1).WriteArray(array[j, :, :])
-
-        out_ds = None
-
-        exportToMinio(f"image{i}.tif", rpath)
-        os.remove(f"image{i}.tif")
-
-
-AOIs = {
-    "Guadeloupe": {
-        "west": -61.811124,
-        "south": 15.828534,
-        "east": -60.998518,
-        "north": 16.523944,
-    },
-    "Martinique": {
-        "west": -61.264617,
-        "south": 14.378599,
-        "east": -60.781573,
-        "north": 14.899453,
-    },
-    "Mayotte": {
-        "west": 45.013633,
-        "south": -13.006619,
-        "east": 45.308891,
-        "north": -12.633022,
-    },
-    "Guyane": {
-        "west": -52.883,
-        "south": 4.148,
-        "east": -51.813,
-        "north": 5.426,
-    },
-}
-
-EPSGs = {
-    "Guadeloupe": "4559",
-    "Martinique": "4559",
-    "Mayotte": "4471",
-    "Guyane": "4235",
-}
-
-START_DATE = "2022-05-01"
-END_DATE = "2022-09-01"
-CLOUD_FILTER = 60
-CLD_PRB_THRESH = 40
-NIR_DRK_THRESH = 0.15
-CLD_PRJ_DIST = 2
-BUFFER = 50
-
-
-# export_s2_no_cloud(
-#     "Guadeloupe",
-#     AOIs,
-#     EPSGs,
-#     START_DATE,
-#     END_DATE,
-#     CLOUD_FILTER,
-#     CLD_PRB_THRESH,
-#     NIR_DRK_THRESH,
-#     CLD_PRJ_DIST,
-#     BUFFER,
-# )
-
-export_s2_no_cloud(
-    "Martinique",
-    AOIs,
-    EPSGs,
-    START_DATE,
-    END_DATE,
-    CLOUD_FILTER,
-    CLD_PRB_THRESH,
-    NIR_DRK_THRESH,
-    CLD_PRJ_DIST,
-    BUFFER,
-)
-
-# export_s2_no_cloud(
-#     "Mayotte",
-#     AOIs,
-#     EPSGs,
-#     START_DATE,
-#     END_DATE,
-#     CLOUD_FILTER,
-#     CLD_PRB_THRESH,
-#     NIR_DRK_THRESH,
-#     CLD_PRJ_DIST,
-#     BUFFER,
-# )
-
-# export_s2_no_cloud(
-#     "Guyane",
-#     AOIs,
-#     EPSGs,
-#     START_DATE,
-#     END_DATE,
-#     CLOUD_FILTER,
-#     CLD_PRB_THRESH,
-#     NIR_DRK_THRESH,
-#     CLD_PRJ_DIST,
-#     BUFFER,
-# )
+    # export_s2_no_cloud(
+    #     "Guyane",
+    #     AOIs,
+    #     EPSGs,
+    #     START_DATE,
+    #     END_DATE,
+    #     CLOUD_FILTER,
+    #     CLD_PRB_THRESH,
+    #     NIR_DRK_THRESH,
+    #     CLD_PRJ_DIST,
+    #     BUFFER,
+    # )

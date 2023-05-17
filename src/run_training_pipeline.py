@@ -2,7 +2,7 @@ import gc
 import os
 import sys
 from datetime import datetime
-from tqdm import tqdm
+
 import mlflow
 import numpy as np
 import pytorch_lightning as pl
@@ -13,9 +13,12 @@ from pytorch_lightning.callbacks import (
     LearningRateMonitor,
     ModelCheckpoint,
 )
+from rasterio.errors import RasterioIOError
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 from yaml.loader import SafeLoader
 
+import train_pipeline_utils.handle_dataset as hd
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
 from classes.optim.losses import CrossEntropy
@@ -25,19 +28,14 @@ from data.components.dataset import PleiadeDataset
 from models.components.segmentation_models import DeepLabv3Module
 from models.segmentation_module import SegmentationModule
 from train_pipeline_utils.download_data import load_satellite_data
-from train_pipeline_utils.handle_dataset import (
-    generate_transform, 
-    split_dataset
-)
-from train_pipeline_utils.prepare_data import (  # , write_splitted_images_mask
+from train_pipeline_utils.prepare_data import (
     check_labelled_images,
     filter_images,
     label_images,
     save_images_and_masks,
-    split_images,
 )
 from utils.utils import update_storage_access
-from rasterio.errors import RasterioIOError
+
 
 def download_data(config):
     """
@@ -94,56 +92,66 @@ def prepare_data(config, list_data_dir):
     list_output_dir = []
 
     for i, (year, dep) in enumerate(zip(years, deps)):
-        # i, year , dep= 0,years[0],deps[0]
+        output_dir = (
+            "train_data"
+            + "-"
+            + src
+            + "-"
+            + labeler
+            + "-"
+            + dep
+            + "-"
+            + str(year)
+            + "/"
+        )
+
         date = datetime.strptime(str(year) + "0101", "%Y%m%d")
+
         if labeler == "RIL":
             buffer_size = config_data["buffer size"]
             labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
         elif labeler == "BDTOPO":
             labeler = BDTOPOLabeler(date, dep=dep)
-
-        output_dir = (
-            "train_data" + "-" + src + "-" + dep + "-" + str(year) + "/"
-        )
+            print(labeler.labeling_data.shape)
 
         if not check_labelled_images(output_dir):
-            
-            # list_splitted_images = split_images(
-            #     list_data_dir[i], config_data["n channels train"]
-            # )
             dir = list_data_dir[i]
             list_path = [dir + "/" + filename for filename in os.listdir(dir)]
-            
+
             for path in tqdm(list_path):
-                # path = list_path[0]
                 try:
                     si = SatelliteImage.from_raster(
                         file_path=path,
                         dep=dep,
                         date=date,
-                        n_bands=config_data["n channels train"]
+                        n_bands=config_data["n bands"],
                     )
-                
+
                 except RasterioIOError:
                     print("Errerur de lecture du fichier " + path)
                     continue
 
                 else:
-                    list_splitted_images = si.split(config_data["tile size"]) 
-                    
+                    list_splitted_images = si.split(config_data["tile size"])
+
                     list_filtered_splitted_images = filter_images(
                         config_data["source train"], list_splitted_images
                     )
 
-                    list_filtered_splitted_labeled_images, list_masks = label_images(
-                        list_filtered_splitted_images, labeler
-                    )
+                    (
+                        list_filtered_splitted_labeled_images,
+                        list_masks,
+                    ) = label_images(list_filtered_splitted_images, labeler)
 
                     save_images_and_masks(
-                        list_filtered_splitted_labeled_images, list_masks, output_dir
+                        list_filtered_splitted_labeled_images,
+                        list_masks,
+                        output_dir,
                     )
 
         list_output_dir.append(output_dir)
+        nb = len(os.listdir(output_dir + "/images"))
+        print(str(nb) + " couples images/masques retenus")
 
     return list_output_dir
 
@@ -243,14 +251,14 @@ def intantiate_dataloader(config, list_output_dir):
     full_dataset = intantiate_dataset(
         config, list_path_images, list_path_labels
     )
-    train_dataset, valid_dataset = split_dataset(
+    train_dataset, valid_dataset = hd.split_dataset(
         full_dataset, config["optim"]["val prop"]
     )
 
     # on applique les transforms respectives
     augmentation = config["donnees"]["augmentation"]
     tile_size = config["donnees"]["tile size"]
-    t_aug, t_preproc = generate_transform(tile_size, augmentation)
+    t_aug, t_preproc = hd.generate_transform(tile_size, augmentation)
     train_dataset.transforms = t_aug
     valid_dataset.transforms = t_preproc
 
@@ -395,13 +403,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         config = yaml.load(f, Loader=SafeLoader)
 
     list_data_dir = download_data(config)
-    # list_data_dir = ['/home/onyxia/work/detection-habitat-spontane/data/PLEIADES/2022/MARTINIQUE']
-    # list_data_dir = ['/home/onyxia/work/detection-habitat-spontane/data/SENTINEL2/MAYOTTE/TUILES_2022']
-    # list_data_dir = [
-    #     "/home/onyxia/work/detection-habitat-spontane/data/PLEIADES/2022/GUYANE"
-    # ]
     list_output_dir = prepare_data(config, list_data_dir)
-  
+
     model = instantiate_model(config)
 
     train_dl, valid_dl, test_dl = intantiate_dataloader(
@@ -440,7 +443,8 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
-# remote_server_uri = "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
+# remote_server_uri =
+# "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
 # experiment_name = "segmentation"
 # run_name = "testclem"
 

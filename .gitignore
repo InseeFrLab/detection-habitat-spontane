@@ -133,3 +133,5 @@ dmypy.json
 /data/
 GCP_credentials.json
 *.tif
+*.jp2
+*.npy
