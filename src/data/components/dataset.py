@@ -87,6 +87,7 @@ class PleiadeDataset(Dataset):
         self,
         list_paths_images: List,
         list_paths_labels: List,
+        n_bands: int,
         transforms: Optional[Compose] = None,
     ):
         """
@@ -100,6 +101,7 @@ class PleiadeDataset(Dataset):
         self.list_paths_images = list_paths_images
         self.list_paths_labels = list_paths_labels
         self.transforms = transforms
+        self.n_bands = n_bands
 
     def __getitem__(self, idx):
         """_summary_
@@ -112,12 +114,13 @@ class PleiadeDataset(Dataset):
         """
         if torch.is_tensor(idx):
             idx = idx.tolist()
-
+        #pathim = "../train_data-SENTINEL2-976-2022/506990_8564970_70_000.jp2"
+        #pathlabel = "../train_data-SENTINEL2-976-2022/506990_8564970_70_000.npy"
         pathim = self.list_paths_images[idx]
         pathlabel = self.list_paths_labels[idx]
-
+        
         img = SatelliteImage.from_raster(
-            file_path=pathim, dep=None, date=None, n_bands=3
+            file_path=pathim, dep=None, date=None, n_bands=self.n_bands
         ).array
 
         img = np.transpose(img.astype(float), [1, 2, 0])
