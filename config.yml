@@ -4,7 +4,7 @@ donnees:
   year: [2022]
   dep: ["972"]
   type labeler: "BDTOPO"
-  buffer size: None
+  buffer size: 10
   n channels train: 6
   n bands: 3
   tile size: 250
