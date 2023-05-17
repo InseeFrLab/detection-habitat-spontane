@@ -456,13 +456,17 @@ def instantiate_trainer(config, lightning_module):
     """
     # def callbacks
     checkpoint_callback = ModelCheckpoint(
-        monitor="validation_loss", save_top_k=1, save_last=True, mode="max"
+        monitor="validation_loss", save_top_k=1, save_last=True, mode="min"
+    )
+
+    checkpoint_callback_IOU = ModelCheckpoint(
+        monitor="validation_IOU", save_top_k=1, save_last=True, mode="max"
     )
     early_stop_callback = EarlyStopping(
-        monitor="validation_loss", mode="max", patience=3
+        monitor="validation_loss", mode="min", patience=20
     )
     lr_monitor = LearningRateMonitor(logging_interval="step")
-    list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback]
+    list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback, checkpoint_callback_IOU]
 
     strategy = "auto"
 
@@ -542,7 +546,6 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 batch_size_test,
                 config["mlflow"]
                 )
-    
     
     else:
         trainer.fit(light_module, train_dl, valid_dl)
