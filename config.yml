@@ -1,14 +1,14 @@
 donnees:
-  source train: "PLEIADES"
-  dataset: "PLEIADE"
+  source train: "SENTINEL2"
+  dataset: "PLEIADE" 
   year: [2022]
-  dep: ["972"]
+  dep: ["976"]
   type labeler: "RIL"
   buffer size: 10
-  n channels train: 3
-  n bands: 3
+  n channels train: 12
+  n bands: 12
   tile size: 250
-  augmentation: True
+  augmentation: False
   task: "segmentation"
 
 optim:
@@ -16,9 +16,10 @@ optim:
   lr: 0.0001
   momentum: 0.9
   module: "deeplabv3"
-  batch size: 13
+  batch size: 4
   batch size test: 4
   max epochs: 50
   val prop: 0.2
+  accumulate batch : 4
 
-mlflow: False
+mlflow: True

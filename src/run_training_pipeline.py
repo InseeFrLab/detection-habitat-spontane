@@ -121,7 +121,8 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
         )
 
         if not check_labelled_images(output_dir):
-            
+
+            list_name_cloud = []
             if src == "PLEIADES":
                 cloud_dir = list_masks_cloud_dir[i]
                 list_name_cloud = [path.split("/")[-1].split(".")[0] for path in os.listdir(cloud_dir)]
@@ -175,51 +176,53 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
 
 def prepare_test_data(config,test_dir):
 
-    images_path = test_dir + "/images"
-    labels_path = test_dir + "/masks"
+    if config["donnees"]["source train"] == "PLEIADES":
 
-    list_name_image = os.listdir(images_path)
-    list_name_label = os.listdir(labels_path)
+        images_path = test_dir + "/images"
+        labels_path = test_dir + "/masks"
 
-    list_name_image = np.sort(remove_dot_file(list_name_image))
-    list_name_label = np.sort(remove_dot_file(list_name_label))
+        list_name_image = os.listdir(images_path)
+        list_name_label = os.listdir(labels_path)
 
-    list_images_path = [images_path + "/" + name for name in list_name_image]
-    list_labels_path = [labels_path + "/" + name for name in list_name_label]
-    
-    output_test = "../test-data"
-    output_images_path = output_test + "/images"
-    output_labels_path = output_test + "/labels"
+        list_name_image = np.sort(remove_dot_file(list_name_image))
+        list_name_label = np.sort(remove_dot_file(list_name_label))
 
-    n_bands = config["donnees"]["n bands"]
-    tile_size = config["donnees"]["tile size"]
-    
-    if not os.path.exists(output_labels_path):
-        os.makedirs(output_labels_path)
-    else:
-        return None
+        list_images_path = [images_path + "/" + name for name in list_name_image]
+        list_labels_path = [labels_path + "/" + name for name in list_name_label]
+        
+        output_test = "../test-data"
+        output_images_path = output_test + "/images"
+        output_labels_path = output_test + "/labels"
 
-    for image_path, label_path, name in zip(
-        list_images_path,
-        list_labels_path,
-        list_name_image
-        ):
+        n_bands = config["donnees"]["n bands"]
+        tile_size = config["donnees"]["tile size"]
+        
+        if not os.path.exists(output_labels_path):
+            os.makedirs(output_labels_path)
+        else:
+            return None
 
-        si = SatelliteImage.from_raster(
-            file_path=image_path, dep=None, date=None, n_bands=n_bands
-        )
-        mask = np.load(label_path)
+        for image_path, label_path, name in zip(
+            list_images_path,
+            list_labels_path,
+            list_name_image
+            ):
 
-        lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
-        list_lsi = lsi.split(tile_size)
+            si = SatelliteImage.from_raster(
+                file_path=image_path, dep=None, date=None, n_bands=n_bands
+            )
+            mask = np.load(label_path)
 
-        for i, lsi in enumerate(list_lsi):
-            file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
-            
-            lsi.satellite_image.to_raster(
-                output_images_path, file_name_i + ".jp2"
-                )
-            np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
+            lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
+            list_lsi = lsi.split(tile_size)
+
+            for i, lsi in enumerate(list_lsi):
+                file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+                
+                lsi.satellite_image.to_raster(
+                    output_images_path, file_name_i + ".jp2"
+                    )
+                np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
 
 
 def instantiate_dataset(config, list_path_images, list_path_labels):
@@ -244,8 +247,10 @@ def instantiate_dataset(config, list_path_images, list_path_labels):
     if dataset_type not in dataset_dict:
         raise ValueError("Invalid dataset type")
     else:
-        full_dataset = dataset_dict[dataset_type](
-            list_path_images, list_path_labels
+        dataset_select = dataset_dict[dataset_type]
+
+        full_dataset = dataset_select(
+            list_path_images, list_path_labels, config["donnees"]["n channels train"]
         )
 
     return full_dataset
@@ -322,7 +327,12 @@ def instantiate_dataloader(config, list_output_dir):
     # on applique les transforms respectives
     augmentation = config["donnees"]["augmentation"]
     tile_size = config["donnees"]["tile size"]
-    t_aug, t_preproc = generate_transform(tile_size, augmentation)
+
+    if config["donnees"]["source train"] == "PLEIADES":
+        t_aug, t_preproc = generate_transform(tile_size, augmentation)
+    else:
+        t_aug, t_preproc = None, None
+
     train_dataset.transforms = t_aug
     valid_dataset.transforms = t_preproc
 
@@ -456,13 +466,17 @@ def instantiate_trainer(config, lightning_module):
     """
     # def callbacks
     checkpoint_callback = ModelCheckpoint(
-        monitor="validation_loss", save_top_k=1, save_last=True, mode="max"
+        monitor="validation_loss", save_top_k=1, save_last=True, mode="min"
+    )
+
+    checkpoint_callback_IOU = ModelCheckpoint(
+        monitor="validation_IOU", save_top_k=1, save_last=True, mode="max"
     )
     early_stop_callback = EarlyStopping(
-        monitor="validation_loss", mode="max", patience=3
+        monitor="validation_loss", mode="min", patience=20
     )
     lr_monitor = LearningRateMonitor(logging_interval="step")
-    list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback]
+    list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback, checkpoint_callback_IOU]
 
     strategy = "auto"
 
@@ -472,6 +486,7 @@ def instantiate_trainer(config, lightning_module):
         num_sanity_val_steps=2,
         strategy=strategy,
         log_every_n_steps=2,
+        accumulate_grad_batches=config["optim"]["accumulate batch"]
     )
 
     return trainer
@@ -504,16 +519,17 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     train_dl, valid_dl, test_dl = instantiate_dataloader(
         config, list_output_dir
     )
-
+    # train_dl.dataset[0][0].shape
     light_module = instantiate_lightning_module(config, model)
     trainer = instantiate_trainer(config, light_module)
 
     torch.cuda.empty_cache()
     gc.collect()
 
-    # remote_server_uri = "https://projet-slums-detection-200178.user.lab.sspcloud.fr"
+    # remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"
     # experiment_name = "segmentation"
-    # run_name = "testclem2"
+    # run_name = "testjudith"
+
 
     if config["mlflow"]:
 
@@ -535,28 +551,29 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             tile_size = config["donnees"]["tile size"]
             batch_size_test = config["optim"]["batch size test"]
             
-            evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
-                test_dl,
-                model,
-                tile_size,
-                batch_size_test,
-                config["mlflow"]
-                )
-    
+            if config["donnees"]["source train"] == "PLEIADES":
+                evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
+                        test_dl,
+                        model,
+                        tile_size,
+                        batch_size_test,
+                        config["mlflow"]
+                    )
     
     else:
         trainer.fit(light_module, train_dl, valid_dl)
         model = light_module.model
         tile_size = config["donnees"]["tile size"]
         batch_size_test = config["optim"]["batch size test"]
-            
-        evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
-                test_dl,
-                model,
-                tile_size,
-                batch_size_test,
-                config["mlflow"]
-            )
+        
+        if config["donnees"]["source train"] == "PLEIADES":
+            evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
+                    test_dl,
+                    model,
+                    tile_size,
+                    batch_size_test,
+                    config["mlflow"]
+                )
         # trainer.test(light_module, test_dl)
 
 
