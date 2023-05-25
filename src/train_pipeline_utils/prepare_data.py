@@ -78,6 +78,8 @@ def check_labelled_images(output_directory_name):
 
 # src = config_data["source train"]
 # list_images = list_splitted_images
+
+
 def filter_images(src, list_images, list_array_cloud):
     """
     calls the appropriate function according to the data type.
@@ -188,7 +190,6 @@ def save_images_and_masks(list_images, list_masks, output_directory_name):
     Returns:
         str: The name of the output directory.
     """
-    
 
     # print("Entre dans la fonction save_images_and_masks")
     output_images_path = output_directory_name + "/images"
@@ -197,13 +198,13 @@ def save_images_and_masks(list_images, list_masks, output_directory_name):
     for image, mask in zip(list_images, list_masks):
         # image = list_images[0]
         #bb = image.bounds
-        
+
         #filename = str(bb[0]) + "_" + str(bb[1]) + "_" \
         #   + "{:03d}".format(i)
         filename = image.filename.split(".")[0] + "_" + "{:03d}".format(i)
         i = i + 1
         try:
-            image.to_raster(output_images_path, filename + ".jp2")
+            image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
             np.save(output_masks_path + "/" + filename + ".npy", mask)
         except rasterio._err.CPLE_AppDefinedError:
             print("Writing error")
@@ -212,4 +213,3 @@ def save_images_and_masks(list_images, list_masks, output_directory_name):
     # nb = len(os.listdir(output_directory_name + "/images"))
     # print(str(nb) + " couples images/masques retenus")
     return None
-
