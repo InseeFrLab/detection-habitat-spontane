@@ -528,7 +528,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     # remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"
     # experiment_name = "segmentation"
-    # run_name = "testjudith"
+    # run_name = "testclem"
 
 
     if config["mlflow"]:
@@ -552,6 +552,18 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             batch_size_test = config["optim"]["batch size test"]
             
             if config["donnees"]["source train"] == "PLEIADES":
+
+                light_module_checkpoint = light_module.load_from_checkpoint(
+                    loss = instantiate_loss(config),
+                    checkpoint_path=trainer.checkpoint_callback.best_model_path, # je créé un module qui charge
+                    model=light_module.model,
+                    optimizer=light_module.optimizer,
+                    optimizer_params=light_module.optimizer_params,
+                    scheduler=light_module.scheduler,
+                    scheduler_params=light_module.scheduler_params,
+                    scheduler_interval=light_module.scheduler_interval
+
+                )
                 evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
                         test_dl,
                         model,
@@ -567,6 +579,21 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         batch_size_test = config["optim"]["batch size test"]
         
         if config["donnees"]["source train"] == "PLEIADES":
+
+            light_module_checkpoint = light_module.load_from_checkpoint(
+                loss = instantiate_loss(config),
+                checkpoint_path=trainer.checkpoint_callback.best_model_path, # je créé un module qui charge
+                model=light_module.model,
+                optimizer=light_module.optimizer,
+                optimizer_params=light_module.optimizer_params,
+                scheduler=light_module.scheduler,
+                scheduler_params=light_module.scheduler_params,
+                scheduler_interval=light_module.scheduler_interval
+
+                )
+            
+            model = light_module_checkpoint.model   
+
             evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
                     test_dl,
                     model,
