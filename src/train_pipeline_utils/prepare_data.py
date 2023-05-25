@@ -13,8 +13,8 @@ def check_labelled_images(output_directory_name):
     if it doesn't exist, it is created.
 
     Args:
-        output_directory_name: a string representing the path to the directory \
-        that may already contain data and masks.
+        output_directory_name: a string representing the path to \
+            the directory that may already contain data and masks.
 
     Returns:
         boolean: True if the directory exists and is not empty. \
@@ -35,50 +35,13 @@ def check_labelled_images(output_directory_name):
         print("The directory exists but is empty.")
         return False
     else:
-        print("The directory doesn't exist and is going to be created.")
         os.makedirs(output_images_path)
         os.makedirs(output_masks_path)
         print("Directory created")
         return False
 
 
-# def split_images(file_path, n_bands):
-#     """
-#     splits the images if they are not already at the expected size.
-
-#     Args:
-#         file path: a string representing the path to the directory \
-#         that contains the data to be splitted.
-#         n_bands: an integer representing the number of \
-#         bands in the input images.
-
-#     Returns:
-#         list[SatelliteImage] : the list containing the splitted data.
-#     """
-
-#     # print("Entre dans la fonction split_images")
-#     list_name = os.listdir(file_path)
-#     list_path = [file_path + "/" + name for name in list_name]
-
-#     list_images = [
-#         SatelliteImage.from_raster(
-#             file_path=path, dep=None, date=None, n_bands=n_bands
-#         )
-#         for path in list_path
-#     ]
-
-#     if list_images[0].array.shape[1] != 250:
-#         list_splitted_images = [image.split(250) for image in list_images]
-#         list_splitted_images = sum(list_splitted_images, [])
-#     else:
-#         list_splitted_images = list_images
-
-#     # print("Nombre d'images splitées : ", len(list_splitted_images))
-#     return list_splitted_images
-
-# src = config_data["source train"]
-# list_images = list_splitted_images
-def filter_images(src, list_images, list_array_cloud):
+def filter_images(src, list_images):
     """
     calls the appropriate function according to the data type.
 
@@ -106,7 +69,8 @@ def filter_images_pleiades(list_images, list_array_cloud):
         list_images : the list containing the splitted data to be filtered.
 
     Returns:
-        list[SatelliteImage] : the list containing the splitted and filtered data.
+        list[SatelliteImage] : the list containing the splitted \
+            and filtered data.
     """
     # print("Entre dans la fonction filter_images_pleiades")
     list_filtered_splitted_images = []
@@ -122,10 +86,6 @@ def filter_images_pleiades(list_images, list_array_cloud):
             if not is_too_black(splitted_image):
                 list_filtered_splitted_images.append(splitted_image)
 
-    # print(
-    #     "Nombre d'images splitées et filtrées (nuages et sombres) : ",
-    #     len(list_filtered_splitted_images),
-    # )
     return list_filtered_splitted_images
 
 
@@ -170,7 +130,12 @@ def label_images(list_images, labeler):
             list_filtered_splitted_labeled_images.append(satellite_image)
             list_masks.append(mask)
 
-    # print(len(list_filtered_splitted_labeled_images), len(list_masks))
+    # print(
+    #     "Nombre d'images labelisées : ",
+    #     len(list_filtered_splitted_labeled_images),
+    #     ", Nombre de masques : ",
+    #     len(list_masks),
+    # )
     return list_filtered_splitted_labeled_images, list_masks
 
 
@@ -203,13 +168,15 @@ def save_images_and_masks(list_images, list_masks, output_directory_name):
         filename = image.filename.split(".")[0] + "_" + "{:03d}".format(i)
         i = i + 1
         try:
-            image.to_raster(output_images_path, filename + ".jp2")
-            np.save(output_masks_path + "/" + filename + ".npy", mask)
+            image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
+            np.save(
+                output_masks_path + "/" + filename + ".npy",
+                mask,
+            )
+
         except rasterio._err.CPLE_AppDefinedError:
-            print("Writing error")
+            # except:
+            print("Writing error", image.filename)
             continue
 
-    # nb = len(os.listdir(output_directory_name + "/images"))
-    # print(str(nb) + " couples images/masques retenus")
     return None
-

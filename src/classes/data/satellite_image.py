@@ -11,6 +11,7 @@ import numpy as np
 import rasterio
 import rasterio.plot as rp
 import torch
+from osgeo import gdal
 
 from utils.utils import (
     get_bounds_for_tiles,
@@ -218,36 +219,97 @@ class SatelliteImage:
             normalized,
         )
 
-    def to_raster(self, directory_name: str, file_name: str) -> None:
+    def to_raster(
+        self,
+        directory_name: str,
+        file_name: str,
+        format: str = "jp2",
+        proj=None,
+    ) -> None:
         """
-        save a SatelliteImage Object into a raster file (.tif)
+        calls a function to save a SatelliteImage Object into a raster file\
+            according to the raster type desired (.tif or .jp2).
 
         Args:
             directory_name: a string representing the name of the directory \
             where the output file should be saved.
             file_name: a string representing the name of the output file.
+            format: a string representing the raster type desired.
+            proj: the projection to assign to the raser.
         """
 
-        data = self.array
-        crs = self.crs
-        transform = self.transform
-        n_bands = self.n_bands
+        if format == "jp2":
+            to_raster_jp2(self, directory_name, file_name)
+        elif format == "tif":
+            to_raster_tif(self, directory_name, file_name, proj)
+        else:
+            raise ValueError('`format` must be either "jp2" or "tif"')
 
-        metadata = {
-            "dtype": data.dtype,
-            "count": n_bands,
-            "width": data.shape[2],
-            "height": data.shape[1],
-            "crs": crs,
-            "transform": transform,
-            "driver": "JP2OpenJPEG",
-            "compress": "jp2k",
-            "interleave": "pixel",
-        }
 
-        if not os.path.exists(directory_name):
-            os.makedirs(directory_name)
+def to_raster_jp2(self, directory_name: str, file_name: str):
+    """
+    save a SatelliteImage Object into a raster file (.tif)
 
-        file = directory_name + "/" + file_name
-        with rasterio.open(file, "w", **metadata) as dst:
-            dst.write(data, indexes=np.arange(n_bands) + 1)
+    Args:
+        directory_name: a string representing the name of the directory \
+        where the output file should be saved.
+        file_name: a string representing the name of the output file.
+    """
+
+    data = self.array
+    crs = self.crs
+    transform = self.transform
+    n_bands = self.n_bands
+
+    metadata = {
+        "dtype": "uint16",
+        "count": n_bands,
+        "width": data.shape[2],
+        "height": data.shape[1],
+        "crs": crs,
+        "transform": transform,
+        "driver": "JP2OpenJPEG",
+        "compress": "jp2k",
+        "interleave": "pixel",
+    }
+
+    if not os.path.exists(directory_name):
+        os.makedirs(directory_name)
+
+    file = directory_name + "/" + file_name
+    with rasterio.open(file, "w", **metadata) as dst:
+        dst.write(data, indexes=np.arange(n_bands) + 1)
+
+
+def to_raster_tif(self, directory_name: str, filename: str, proj):
+    """
+    save a SatelliteImage Object into a raster file (.tif)
+
+    Args:
+        directory_name: a string representing the name of the directory \
+        where the output file should be saved.
+        file_name: a string representing the name of the output file.
+        proj: the projection to assign to the raser.
+    """
+
+    transf = self.transform
+
+    array = self.array
+
+    driver = gdal.GetDriverByName("GTiff")
+    out_ds = driver.Create(
+        filename + ".tif",
+        array.shape[2],
+        array.shape[1],
+        array.shape[0],
+        gdal.GDT_Float64,
+    )
+    out_ds.SetGeoTransform(
+        [transf[2], transf[0], transf[1], transf[5], transf[3], transf[4]]
+    )
+    out_ds.SetProjection(proj)
+
+    for j in range(array.shape[0]):
+        out_ds.GetRasterBand(j + 1).WriteArray(array[j, :, :])
+
+    out_ds = None
