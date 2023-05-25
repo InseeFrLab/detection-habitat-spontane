@@ -2,7 +2,7 @@ import gc
 import os
 import sys
 from datetime import datetime
-from tqdm import tqdm
+
 import mlflow
 import numpy as np
 import pytorch_lightning as pl
@@ -13,9 +13,12 @@ from pytorch_lightning.callbacks import (
     LearningRateMonitor,
     ModelCheckpoint,
 )
+from rasterio.errors import RasterioIOError
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 from yaml.loader import SafeLoader
 
+import train_pipeline_utils.handle_dataset as hd
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
 from classes.optim.losses import CrossEntropySelfmade
@@ -109,7 +112,21 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
 
     for i, (year, dep) in enumerate(zip(years, deps)):
         # i, year , dep = 0,years[0],deps[0]
+        output_dir = (
+            "train_data"
+            + "-"
+            + src
+            + "-"
+            + labeler
+            + "-"
+            + dep
+            + "-"
+            + str(year)
+            + "/"
+        )
+
         date = datetime.strptime(str(year) + "0101", "%Y%m%d")
+
         if labeler == "RIL":
             buffer_size = config_data["buffer size"]
             labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
@@ -129,7 +146,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
             
             dir = list_data_dir[i]
             list_path = [dir + "/" + filename for filename in os.listdir(dir)]
-            
+
             for path in tqdm(list_path):
                 # path = list_path[0]
                 # path  = dir + "/"+ "ORT_2022_0691_1641_U20N_8Bits.jp2"
@@ -138,7 +155,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                         file_path=path,
                         dep=dep,
                         date=date,
-                        n_bands=config_data["n channels train"]
+                        n_bands=config_data["n bands"],
                     )
                     
                 except RasterioIOError:
@@ -161,15 +178,20 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                         list_splitted_mask_cloud 
                     )
 
-                    list_filtered_splitted_labeled_images, list_masks = label_images(
-                        list_filtered_splitted_images, labeler
-                    )
+                    (
+                        list_filtered_splitted_labeled_images,
+                        list_masks,
+                    ) = label_images(list_filtered_splitted_images, labeler)
 
                     save_images_and_masks(
-                        list_filtered_splitted_labeled_images, list_masks, output_dir
+                        list_filtered_splitted_labeled_images,
+                        list_masks,
+                        output_dir,
                     )
 
         list_output_dir.append(output_dir)
+        nb = len(os.listdir(output_dir + "/images"))
+        print(str(nb) + " couples images/masques retenus")
 
     return list_output_dir
 
@@ -613,6 +635,8 @@ if __name__ == "__main__":
 
 
 # remote_server_uri = "https://projet-slums-detection-200178.user.lab.sspcloud.fr"
+# remote_server_uri =
+# "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
 # experiment_name = "segmentation"
 # run_name = "testclem2"
 
