@@ -41,7 +41,7 @@ def check_labelled_images(output_directory_name):
         return False
 
 
-def filter_images(src, list_images):
+def filter_images(src, list_images,list_array_cloud = None):
     """
     calls the appropriate function according to the data type.
 
