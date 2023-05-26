@@ -133,10 +133,6 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
         elif labeler == "BDTOPO":
             labeler = BDTOPOLabeler(date, dep=dep)
 
-        output_dir = (
-            "../train_data" + "-" + src + "-" + dep + "-" + str(year) + "/"
-        )
-
         if not check_labelled_images(output_dir):
 
             list_name_cloud = []
@@ -634,7 +630,7 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
-# remote_server_uri = "https://projet-slums-detection-200178.user.lab.sspcloud.fr"
+# remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"
 # remote_server_uri =
 # "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
 # experiment_name = "segmentation"
