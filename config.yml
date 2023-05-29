@@ -3,7 +3,7 @@ donnees:
   dataset: "PLEIADE" 
   year: [2022]
   dep: ["972"]
-  type labeler: "BDTOPO"
+  type labeler: "RIL"
   buffer size: 10
   n channels train: 3
   n bands: 3
@@ -20,6 +20,6 @@ optim:
   batch size test: 4
   max epochs: 50
   val prop: 0.2
-  accumulate batch : 4
+  accumulate batch : 1
 
 mlflow: True
