@@ -140,14 +140,16 @@ def write_splitted_images_masks(file_path,output_directory_name,labeler,tile_siz
         list_satellite_image = big_satellite_image.split(tile_size)
         list_satellite_image = [im for im in list_satellite_image if not is_too_black(im)]
         # mettre le filtre is too black ici !!!
+        compteur_j =0
         for i, satellite_image in enumerate(list_satellite_image):
                 
             mask = labeler.create_segmentation_label(satellite_image) 
-            file_name_i = file_name.split(".")[0]+"_"+ "{:03d}".format(i)
             if(np.sum(mask) == 0): # je dégage les masques vides j'écris pasd
                 continue
-            to_raster(satellite_image,output_images_path, file_name_i + ".tif")
-            np.save(output_masks_path+"/"+file_name_i+".npy",mask) # save
+            file_name_j = file_name.split(".")[0]+"_"+ "{:03d}".format(compteur_j)
+            compteur_j = compteur_j + 1
+            to_raster(satellite_image,output_images_path, file_name_j + ".tif")
+            np.save(output_masks_path+"/"+file_name_j+".npy",mask) # save
 
 
 satellite_image = SatelliteImage.from_raster(
@@ -198,5 +200,73 @@ dataset = PleiadeDataset(list_path_images,list_path_labels)
 
 
 
+
+# comparaison des outputs dans les dossiers de train
+import os
+import numpy as np
+list_image_now =np.sort(os.listdir("train_data-PLEIADES-RIL-972-2022eee"+"/images"))
+list_image_before =np.sort(os.listdir("../splitted_data2"+"/images"))
+
+len(list_image_before)
+len(list_image_now)
+
+list_image_now = [name.split(".")[0] for name in list_image_now]
+list_image_before = [name.split(".")[0] for name in list_image_before]
+
+
+images_avant_pas_apres = [im for im in list_image_before if im not in list_image_now]
+images_apres_pas_avant = [im for im in list_image_now if im not in list_image_before]
+
+
+len(images_avant_pas_apres) # la diff ça devrait être les nuages ?
+len(images_apres_pas_avant)
+
+exemple = "../splitted_data2"+"/images/"+images_avant_pas_apres[20]+".tif"
+
+from classes.data.satellite_image import SatelliteImage
+satellite_image = SatelliteImage.from_raster(
+        file_path = exemple,
+        dep = None,
+        date = None,
+        n_bands= 3)
+
+import matplotlib.pyplot as plt
+satellite_image.plot([0,1,2])
+res = plt.gcf()
+res.savefig("exemple2.png")
+
+
+
+len(os.listdir(output_directory_name+"/images"))
+
 # TO DO observer kles résultats et observer également les différences. entre fichiers
 # produire une labeled
+
+
+update_storage_access()
+os.environ["MLFLOW_S3_ENDPOINT_URL"] = "https://minio.lab.sspcloud.fr"
+mlflow.set_tracking_uri("https://projet-slums-detection-874257.user.lab.sspcloud.fr")
+
+run_id = "6a8f70d2eb8644b79b006b963a45e425"
+model_uri = f"runs:/{run_id}/restored_model_checkpoint/epoch=28-step=23113.ckpt"
+
+# Load the model from the .ckpt file
+model = mlflow.pytorch.load_model(model_uri, map_location=torch.device('cpu'))
+
+
+
+# j'ouvre le fichier modèle qui emande depplab macvhin
+
+
+# Load the checkpoint file
+import torch
+path = "../epoch=28-step=23113.ckpt"
+checkpoint = torch.load(path)
+
+# Access the contents of the checkpoint
+model_state_dict = checkpoint['model_state_dict']
+optimizer_state_dict = checkpoint['optimizer_state_dict']
+epoch = checkpoint['epoch']
+
+model = DeepLabv3M()
+model.load_state_dict(model_state_dict)

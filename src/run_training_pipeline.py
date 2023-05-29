@@ -532,6 +532,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     list_output_dir = prepare_train_data(config, list_data_dir, list_masks_cloud_dir)
     prepare_test_data(config, test_dir)
     
+    # list_output_dir = ["../splitted_data2"]
     model = instantiate_model(config)
 
     train_dl, valid_dl, test_dl = instantiate_dataloader(
@@ -546,7 +547,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     # remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"
     # experiment_name = "segmentation"
-    # run_name = "testclem"
+    # run_name = "deeplabv3V41"
 
 
     if config["mlflow"]:
