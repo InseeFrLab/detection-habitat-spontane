@@ -178,8 +178,11 @@ from datetime import datetime
 date = datetime.strptime("20220101",'%Y%m%d')
 print(date)
 labeler = RILLabeler(date, dep = dep, buffer_size = 10) 
-output_directory_name = "../splitted_data2"
 
+#from classes.labelers.labeler import BDTOPOLabeler
+#labeler = BDTOPOLabeler(date, dep = dep) 
+
+output_directory_name = "../splitted_data2"
 write_splitted_images_masks(file_path,output_directory_name,labeler,tile_size,n_bands,dep)
 
 # 1 min pour 250 -> 4min pour 1000, ça se tente un peu lionguet mais 
