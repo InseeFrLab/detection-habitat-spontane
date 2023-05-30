@@ -2,7 +2,7 @@ import gc
 import os
 import sys
 from datetime import datetime
-from tqdm import tqdm
+
 import mlflow
 import numpy as np
 import pytorch_lightning as pl
@@ -13,36 +13,42 @@ from pytorch_lightning.callbacks import (
     LearningRateMonitor,
     ModelCheckpoint,
 )
+from rasterio.errors import RasterioIOError
+from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 from yaml.loader import SafeLoader
 
+from classes.data.labeled_satellite_image import (  # noqa: E501
+    SegmentationLabeledSatelliteImage,
+)
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
+from classes.optim.evaluation_model import (
+    evaluer_modele_sur_jeu_de_test_segmentation_pleiade,
+)
 from classes.optim.losses import CrossEntropySelfmade
-from torch.nn import CrossEntropyLoss
 from classes.optim.optimizer import generate_optimization_elements
-from data.components.dataset import PleiadeDataset, Sentinel2Dataset
+from data.components.dataset import PleiadeDataset, SentinelDataset
 from models.components.segmentation_models import DeepLabv3Module
 from models.segmentation_module import SegmentationModule
-from train_pipeline_utils.download_data import load_satellite_data, load_donnees_test
+from train_pipeline_utils.download_data import (
+    load_2satellites_data,
+    load_donnees_test,
+    load_satellite_data,
+)
 from train_pipeline_utils.handle_dataset import (
     generate_transform_pleiades,
-    generate_transform_sentinel2,
-    select_indices_to_split_dataset
+    generate_transform_sentinel,
+    select_indices_to_split_dataset,
 )
-
-from train_pipeline_utils.prepare_data import(
+from train_pipeline_utils.prepare_data import (
+    check_labelled_images,
     filter_images,
     label_images,
     save_images_and_masks,
-    check_labelled_images
 )
-
-from classes.data.satellite_image import SatelliteImage
-from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
-from utils.utils import update_storage_access, split_array, remove_dot_file
-from rasterio.errors import RasterioIOError
-from classes.optim.evaluation_model import evaluer_modele_sur_jeu_de_test_segmentation_pleiade
+from utils.utils import remove_dot_file, split_array, update_storage_access
 
 
 def download_data(config):
@@ -71,8 +77,11 @@ def download_data(config):
         if src == "PLEIADES":
             cloud_dir = load_satellite_data(year, dep, "NUAGESPLEIADES")
             list_masks_cloud_dir.append(cloud_dir)
-
-        output_dir = load_satellite_data(year, dep, src)
+            output_dir = load_satellite_data(year, dep, src)
+        elif src == "SENTINEL1-2":
+            output_dir = load_2satellites_data(year, dep, src)
+        else:
+            output_dir = load_satellite_data(year, dep, src)
         list_output_dir.append(output_dir)
 
     print("chargement des données test")
@@ -121,11 +130,13 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
         )
 
         if not check_labelled_images(output_dir):
-
             list_name_cloud = []
             if src == "PLEIADES":
                 cloud_dir = list_masks_cloud_dir[i]
-                list_name_cloud = [path.split("/")[-1].split(".")[0] for path in os.listdir(cloud_dir)]
+                list_name_cloud = [
+                    path.split("/")[-1].split(".")[0]
+                    for path in os.listdir(cloud_dir)
+                ]
 
             dir = list_data_dir[i]
             list_path = [dir + "/" + filename for filename in os.listdir(dir)]
@@ -138,7 +149,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                         file_path=path,
                         dep=dep,
                         date=date,
-                        n_bands=config_data["n channels train"]
+                        n_bands=config_data["n bands"],
                     )
 
                 except RasterioIOError:
@@ -150,23 +161,30 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     list_splitted_mask_cloud = None
 
                     if filename in list_name_cloud:
-                        mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
-                        list_splitted_mask_cloud = split_array(mask_full_cloud, config_data["tile size"])
+                        mask_full_cloud = np.load(
+                            cloud_dir + "/" + filename + ".npy"
+                        )
+                        list_splitted_mask_cloud = split_array(
+                            mask_full_cloud, config_data["tile size"]
+                        )
 
                     list_splitted_images = si.split(config_data["tile size"])
 
                     list_filtered_splitted_images = filter_images(
                         config_data["source train"],
                         list_splitted_images,
-                        list_splitted_mask_cloud
+                        list_splitted_mask_cloud,
                     )
 
-                    list_filtered_splitted_labeled_images, list_masks = label_images(
-                        list_filtered_splitted_images, labeler
-                    )
+                    (
+                        list_filtered_splitted_labeled_images,
+                        list_masks,
+                    ) = label_images(list_filtered_splitted_images, labeler)
 
                     save_images_and_masks(
-                        list_filtered_splitted_labeled_images, list_masks, output_dir
+                        list_filtered_splitted_labeled_images,
+                        list_masks,
+                        output_dir,
                     )
 
         list_output_dir.append(output_dir)
@@ -195,7 +213,6 @@ def prepare_test_data(config, test_dir):
     output_images_path = output_test + "/images"
     output_labels_path = output_test + "/labels"
 
-    n_bands = config["donnees"]["n bands"]
     tile_size = config["donnees"]["tile size"]
 
     if not os.path.exists(output_labels_path):
@@ -204,11 +221,8 @@ def prepare_test_data(config, test_dir):
         return None
 
     for image_path, label_path, name in zip(
-        list_images_path,
-        list_labels_path,
-        list_name_image
+        list_images_path, list_labels_path, list_name_image
     ):
-
         si = SatelliteImage.from_raster(
             file_path=image_path, dep=None, date=None, n_bands=3
         )
@@ -222,9 +236,11 @@ def prepare_test_data(config, test_dir):
 
             lsi.satellite_image.to_raster(
                 output_images_path, file_name_i + ".jp2", "jp2"
-                )
+            )
             try:
-                np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
+                np.save(
+                    output_labels_path + "/" + file_name_i + ".npy", lsi.label
+                )
             except OSError:
                 print("Erreur d'écriture")
 
@@ -245,9 +261,7 @@ def instantiate_dataset(config, list_path_images, list_path_labels):
         A dataset object of the specified type.
     """
     print("Entre dans la fonction instantiate_dataset")
-    dataset_dict = {
-        "PLEIADE": PleiadeDataset,
-        "SENTINEL2": Sentinel2Dataset}
+    dataset_dict = {"PLEIADES": PleiadeDataset, "SENTINEL": SentinelDataset}
     dataset_type = config["donnees"]["dataset"]
 
     # inqtanciation du dataset complet
@@ -257,7 +271,7 @@ def instantiate_dataset(config, list_path_images, list_path_labels):
         dataset_select = dataset_dict[dataset_type]
 
         full_dataset = dataset_select(
-            list_path_images, list_path_labels, config["donnees"]["n channels train"]
+            list_path_images, list_path_labels, config["donnees"]["n bands"]
         )
 
     return full_dataset
@@ -300,7 +314,11 @@ def instantiate_dataloader(config, list_output_dir):
     # (Sentinel, PLEIADES) VS Dataset préannotés
 
     print("Entre dans la fonction instantiate_dataloader")
-    if config["donnees"]["source train"] in ["PLEIADES", "SENTINEL2"]:
+    if config["donnees"]["source train"] in [
+        "PLEIADES",
+        "SENTINEL2",
+        "SENTINEL1-2",
+    ]:
         list_path_labels = []
         list_path_images = []
         for dir in list_output_dir:
@@ -308,20 +326,23 @@ def instantiate_dataloader(config, list_output_dir):
             labels = os.listdir(dir + "/labels")
             images = os.listdir(dir + "/images")
 
-            list_path_labels = np.concatenate((
-                list_path_labels,
-                np.sort([dir + "/labels/" + name for name in labels])
-            ))
+            list_path_labels = np.concatenate(
+                (
+                    list_path_labels,
+                    np.sort([dir + "/labels/" + name for name in labels]),
+                )
+            )
 
-            list_path_images = np.concatenate((
-                list_path_images,
-                np.sort([dir + "/images/" + name for name in images])
-            ))
+            list_path_images = np.concatenate(
+                (
+                    list_path_images,
+                    np.sort([dir + "/images/" + name for name in images]),
+                )
+            )
 
     train_idx, val_idx = select_indices_to_split_dataset(
-        len(list_path_images),
-        config["optim"]["val prop"]
-     )
+        len(list_path_images), config["optim"]["val prop"]
+    )
 
     # récupération de la classe de Dataset souhaitée
     train_dataset = instantiate_dataset(
@@ -338,9 +359,14 @@ def instantiate_dataloader(config, list_output_dir):
 
     if config["donnees"]["source train"] == "PLEIADES":
         t_aug, t_preproc = generate_transform_pleiades(tile_size, augmentation)
-    elif config["donnees"]["source train"] == "SENTINEL2":
-        # t_aug, t_preproc = None, None
-        t_aug, t_preproc = generate_transform_sentinel2(tile_size, augmentation)
+    else:
+        t_aug, t_preproc = generate_transform_sentinel(
+            config["donnees"]["source train"],
+            config["donnees"]["year"][0],
+            config["donnees"]["dep"][0],
+            tile_size,
+            augmentation,
+        )
 
     train_dataset.transforms = t_aug
     valid_dataset.transforms = t_preproc
@@ -366,8 +392,12 @@ def instantiate_dataloader(config, list_output_dir):
     list_name_image = os.listdir(output_images_path)
     list_name_label = os.listdir(output_labels_path)
 
-    list_path_images = np.sort([output_images_path + name_image for name_image in list_name_image])
-    list_path_labels = np.sort([output_labels_path + name_label for name_label in list_name_label])
+    list_path_images = np.sort(
+        [output_images_path + name_image for name_image in list_name_image]
+    )
+    list_path_labels = np.sort(
+        [output_labels_path + name_label for name_label in list_name_label]
+    )
 
     dataset_test = instantiate_dataset(
         config, list_path_images, list_path_labels
@@ -377,11 +407,11 @@ def instantiate_dataloader(config, list_output_dir):
 
     batch_size_test = config["optim"]["batch size test"]
     test_dataloader = DataLoader(
-            dataset_test,
-            batch_size=batch_size_test,
-            shuffle=False,
-            num_workers=2,
-        )
+        dataset_test,
+        batch_size=batch_size_test,
+        shuffle=False,
+        num_workers=0,
+    )
 
     return train_dataloader, valid_dataloader, test_dataloader
 
@@ -426,9 +456,9 @@ def instantiate_loss(config):
     print("Entre dans la fonction instantiate_loss")
     loss_type = config["optim"]["loss"]
     loss_dict = {
-                "crossentropy": CrossEntropyLoss,
-                "crossentropyselmade": CrossEntropySelfmade
-                }
+        "crossentropy": CrossEntropyLoss,
+        "crossentropyselmade": CrossEntropySelfmade,
+    }
 
     if loss_type not in loss_dict:
         raise ValueError("Invalid loss type")
@@ -489,7 +519,12 @@ def instantiate_trainer(config, lightning_module):
         monitor="validation_loss", mode="min", patience=20
     )
     lr_monitor = LearningRateMonitor(logging_interval="step")
-    list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback, checkpoint_callback_IOU]
+    list_callbacks = [
+        lr_monitor,
+        checkpoint_callback,
+        early_stop_callback,
+        checkpoint_callback_IOU,
+    ]
 
     strategy = "auto"
 
@@ -499,7 +534,7 @@ def instantiate_trainer(config, lightning_module):
         num_sanity_val_steps=2,
         strategy=strategy,
         log_every_n_steps=2,
-        accumulate_grad_batches=config["optim"]["accumulate batch"]
+        accumulate_grad_batches=config["optim"]["accumulate batch"],
     )
 
     return trainer
@@ -521,10 +556,9 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
 
-    # list_data_dir = ["../data/PLEIADES/2022/MARTINIQUE"]
-    # list_masks_cloud_dir = ["../data/NUAGESPLEIADES/2022/MARTINIQUE"]
-
-    list_output_dir = prepare_train_data(config, list_data_dir, list_masks_cloud_dir)
+    list_output_dir = prepare_train_data(
+        config, list_data_dir, list_masks_cloud_dir
+    )
     prepare_test_data(config, test_dir)
 
     train_dl, valid_dl, test_dl = instantiate_dataloader(
@@ -540,12 +574,11 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     torch.cuda.empty_cache()
     gc.collect()
 
-    # remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"
+    # remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr" # noqa: E501
     # experiment_name = "segmentation"
     # run_name = "testjudith"
 
     if config["mlflow"]:
-
         update_storage_access()
         os.environ["MLFLOW_S3_ENDPOINT_URL"] = "https://minio.lab.sspcloud.fr"
         mlflow.end_run()
@@ -555,10 +588,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         with mlflow.start_run(run_name=run_name):
             mlflow.autolog()
-            mlflow.log_artifact(
-                "../config.yml",
-                artifact_path="config.yml"
-            )
+            mlflow.log_artifact("../config.yml", artifact_path="config.yml")
             trainer.fit(light_module, train_dl, valid_dl)
             model = light_module.model
             tile_size = config["donnees"]["tile size"]
@@ -566,12 +596,12 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
             if config["donnees"]["source train"] == "PLEIADES":
                 evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
-                        test_dl,
-                        model,
-                        tile_size,
-                        batch_size_test,
-                        config["mlflow"]
-                    )
+                    test_dl,
+                    model,
+                    tile_size,
+                    batch_size_test,
+                    config["mlflow"],
+                )
 
     else:
         trainer.fit(light_module, train_dl, valid_dl)
@@ -581,12 +611,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         if config["donnees"]["source train"] == "PLEIADES":
             evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
-                    test_dl,
-                    model,
-                    tile_size,
-                    batch_size_test,
-                    config["mlflow"]
-                )
+                test_dl, model, tile_size, batch_size_test, config["mlflow"]
+            )
         # trainer.test(light_module, test_dl)
 
 
@@ -598,7 +624,7 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
-# remote_server_uri = "https://projet-slums-detection-200178.user.lab.sspcloud.fr"
+# remote_server_uri = "https://projet-slums-detection-200178.user.lab.sspcloud.fr" # noqa: E501
 # experiment_name = "segmentation"
 # run_name = "testclem2"
 
