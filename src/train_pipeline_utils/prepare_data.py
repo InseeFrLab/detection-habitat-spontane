@@ -3,9 +3,8 @@ import os
 import numpy as np
 import rasterio
 
-from classes.data.satellite_image import SatelliteImage
-from classes.labelers.labeler import Labeler
-from utils.filter import has_cloud, is_too_black2, is_too_black, mask_full_cloud, patch_nocloud
+from utils.filter import is_too_black
+
 
 def check_labelled_images(output_directory_name):
     """
@@ -13,8 +12,8 @@ def check_labelled_images(output_directory_name):
     if it doesn't exist, it is created.
 
     Args:
-        output_directory_name: a string representing the path to the directory \
-        that may already contain data and masks.
+        output_directory_name: a string representing the path to \
+            the directory that may already contain data and masks.
 
     Returns:
         boolean: True if the directory exists and is not empty. \
@@ -95,9 +94,9 @@ def filter_images(src, list_images, list_array_cloud):
 
     # print("Entre dans la fonction filter_images")
     if src == "PLEIADES":
-        return filter_images_pleiades(list_images,list_array_cloud)
-    elif src == "SENTINEL2":
-        return filter_images_sentinel2(list_images)
+        return filter_images_pleiades(list_images, list_array_cloud)
+    else:
+        return filter_images_sentinel(list_images)
 
 
 def filter_images_pleiades(list_images, list_array_cloud):
@@ -108,7 +107,8 @@ def filter_images_pleiades(list_images, list_array_cloud):
         list_images : the list containing the splitted data to be filtered.
 
     Returns:
-        list[SatelliteImage] : the list containing the splitted and filtered data.
+        list[SatelliteImage] : the list containing \
+            the splitted and filtered data.
     """
     # print("Entre dans la fonction filter_images_pleiades")
     list_filtered_splitted_images = []
@@ -116,7 +116,7 @@ def filter_images_pleiades(list_images, list_array_cloud):
     if list_array_cloud:
         for splitted_image, array_cloud in zip(list_images, list_array_cloud):
             if not is_too_black(splitted_image):
-                prop_cloud = np.sum(array_cloud)/(array_cloud.shape[0])**2
+                prop_cloud = np.sum(array_cloud) / (array_cloud.shape[0]) ** 2
                 if not prop_cloud > 0:
                     list_filtered_splitted_images.append(splitted_image)
     else:
@@ -131,9 +131,9 @@ def filter_images_pleiades(list_images, list_array_cloud):
     return list_filtered_splitted_images
 
 
-def filter_images_sentinel2(list_images):
+def filter_images_sentinel(list_images):
     """
-    filters the Sentinel2 images.
+    filters the Sentinel images.
 
     Args:
         list_images : the list containing the splitted data to be filtered.
@@ -143,7 +143,7 @@ def filter_images_sentinel2(list_images):
             filtered data.
     """
 
-    # print("Entre dans la fonction filter_images_sentinel2")
+    # print("Entre dans la fonction filter_images_sentinel")
     return list_images
 
 
@@ -197,9 +197,9 @@ def save_images_and_masks(list_images, list_masks, output_directory_name):
     i = 0
     for image, mask in zip(list_images, list_masks):
         # image = list_images[0]
-        #bb = image.bounds
+        # bb = image.bounds
 
-        #filename = str(bb[0]) + "_" + str(bb[1]) + "_" \
+        # filename = str(bb[0]) + "_" + str(bb[1]) + "_" \
         #   + "{:03d}".format(i)
         filename = image.filename.split(".")[0] + "_" + "{:03d}".format(i)
         i = i + 1

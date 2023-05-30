@@ -1,11 +1,11 @@
-import albumentations as album
-from albumentations.pytorch.transforms import ToTensorV2
 import random
+
+import albumentations as album
 import yaml
+from albumentations.pytorch.transforms import ToTensorV2
 
 
 def select_indices_to_split_dataset(len_dataset, prop_val):
-
     num_val_indices = int(prop_val * len_dataset)
 
     all_indices = list(range(len_dataset))
@@ -62,7 +62,7 @@ def generate_transform_pleiades(tile_size, augmentation):
     return transforms_augmentation, transforms_preprocessing
 
 
-def generate_transform_sentinel2(tile_size, augmentation):
+def generate_transform_sentinel(src, year, dep, tile_size, augmentation):
     """
     Generates PyTorch transforms for data augmentation and preprocessing\
         for SENTINEL2 images.
@@ -79,10 +79,8 @@ def generate_transform_sentinel2(tile_size, augmentation):
     """
     with open("utils/normalize_sentinel.yml", "r") as stream:
         normalize_sentinel = yaml.safe_load(stream)
-
-    mean = eval(normalize_sentinel["SENTINEL2"]["mean"][2021]["971"])
-    std = eval(normalize_sentinel["SENTINEL2"]["std"][2021]["971"])
-    print(mean, std)
+    mean = eval(normalize_sentinel[src]["mean"][year][dep])
+    std = eval(normalize_sentinel[src]["std"][year][dep])
 
     image_size = (tile_size, tile_size)
 

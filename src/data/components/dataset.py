@@ -114,8 +114,6 @@ class PleiadeDataset(Dataset):
         """
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        #pathim = "../train_data-SENTINEL2-976-2022/506990_8564970_70_000.jp2"
-        #pathlabel = "../train_data-SENTINEL2-976-2022/506990_8564970_70_000.npy"
         pathim = self.list_paths_images[idx]
         pathlabel = self.list_paths_labels[idx]
 
@@ -133,7 +131,7 @@ class PleiadeDataset(Dataset):
         else:
             img = torch.tensor(img.astype(float))
             img = img.permute([2, 0, 1])
-            #label = torch.tensor(label)
+            # label = torch.tensor(label)
 
         img = img.type(torch.float)
         label = label.type(torch.LongTensor)
@@ -144,7 +142,7 @@ class PleiadeDataset(Dataset):
         return len(self.list_paths_images)
 
 
-class Sentinel2Dataset(Dataset):
+class SentinelDataset(Dataset):
     """
     Custom Sentinel2 Dataset class.
     """
@@ -153,8 +151,8 @@ class Sentinel2Dataset(Dataset):
         self,
         list_paths_images,
         list_paths_labels,
+        n_bands: int,
         transforms=None,
-        n_bands: int = 12
     ):
         """
         Constructor.
