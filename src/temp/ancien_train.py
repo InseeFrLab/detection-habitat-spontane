@@ -318,6 +318,36 @@ with mlflow.start_run(run_name=run_name):
     )
     trainer.fit(lightning_module, train_dataloader , valid_dataloader)
 
+    lightning_module = SegmentationModule(
+    model=model,
+    loss = None,
+    optimizer=optimizer,
+    optimizer_params=optimizer_params,
+    scheduler=scheduler,
+    scheduler_params=scheduler_params,
+    scheduler_interval=scheduler_interval,
+    )
 
+
+    lightning_module_checkpoint = lightning_module.load_from_checkpoint(
+    checkpoint_path='lightning_logs/version_2/checkpoints/epoch=13-step=9926.ckpt',
+    model= model,
+    optimizer=optimizer,
+    optimizer_params=optimizer_params,
+    scheduler=scheduler,
+    scheduler_params=scheduler_params,
+    scheduler_interval=scheduler_interval,
+    map_location= torch.device('cpu'),
+    loss = None
+                                            )
+    
+    model = lightning_module_checkpoint.model
+
+from classes.optim.evaluation_model import evaluer_modele_sur_jeu_de_test_segmentation_pleiade
+
+dataset_test.transforms = transforms_preprocessing
+test_dl =DataLoader(dataset_test,batch_size = 4)
+model = model.eval() 
+evaluer_modele_sur_jeu_de_test_segmentation_pleiade(test_dl, model, 250, 4)
 # TO DO, test en normalisant le data set et test sans le normaliser..
 #
