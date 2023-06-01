@@ -26,9 +26,10 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
     batch_size,
     use_mlflow=False
 ):  
-    # model.eval()
+    
     # tile_size = 250
     # batch_size  = 4
+    model.eval()
     npatch = int((2000/tile_size)**2)
     nbatchforfullimage = int(npatch/batch_size)
 
