@@ -213,8 +213,24 @@ labels_val = list_path_labels[ind_val]
 images_train = list_path_images[ind_train]   
 images_val = list_path_images[ind_val]
 
-train_dataloader = DataLoader(PleiadeDataset(images_train,labels_train,3),batch_size=9)
-valid_dataloader = DataLoader(PleiadeDataset(images_val,labels_val,3), batch_size=9)
+train_dataset = PleiadeDataset(images_train,labels_train,3)
+valid_dataset = PleiadeDataset(images_val,labels_val,3)
+
+
+image_size = (250,250)
+transforms_preprocessing = album.Compose(
+        [
+            album.Resize(*image_size, always_apply=True),
+            album.Normalize(),
+            ToTensorV2(),
+        ]
+)
+
+train_dataset.transforms = transforms_preprocessing
+valid_dataset.transforms = transforms_preprocessing
+
+train_dataloader = DataLoader(train_dataset,batch_size=9)
+valid_dataloader = DataLoader(valid_dataset,batch_size=9)
 
 
 # liste d'images test à tester 
@@ -226,10 +242,7 @@ file_path = "../data/PLEIADES/2020/MAYOTTE/ORT_2020052526670967_0519_8586_U38S_8
 # "../data/PLEIADES/2022/MARTINIQUE/ORT_2022_0691_1638_U20N_8Bits.jp2",
 dep = None,
 date = None,
-n_bands= 3) # ../data/PLEIADES/2020/MAYOTTE/ORT_2020052526670967_0524_8590_U38S_8Bits.jp2 fonctions d'affichage de Raya
-#satellite_image.plot([0,1,2])
-#res = plt.gcf()
-#res.savefig("imagetest.png")
+n_bands= 3) 
 
 
 list_test = satellite_image.split(250)
@@ -243,21 +256,7 @@ list_path_images_test = np.sort([directory_image_name + filename for filename in
 list_path_labels_test =   np.sort(list_path_labels[:len(list_path_images_test)])# pas propre je metsd une liste de labels de même taille inutilisés
 
 dataset_test = PleiadeDataset(list_path_images_test,list_path_labels_test,n_bands = 3) 
-
-
-# entrainement
-
-image_size = (250,250)
-transforms_preprocessing = album.Compose(
-        [
-            album.Resize(*image_size, always_apply=True),
-            album.Normalize(),
-            ToTensorV2(),
-        ]
-)
-
-
-
+dataset_test.transforms = transforms_preprocessing
 ## Instanciation modèle et paramètres d'entraînement
 
 optimizer = torch.optim.SGD
@@ -289,7 +288,7 @@ checkpoint_callback = ModelCheckpoint(
 )
 
 early_stop_callback = EarlyStopping(
-    monitor="validation_loss", mode="min", patience=3
+    monitor="validation_loss", mode="min", patience=15
 )
 lr_monitor = LearningRateMonitor(logging_interval="step")
 
@@ -298,7 +297,7 @@ list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback]
 
 mlflow.end_run()
 
-run_name = "modele deeplabV44"
+run_name = "modele deeplabV45 normalize"
 remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"
 experiment_name = "segmentation"
 
@@ -313,41 +312,33 @@ with mlflow.start_run(run_name=run_name):
     max_epochs=50,
     num_sanity_val_steps=2,
     strategy=strategy,
-    log_every_n_steps=2,
+    log_every_n_steps=3,
     accumulate_grad_batches = 1
     )
     trainer.fit(lightning_module, train_dataloader , valid_dataloader)
 
-    lightning_module = SegmentationModule(
-    model=model,
-    loss = None,
-    optimizer=optimizer,
-    optimizer_params=optimizer_params,
-    scheduler=scheduler,
-    scheduler_params=scheduler_params,
-    scheduler_interval=scheduler_interval,
-    )
-
-
     lightning_module_checkpoint = lightning_module.load_from_checkpoint(
-    checkpoint_path='lightning_logs/version_2/checkpoints/epoch=13-step=9926.ckpt',
-    model= model,
-    optimizer=optimizer,
-    optimizer_params=optimizer_params,
-    scheduler=scheduler,
-    scheduler_params=scheduler_params,
-    scheduler_interval=scheduler_interval,
-    map_location= torch.device('cpu'),
-    loss = None
-                                            )
+        checkpoint_path='lightning_logs/version_3/checkpoints/epoch=14-step=10635.ckpt',
+        model= model,
+        optimizer=optimizer,
+        optimizer_params=optimizer_params,
+        scheduler=scheduler,
+        scheduler_params=scheduler_params,
+        scheduler_interval=scheduler_interval,
+    # map_location= torch.device('cpu'),
+         loss = CrossEntropyLoss()
+    )
+    trainer.fit(lightning_module_checkpoint, train_dataloader , valid_dataloader)
+
     
     model = lightning_module_checkpoint.model
 
 from classes.optim.evaluation_model import evaluer_modele_sur_jeu_de_test_segmentation_pleiade
 
 dataset_test.transforms = transforms_preprocessing
+dataset_test.transforms = None
 test_dl =DataLoader(dataset_test,batch_size = 4)
-model = model.eval() 
+#model = model.eval() 
 evaluer_modele_sur_jeu_de_test_segmentation_pleiade(test_dl, model, 250, 4)
 # TO DO, test en normalisant le data set et test sans le normaliser..
 #
