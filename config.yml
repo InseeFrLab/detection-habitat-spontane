@@ -1,6 +1,6 @@
 donnees:
   source train: "PLEIADES"
-  dataset: "PLEIADE" 
+  dataset: "CLASSIFICATION" 
   year: [2022]
   dep: ["972"]
   type labeler: "RIL"

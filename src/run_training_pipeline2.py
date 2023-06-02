@@ -25,6 +25,7 @@ from classes.optim.losses import CrossEntropySelfmade
 from torch.nn import CrossEntropyLoss
 from classes.optim.optimizer import generate_optimization_elements
 from data.components.dataset import PleiadeDataset
+from data.components.classification_patch import Patch_Classification
 from models.components.segmentation_models import DeepLabv3Module
 from models.segmentation_module import SegmentationModule
 from train_pipeline_utils.download_data import load_satellite_data, load_donnees_test
@@ -33,11 +34,10 @@ from train_pipeline_utils.handle_dataset import (
     select_indices_to_split_dataset
 )
 
-from classes.optim.losses import SoftIoULoss
-
 from train_pipeline_utils.prepare_data import(
     filter_images,
     label_images,
+    label_images2,
     save_images_and_masks,
     check_labelled_images
 )
@@ -47,7 +47,6 @@ from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteIma
 from utils.utils import update_storage_access, split_array, remove_dot_file
 from rasterio.errors import RasterioIOError
 from classes.optim.evaluation_model import evaluer_modele_sur_jeu_de_test_segmentation_pleiade
-
 
 def download_data(config):
     """
@@ -83,6 +82,7 @@ def download_data(config):
     test_dir = load_donnees_test(type=config["donnees"]["task"])
 
     return list_output_dir, list_masks_cloud_dir, test_dir
+
 
 
 def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
@@ -132,6 +132,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
         if labeler == "RIL":
             buffer_size = config_data["buffer size"]
             labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
+
         elif labeler == "BDTOPO":
             labeler = BDTOPOLabeler(date, dep=dep)
 
@@ -179,9 +180,9 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     (
                         list_filtered_splitted_labeled_images,
                         list_masks,
-                    ) = label_images(list_filtered_splitted_images, labeler)
+                    ) = label_images2(list_filtered_splitted_images, labeler)
 
-                    save_images_and_masks(
+                    save_images_and_masks2(
                         list_filtered_splitted_labeled_images,
                         list_masks,
                         output_dir,
@@ -194,7 +195,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     return list_output_dir
 
 
-def prepare_test_data(config, test_dir):
+def prepare_test_data(config,test_dir):
 
     if config["donnees"]["source train"] == "PLEIADES":
 
@@ -245,7 +246,7 @@ def prepare_test_data(config, test_dir):
                 np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
 
 
-def instantiate_dataset(config, list_path_images, list_path_labels):
+def instantiate_dataset2(config, list_path_images, output_dir_labels):
     """
     Instantiates the appropriate dataset object
     based on the configuration settings.
@@ -260,7 +261,7 @@ def instantiate_dataset(config, list_path_images, list_path_labels):
     Returns:
         A dataset object of the specified type.
     """
-    dataset_dict = {"PLEIADE": PleiadeDataset}
+    dataset_dict = {"PLEIADE": PleiadeDataset, "CLASSIFICATION" : Patch_Classification}
     dataset_type = config["donnees"]["dataset"]
 
     # inqtanciation du dataset comple
@@ -270,13 +271,13 @@ def instantiate_dataset(config, list_path_images, list_path_labels):
         dataset_select = dataset_dict[dataset_type]
 
         full_dataset = dataset_select(
-            list_path_images, list_path_labels, config["donnees"]["n channels train"]
+            list_path_images, output_dir_labels, config["donnees"]["n channels train"]
         )
 
     return full_dataset
 
 
-def instantiate_dataloader(config, list_output_dir):
+def instantiate_dataloader2(config, list_output_dir):
     """
     Instantiates and returns the data loaders for
     training, validation, and testing datasets.
@@ -313,17 +314,28 @@ def instantiate_dataloader(config, list_output_dir):
     # (Sentinel, PLEIADES) VS Dataset préannotés
 
     if config["donnees"]["source train"] in ["PLEIADES", "SENTINEL2"]:
-        list_path_labels = []
-        list_path_images = []
         for dir in list_output_dir:
             # dir = list_output_dir[0]
             labels = os.listdir(dir + "/labels") 
             images = os.listdir(dir + "/images")
+            
+            liste_masks = []
+            
+            with open(dir + "/labels/" + labels[0], 'r') as csvfile:
+                reader = csv.reader(csvfile)
+                
+                # Ignorer l'en-tête du fichier CSV s'il y en a un
+                next(reader)
+                
+                # Parcourir les lignes du fichier CSV et extraire la deuxième colonne
+                for row in reader:
+                    image_path = row[0]
+                    mask = row[1] # Index 1 correspond à la deuxième colonne (index 0 pour la première)
+                    liste_masks.append([image_path, mask])
 
-            list_path_labels = np.concatenate((
-                list_path_labels,
-                np.sort([dir + "/labels/" + name for name in labels])
-            ))
+            liste_masks = sorted(liste_masks, key=lambda x: x[0])
+            liste_masks = [liste_masks[1] for sous_liste in l_triee]
+
             
             list_path_images = np.concatenate((
                 list_path_images,
@@ -434,7 +446,6 @@ def instantiate_loss(config):
     """
     loss_type = config["optim"]["loss"]
     loss_dict = {
-                "softiou": SoftIoULoss,
                 "crossentropy": CrossEntropyLoss,
                 "crossentropyselmade": CrossEntropySelfmade
                 }
@@ -635,12 +646,22 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
-#nohup python run_training_pipeline.py https://projet-slums-detection-874257.user.lab.sspcloud.fr segmentation testnohup2 > out.txt &
- #TO DO :
+# remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"
+# remote_server_uri =
+# "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
+# experiment_name = "segmentation"
+# run_name = "testclem2"
+
+# TO DO :
 # test routine sur S2Looking dataset
+
+# diminution du nombre d'images DL : pour test
+
 # import os
 
 # list_data_dir = ["../data/PLEIADES/2022/MARTINIQUE/"]
+
+
 # def delete_files_in_dir(dir_path,length_delete):
 #    # Get a list of all the files in the directory
 #  files = os.listdir(dir_path)[:length_delete]
