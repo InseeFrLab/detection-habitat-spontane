@@ -33,6 +33,8 @@ from train_pipeline_utils.handle_dataset import (
     select_indices_to_split_dataset
 )
 
+from classes.optim.losses import SoftIoULoss
+
 from train_pipeline_utils.prepare_data import(
     filter_images,
     label_images,
@@ -45,6 +47,7 @@ from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteIma
 from utils.utils import update_storage_access, split_array, remove_dot_file
 from rasterio.errors import RasterioIOError
 from classes.optim.evaluation_model import evaluer_modele_sur_jeu_de_test_segmentation_pleiade
+
 
 def download_data(config):
     """
@@ -80,7 +83,6 @@ def download_data(config):
     test_dir = load_donnees_test(type=config["donnees"]["task"])
 
     return list_output_dir, list_masks_cloud_dir, test_dir
-
 
 
 def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
@@ -192,7 +194,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     return list_output_dir
 
 
-def prepare_test_data(config,test_dir):
+def prepare_test_data(config, test_dir):
 
     if config["donnees"]["source train"] == "PLEIADES":
 
@@ -432,6 +434,7 @@ def instantiate_loss(config):
     """
     loss_type = config["optim"]["loss"]
     loss_dict = {
+                "softiou": SoftIoULoss,
                 "crossentropy": CrossEntropyLoss,
                 "crossentropyselmade": CrossEntropySelfmade
                 }
