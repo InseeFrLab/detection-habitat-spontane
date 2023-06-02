@@ -38,14 +38,11 @@ def get_s1_grd(aoi, start_date, end_date):
             according to specified filters.
     """
 
-    sentinel1 = ee.Image(
+    sentinel1 = (
         ee.ImageCollection("COPERNICUS/S1_GRD")
         .filterBounds(aoi)
         .filterDate(ee.Date(start_date), ee.Date(end_date))
-        .filter(ee.Filter.eq("orbitProperties_pass", "ASCENDING"))
-        .first()
         .select("VV", "VH")
-        .clip(aoi)
     )
 
     return sentinel1
@@ -64,6 +61,44 @@ def export_s1(DOM, AOIs, EPSGs, start_date, end_date):
         end_date: date after which the images can no longer be downloaded.
     """
 
+    AOI = ee.Geometry.BBox(**AOIs[DOM.upper()])
+    AOI_DOM = AOIs[DOM.upper()]
+    feature_aoi = ee.Geometry.Polygon(
+        [
+            [AOI_DOM["west"], AOI_DOM["north"]],
+            [AOI_DOM["east"], AOI_DOM["north"]],
+            [AOI_DOM["east"], AOI_DOM["south"]],
+            [AOI_DOM["west"], AOI_DOM["south"]],
+        ]
+    )
+
+    s1_grd = get_s1_grd(AOI, start_date, end_date)
+
+    image = ee.Image(s1_grd.first()).clip(feature_aoi)
+
+    if ee.Feature(image).contains(feature_aoi).getInfo():
+        export_s1_grd_first(start_date, AOI, image, DOM)
+    else:
+        export_s1_grd_mean(
+            start_date, AOI, ee.Image(s1_grd.mean()).clip(feature_aoi), DOM
+        )
+
+
+def export_s1_grd_first(start_date, AOI, s1_grd, DOM):
+    """
+    Calls a function that downloads the images locally and calls a function \
+        that uplaods them on MinIO.
+
+    Args:
+        DOM: name of the DOM.
+        AOIs: western, southern, eastern and northern boudaries of the DOMs.
+        EPSGs: EPSGs of the DOMs.
+        start_date: date from which the images can be downloaded.
+        end_date: date after which the images can no longer be downloaded.
+    """
+
+    print("Entre dans la fonction s1_grd_first")
+
     update_storage_access()
     root_path = get_root_path()
     environment = get_environment()
@@ -79,8 +114,46 @@ def export_s1(DOM, AOIs, EPSGs, start_date, end_date):
         ],
     )
 
-    AOI = ee.Geometry.BBox(**AOIs[DOM.upper()])
-    s1_grd = get_s1_grd(AOI, start_date, end_date)
+    fishnet = geemap.fishnet(AOI, rows=4, cols=4, delta=0.5)
+    geemap.download_ee_image_tiles(
+        image=s1_grd,
+        features=fishnet,
+        out_dir=path_local,
+        prefix="data_",
+        crs=f"EPSG:{EPSGs[DOM.upper()]}",
+        scale=10,
+        num_threads=50,
+    )
+
+    upload_satelliteImages(
+        path_local,
+        f"{bucket}/{path_s3}",
+        f"{DEPs[DOM.upper()]}",
+        250,
+        1,
+        False,
+    )
+
+    shutil.rmtree(path_local, ignore_errors=True)
+
+
+def export_s1_grd_mean(start_date, AOI, s1_grd, DOM):
+    print("Entre dans la fonction s1_grd_mean")
+
+    update_storage_access()
+    root_path = get_root_path()
+    environment = get_environment()
+
+    bucket = environment["bucket"]
+    path_s3 = environment["sources"]["SENTINEL1"][int(start_date[0:4])][
+        DEPs[DOM.upper()]
+    ]
+    path_local = os.path.join(
+        root_path,
+        environment["local-path"]["SENTINEL1"][int(start_date[0:4])][
+            DEPs[DOM.upper()]
+        ],
+    )
 
     fishnet = geemap.fishnet(AOI, rows=4, cols=4, delta=0.5)
     geemap.download_ee_image_tiles(
@@ -221,6 +294,14 @@ if __name__ == "__main__":
 
     # export_s1(
     #     "Mayotte",
+    #     AOIs,
+    #     EPSGs,
+    #     START_DATE,
+    #     END_DATE
+    # )
+
+    # export_s1(
+    #     "Reunion",
     #     AOIs,
     #     EPSGs,
     #     START_DATE,

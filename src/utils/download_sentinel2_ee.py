@@ -276,3 +276,16 @@ if __name__ == "__main__":
     #     CLD_PRJ_DIST,
     #     BUFFER,
     # )
+
+    # export_s2_no_cloud(
+    #     "Reunion",
+    #     AOIs,
+    #     EPSGs,
+    #     START_DATE,
+    #     END_DATE,
+    #     CLOUD_FILTER,
+    #     CLD_PRB_THRESH,
+    #     NIR_DRK_THRESH,
+    #     CLD_PRJ_DIST,
+    #     BUFFER,
+    # )
