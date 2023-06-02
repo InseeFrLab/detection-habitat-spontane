@@ -632,22 +632,12 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
-# remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"
-# remote_server_uri =
-# "https://projet-slums-detection-807277.user.lab.sspcloud.fr"
-# experiment_name = "segmentation"
-# run_name = "testclem2"
-
-# TO DO :
+#nohup python run_training_pipeline.py https://projet-slums-detection-874257.user.lab.sspcloud.fr segmentation testnohup2 > out.txt &
+ #TO DO :
 # test routine sur S2Looking dataset
-
-# diminution du nombre d'images DL : pour test
-
 # import os
 
 # list_data_dir = ["../data/PLEIADES/2022/MARTINIQUE/"]
-
-
 # def delete_files_in_dir(dir_path,length_delete):
 #    # Get a list of all the files in the directory
 #  files = os.listdir(dir_path)[:length_delete]
