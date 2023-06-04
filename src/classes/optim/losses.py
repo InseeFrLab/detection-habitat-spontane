@@ -68,6 +68,7 @@ class CustomLoss(nn.Module):
         mask = target == 9  # penalisation des 9 par exemples
         high_cost = (loss * mask.float()).mean()
         return loss + high_cost
+        
 def to_one_hot(tensor,nClasses):
     
     n,h,w = tensor.size()
