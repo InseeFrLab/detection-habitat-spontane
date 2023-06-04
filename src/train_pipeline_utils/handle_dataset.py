@@ -36,7 +36,7 @@ def generate_transform(tile_size, augmentation):
     transforms_preprocessing = album.Compose(
         [
            #album.Resize(*image_size, always_apply=True),
-            #album.Normalize(),
+            album.Normalize(),
             ToTensorV2(),
         ]
     )
@@ -50,7 +50,7 @@ def generate_transform(tile_size, augmentation):
                 ),
                 album.HorizontalFlip(),
                 album.VerticalFlip(),
-                #album.Normalize(),
+                album.Normalize(),
                 ToTensorV2(),
             ]
         )
