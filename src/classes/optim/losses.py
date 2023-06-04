@@ -9,7 +9,7 @@ class SoftIoULoss(nn.Module):
         super(SoftIoULoss, self).__init__()
 
     def forward(self, output, target):
-        output = output.to("cpu")
+        output = output
         target_one_hot = to_one_hot(target, 2)
         N = output.size()[0]
         inputs = torch.softmax(output,dim=1)
@@ -71,5 +71,5 @@ class CustomLoss(nn.Module):
 def to_one_hot(tensor,nClasses):
     
     n,h,w = tensor.size()
-    one_hot = torch.zeros(n,nClasses,h,w).scatter_(1,tensor.view(n,1,h,w),1)
+    one_hot = torch.zeros(n,nClasses,h,w,device = "cuda:0").scatter_(1,tensor.view(n,1,h,w),1)
     return one_hot
