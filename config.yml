@@ -9,13 +9,13 @@ donnees:
   n bands: 3
   tile size: 250
   augmentation: False
-  task: "segmentation"
+  task: "classification"
 
 optim:
-  loss: "crossentropy"
+  loss: "lossbinaire"
   lr: 0.0001
   momentum: 0.9
-  module: "deeplabv3"
+  module: "binarydeeplabv3"
   batch size: 9
   batch size test: 4
   max epochs: 50

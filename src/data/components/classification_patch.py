@@ -22,7 +22,7 @@ class Patch_Classification(Dataset):
     def __init__(
         self,
         list_paths_images: List,
-        output_dir: str,
+        list_labels: str,
         n_bands: int,
         transforms: Optional[Compose] = None,
     ):
@@ -35,7 +35,7 @@ class Patch_Classification(Dataset):
             transforms (Compose) : list of transforms
         """
         self.list_paths_images = list_paths_images
-        self.list_paths_labels = list_paths_labels
+        self.list_labels = list_labels
         self.transforms = transforms
         self.n_bands = n_bands
 
@@ -52,21 +52,9 @@ class Patch_Classification(Dataset):
             idx = idx.tolist()
         #pathim = "../train_data-SENTINEL2-976-2022/506990_8564970_70_000.jp2"
         #pathlabel = "../train_data-SENTINEL2-976-2022/506990_8564970_70_000.npy"
-        liste_masks = []
-        
-        with open(self.output_dir, 'r') as csvfile:
-            reader = csv.reader(csvfile)
-            
-            # Ignorer l'en-tête du fichier CSV s'il y en a un
-            next(reader)
-            
-            # Parcourir les lignes du fichier CSV et extraire la deuxième colonne
-            for row in reader:
-                mask = row[1]  # Index 1 correspond à la deuxième colonne (index 0 pour la première)
-                liste_masks.append(mask)
 
         pathim = self.list_paths_images[idx]
-        label = liste_masks[idx]
+        label = int(self.list_labels[idx])
         
         img = SatelliteImage.from_raster(
             file_path=pathim, dep=None, date=None, n_bands=self.n_bands
@@ -86,7 +74,7 @@ class Patch_Classification(Dataset):
 
         img = img.type(torch.float)
         label = label.type(torch.LongTensor)
-        metadata = {"pathimage": pathim, "pathlabel": pathlabel}
+        metadata = {"pathimage": pathim, "class": label}
         return img, label, metadata
 
     def __len__(self):

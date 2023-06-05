@@ -232,35 +232,40 @@ def save_images_and_masks2(list_images, list_masks, output_directory_name):
     """
     
     # print("Entre dans la fonction save_images_and_masks")
-    output_images_path = output_directory_name + "/images"
-    output_masks_path = output_directory_name + "/labels"
+    output_images_path = output_directory_name + "images"
+    output_masks_path = output_directory_name + "labels"
 
-    with open(output_masks_path + "/" + 'fichierlabeler.csv', 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        
-        # Écriture de l'en-tête du fichier CSV (facultatif)
-        writer.writerow(['Path_image', 'Classification'])
+    
+    csv_file_path = output_masks_path + "/" + 'fichierlabeler.csv'
 
     i = 0
     for image, mask in zip(list_images, list_masks):
-        # image = list_images[0]
-        #bb = image.bounds
-        
-        #filename = str(bb[0]) + "_" + str(bb[1]) + "_" \
-        #   + "{:03d}".format(i)
         filename = image.filename.split(".")[0] + "_" + "{:03d}".format(i)
-        i = i + 1
-        
+        i += 1
+    
         try:
             image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
-
+    
         except rasterio._err.CPLE_AppDefinedError:
-            # except:
-            print("Writing error", image.filename)
+            print("Writing error:", image.filename)
             continue
-
+    
+        # Create the csv file if it does not exist
+        if not os.path.isfile(csv_file_path):
+            with open(csv_file_path, 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(['Path_image', 'Classification'])
+                writer.writerow([filename, mask])
+    
+        # Open it if it exists
         else:
-            writer.writerow([filename, mask]) 
+            with open(csv_file_path, 'a', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow([filename, mask])
+        
+        #print("Les nouvelles lignes ont été ajoutées avec succès.")
+
+
 
 
     return None
