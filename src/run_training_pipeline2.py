@@ -246,7 +246,7 @@ def prepare_test_data(config,test_dir):
                 np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
 
 
-def instantiate_dataset2(config, list_path_images, output_dir_labels):
+def instantiate_dataset2(config, list_path_images, list_labels):
     """
     Instantiates the appropriate dataset object
     based on the configuration settings.
@@ -271,10 +271,41 @@ def instantiate_dataset2(config, list_path_images, output_dir_labels):
         dataset_select = dataset_dict[dataset_type]
 
         full_dataset = dataset_select(
-            list_path_images, output_dir_labels, config["donnees"]["n channels train"]
+            list_path_images, list_labels, config["donnees"]["n channels train"]
         )
 
     return full_dataset
+
+def instantiate_dataset3(config, list_path_images, list_labels):
+    """
+    Instantiates the appropriate dataset object
+    based on the configuration settings.
+    
+    Args:
+        config: A dictionary representing the configuration settings.
+        list_path_images: A list of strings representing
+        the paths to the preprocessed tile image files.
+        list_path_labels: A list of strings representing
+        the paths to the corresponding preprocessed mask image files.
+    
+    Returns:
+        A dataset object of the specified type.
+    """
+    dataset_dict = {"PLEIADE": PleiadeDataset, "CLASSIFICATION" : Patch_Classification}
+    dataset_type = "PLEIADE"
+
+    # inqtanciation du dataset comple
+    if dataset_type not in dataset_dict:
+        raise ValueError("Invalid dataset type")
+    else:
+        dataset_select = dataset_dict[dataset_type]
+
+        full_dataset = dataset_select(
+            list_path_images, list_labels, config["donnees"]["n channels train"]
+        )
+
+    return full_dataset
+
 
 
 def instantiate_dataloader2(config, list_output_dir):
@@ -348,12 +379,12 @@ def instantiate_dataloader2(config, list_output_dir):
     )
     
     # récupération de la classe de Dataset souhaitée
-    train_dataset = instantiate_dataset(
-        config, list_path_images[train_idx], list_path_labels[train_idx]
+    train_dataset = instantiate_dataset2(
+        config, list_path_images[train_idx], liste_masks[train_idx]
     )
 
-    valid_dataset = instantiate_dataset(
-        config, list_path_images[val_idx], list_path_labels[val_idx]
+    valid_dataset = instantiate_dataset2(
+        config, list_path_images[val_idx], liste_masks[val_idx]
     )
 
     # on applique les transforms respectives
@@ -549,7 +580,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     # list_output_dir = ["../splitted_data2"]
     model = instantiate_model(config)
 
-    train_dl, valid_dl, test_dl = instantiate_dataloader(
+    train_dl, valid_dl, test_dl = instantiate_dataloader2(
     config, list_output_dir
     )
     
