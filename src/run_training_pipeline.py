@@ -55,6 +55,9 @@ from classes.optim.evaluation_model import evaluer_modele_sur_jeu_de_test_segmen
 from models.classification_module import ClassificationModule  
 
 
+# with open("../config.yml") as f:
+#     config = yaml.load(f, Loader=SafeLoader)
+
 def download_data(config):
     """
     Downloads data based on the given configuration.
@@ -122,7 +125,9 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     for i, (year, dep) in enumerate(zip(years, deps)):
         # i, year , dep = 0,years[0],deps[0]
         output_dir = (
-            "train_data"
+            "../train_data"
+            + "-"
+            + config_task
             + "-"
             + src
             + "-"
@@ -458,7 +463,7 @@ def instantiate_model(config):
     """
     module_type = config["optim"]["module"]
     module_dict = {
-        "deeplabv3": DeepLabv3Module, 
+        "deeplabv3": DeepLabv3Module,
         "resnet50": ResNet50Module
     }
     nchannel = config["donnees"]["n channels train"]
@@ -556,14 +561,20 @@ def instantiate_trainer(config, lightning_module):
         monitor="validation_loss", save_top_k=1, save_last=True, mode="min"
     )
 
-    checkpoint_callback_IOU = ModelCheckpoint(
-        monitor="validation_IOU", save_top_k=1, save_last=True, mode="max"
-    )
+
     early_stop_callback = EarlyStopping(
         monitor="validation_loss", mode="min", patience=20
     )
     lr_monitor = LearningRateMonitor(logging_interval="step")
-    list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback, checkpoint_callback_IOU]
+
+    if config["donnees"]["task"] == "segmentation":
+        checkpoint_callback_IOU = ModelCheckpoint(
+                monitor="validation_IOU", save_top_k=1, save_last=True, mode="max"
+                )
+        list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback, checkpoint_callback_IOU]
+
+    if config["donnees"]["task"] == "classification":
+        list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback]
 
     strategy = "auto"
 
@@ -582,7 +593,7 @@ def instantiate_trainer(config, lightning_module):
 def run_pipeline(remote_server_uri, experiment_name, run_name):
     """
     Runs the segmentation pipeline u
-    sing the configuration specified in `config.yml` 
+    sing the configuration specified in `config.yml`
     and the provided MLFlow parameters.
     Args:
         None
