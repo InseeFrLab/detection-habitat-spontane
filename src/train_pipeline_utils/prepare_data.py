@@ -125,9 +125,8 @@ def label_images(list_images, labeler, task="segmentation"):
     list_filtered_splitted_labeled_images = []
 
     for satellite_image in list_images:
-    
+        mask = labeler.create_segmentation_label(satellite_image)
         if task=="segmentation":
-            mask = labeler.create_segmentation_label(satellite_image)
             if np.sum(mask) >0:
                 list_filtered_splitted_labeled_images.append(satellite_image)
                 list_masks.append(mask)

@@ -4,6 +4,7 @@ sources:
   TEST:  
     segmentation: donnees-test/segmentation
     change-detection: donnees-test/change_detection
+    classification: donnees-test/classification
   PAPERS:
     S2Looking: Donnees/PAPERS/S2Looking
     LEVIR_CD: Donnees/PAPERS/LEVIR_CD
@@ -150,6 +151,7 @@ local-path:
   TEST:  
     segmentation: donnees-test/segmentation
     change-detection: donnees-test/change-detection
+    classification: donnees-test/classification
 
   PAPERS: data/paper_dataset
   PLEIADES:

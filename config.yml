@@ -3,7 +3,7 @@ donnees:
   dataset: "CLASSIFICATION" 
   year: [2022]
   dep: ["972"]
-  type labeler: "BDTOPO"
+  type labeler: "RIL"
   buffer size: 10
   n channels train: 3
   n bands: 3
