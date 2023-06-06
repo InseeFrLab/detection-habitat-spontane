@@ -77,13 +77,13 @@ def filter_images_pleiades(list_images, list_array_cloud):
 
     if list_array_cloud:
         for splitted_image, array_cloud in zip(list_images, list_array_cloud):
-            if not is_too_black2(splitted_image):
+            if not is_too_black(splitted_image):
                 prop_cloud = np.sum(array_cloud)/(array_cloud.shape[0])**2
                 if not prop_cloud > 0:
                     list_filtered_splitted_images.append(splitted_image)
     else:
         for splitted_image in list_images:
-            if not is_too_black2(splitted_image):
+            if not is_too_black(splitted_image):
                 list_filtered_splitted_images.append(splitted_image)
 
     return list_filtered_splitted_images

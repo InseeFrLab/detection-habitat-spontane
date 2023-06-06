@@ -125,7 +125,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     for i, (year, dep) in enumerate(zip(years, deps)):
         # i, year , dep = 0,years[0],deps[0]
         output_dir = (
-            "../train_data"
+            "train_data"
             + "-"
             + config_task
             + "-"
@@ -336,11 +336,11 @@ def instantiate_dataloader(config, list_output_dir):
         list_images = []
             
         for dir in list_output_dir:
+            labels = os.listdir(dir + "/labels") 
+            if labels[0][0] == ".":
+                del(labels[0])
+
             if config_task == "segmentation":
-                
-                # dir = list_output_dir[0]
-                labels = os.listdir(dir + "/labels") 
-                
                 list_labels = np.concatenate((
                     list_labels,
                     np.sort([dir + "/labels/" + name for name in labels])
@@ -367,6 +367,7 @@ def instantiate_dataloader(config, list_output_dir):
                         list_labels,
                         list_labels_dir
                     ))
+                print(list_labels)
             
             # Même opération peu importe la tâche 
             images = os.listdir(dir + "/images")
@@ -416,10 +417,15 @@ def instantiate_dataloader(config, list_output_dir):
     ]
 
     # Gestion datset test
+    # output_test = "../donnees-test/"
+    # output_test_task = output_test + config["donnees"]["task"]
+    # output_images_path = output_test_task + "/images/"
+    # output_labels_path = output_test_task + "/masks/"
+
     output_test = "../test-data"
     output_images_path = output_test + "/images/"
     output_labels_path = output_test + "/labels/"
-
+    
     list_name_image = os.listdir(output_images_path)
     list_name_label = os.listdir(output_labels_path)
 
@@ -503,7 +509,7 @@ def instantiate_loss(config):
         return loss_dict[loss_type]()
 
 
-def instantiate_lightning_module(config, model):
+def instantiate_lightning_module(config):
     """
     Create a PyTorch Lightning module for segmentation
     with the given model and optimization configuration.
@@ -520,7 +526,7 @@ def instantiate_lightning_module(config, model):
 
     if config["donnees"]["task"] == "segmentation":
         lightning_module = SegmentationModule(
-            model=model,
+            model=instantiate_model(config),
             loss=instantiate_loss(config),
             optimizer=list_params[0],
             optimizer_params=list_params[1],
@@ -531,7 +537,7 @@ def instantiate_lightning_module(config, model):
     
     if config["donnees"]["task"] == "classification":
         lightning_module = ClassificationModule(
-            model=model,
+            model=instantiate_model(config),
             loss=instantiate_loss(config),
             optimizer=list_params[0],
             optimizer_params=list_params[1],
@@ -601,7 +607,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         None
     """
     # Open the file and load the file
-    with open("../config.yml") as f:
+    with open("config.yml") as f:
         config = yaml.load(f, Loader=SafeLoader)
 
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
@@ -613,14 +619,13 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     prepare_test_data(config, test_dir)
 
     # list_output_dir = ["../splitted_data2"]
-    model = instantiate_model(config)
 
     train_dl, valid_dl, test_dl = instantiate_dataloader(
     config, list_output_dir
     )
     
     # train_dl.dataset[0][0].shape
-    light_module = instantiate_lightning_module(config, model)
+    light_module = instantiate_lightning_module(config)
     trainer = instantiate_trainer(config, light_module)
 
     torch.cuda.empty_cache()
@@ -643,7 +648,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         with mlflow.start_run(run_name=run_name):
             mlflow.autolog()    
             mlflow.log_artifact(
-                "../config.yml",
+                "config.yml",
                 artifact_path="config.yml"
             )
             trainer.fit(light_module, train_dl, valid_dl)

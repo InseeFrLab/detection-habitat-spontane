@@ -1,5 +1,5 @@
 import torch
-import torch.nn as nn
+from torch import nn
 import torchvision
 from torchvision.models.resnet import ResNet50_Weights
 
@@ -14,8 +14,10 @@ class ResNet50Module(nn.Module):
         self.model = torchvision.models.resnet50(
                     weights=ResNet50_Weights.DEFAULT
                 )
-
-        self.model.fc  = nn.Linear(in_features=2048, out_features=2, bias=True)
+        fc_in_features = self.model.fc.in_features
+        self.model.fc  = nn.Sequential(nn.Linear(2048, 512),
+                                 nn.ReLU(),
+                                 nn.Linear(512, 2))
 
         if nchannel != 3:
             self.model.conv1 = nn.Conv2d(

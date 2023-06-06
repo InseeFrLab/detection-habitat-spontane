@@ -59,6 +59,17 @@ class ClassificationModule(pl.LightningModule):
             batch (tensor): Batch of images to perform forward-pass.
         Returns (Tuple[tensor, tensor]): Table, Column prediction.
         """
+        self.model.train()
+        return self.model(batch)
+
+    def forward2(self, batch):
+        """
+        Perform forward-pass.
+        Args:
+            batch (tensor): Batch of images to perform forward-pass.
+        Returns (Tuple[tensor, tensor]): Table, Column prediction.
+        """
+        self.model.eval()
         return self.model(batch)
 
     def training_step(self, batch, batch_idx):
@@ -72,6 +83,10 @@ class ClassificationModule(pl.LightningModule):
         images, labels, dic = batch
 
         output = self.forward(images)
+        _, preds = torch.max(output, 1)
+
+        print("prediction: ", preds[:10])
+        print("labels: ", labels[:10])
         loss = self.loss(output, labels)
 
         self.log("train_loss", loss, on_epoch=True)
@@ -87,8 +102,14 @@ class ClassificationModule(pl.LightningModule):
         Returns: Tensor
         """
         images, labels, dic = batch
-
+        
         output = self.forward(images)
+        _, preds = torch.max(output, 1)
+
+        print("prediction: ", preds[:10])
+        print("prediction_size: ", preds.size())
+        print("labels: ", labels[:10])
+        print("labels_size: ", labels.size())
         loss = self.loss(output, labels)
 
         self.log("validation_loss", loss, on_epoch=True)
@@ -104,8 +125,13 @@ class ClassificationModule(pl.LightningModule):
         Returns: Tensor
         """
         images, labels, dic = batch
-        output = self.forward(images)
+        output = self.forward2(images)
+        _, preds = torch.max(output, 1)
 
+        print("prediction: ", preds[:10])
+        print("prediction_size: ", preds.size)
+        print("labels: ", labels[:10])
+        print("labels_size: ", labels.size)
         loss = self.loss(output, labels)
         self.log("test_loss", loss, on_epoch=True)
 

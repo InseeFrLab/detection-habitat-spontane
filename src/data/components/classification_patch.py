@@ -64,16 +64,15 @@ class PatchClassification(Dataset):
         label = torch.tensor(label)
         
         if self.transforms:
-            sample = self.transforms(image=img, label=label)
+            sample = self.transforms(image=img)
             img = sample["image"]
-            label = sample["label"]
         else:
             img = torch.tensor(img.astype(float))
             img = img.permute([2, 0, 1])
             #label = torch.tensor(label)
 
         img = img.type(torch.float)
-        label = label.type(torch.LongTensor)
+        label = label.type(torch.float)
         metadata = {"pathimage": pathim, "class": label}
         return img, label, metadata
 
