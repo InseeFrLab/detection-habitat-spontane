@@ -14,7 +14,7 @@ from classes.data.labeled_satellite_image import (
 from classes.data.satellite_image import SatelliteImage
 
 
-class Patch_Classification(Dataset):
+class PatchClassification(Dataset):
     """
     Custom Dataset class.
     """

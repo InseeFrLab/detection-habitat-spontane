@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import rasterio
-
+import csv
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import Labeler
 from utils.filter import has_cloud, is_too_black2, is_too_black, mask_full_cloud, patch_nocloud
@@ -41,7 +41,7 @@ def check_labelled_images(output_directory_name):
         return False
 
 
-def filter_images(src, list_images,list_array_cloud = None):
+def filter_images(src, list_images, list_array_cloud = None):
     """
     calls the appropriate function according to the data type.
 
@@ -105,7 +105,7 @@ def filter_images_sentinel2(list_images):
     return list_images
 
 
-def label_images(list_images, labeler):
+def label_images(list_images, labeler, task="segmentation"):
     """
     labels the images according to type of labeler desired.
 
@@ -125,11 +125,20 @@ def label_images(list_images, labeler):
     list_filtered_splitted_labeled_images = []
 
     for satellite_image in list_images:
-        mask = labeler.create_segmentation_label(satellite_image)
-        #if np.sum(mask) >0:
-        list_filtered_splitted_labeled_images.append(satellite_image)
-        list_masks.append(mask)
+    
+        if task=="segmentation":
+            mask = labeler.create_segmentation_label(satellite_image)
+            if np.sum(mask) >0:
+                list_filtered_splitted_labeled_images.append(satellite_image)
+                list_masks.append(mask)
 
+        if task == "classification":
+            if np.sum(mask) >=1:
+                list_masks.append(1)
+            else:
+                list_masks.append(0)
+            list_filtered_splitted_labeled_images.append(satellite_image)
+        
     # print(
     #     "Nombre d'images labelisées : ",
     #     len(list_filtered_splitted_labeled_images),
@@ -138,8 +147,7 @@ def label_images(list_images, labeler):
     # )
     return list_filtered_splitted_labeled_images, list_masks
 
-
-def save_images_and_masks(list_images, list_masks, output_directory_name):
+def save_images_and_masks(list_images, list_masks, output_directory_name, task="segmentation"):
     """
     write the couple images/masks into a specific folder.
 
@@ -169,10 +177,27 @@ def save_images_and_masks(list_images, list_masks, output_directory_name):
         i = i + 1
         try:
             image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
-            np.save(
-                output_masks_path + "/" + filename + ".npy",
-                mask,
-            )
+            
+            if task == "segmentation":
+                np.save(
+                    output_masks_path + "/" + filename + ".npy",
+                    mask,
+                )
+            if task == "classification":
+                csv_file_path = output_masks_path + "/" + 'fichierlabeler.csv'
+
+                    # Create the csv file if it does not exist
+                if not os.path.isfile(csv_file_path):
+                    with open(csv_file_path, 'w', newline='') as csvfile:
+                        writer = csv.writer(csvfile)
+                        writer.writerow(['Path_image', 'Classification'])
+                        writer.writerow([filename, mask])
+        
+                # Open it if it exists
+                else:
+                    with open(csv_file_path, 'a', newline='') as csvfile:
+                        writer = csv.writer(csvfile)
+                        writer.writerow([filename, mask])
 
         except rasterio._err.CPLE_AppDefinedError:
             # except:

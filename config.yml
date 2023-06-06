@@ -1,6 +1,6 @@
 donnees:
   source train: "PLEIADES"
-  dataset: "PLEIADE" 
+  dataset: "CLASSIFICATION" 
   year: [2022]
   dep: ["972"]
   type labeler: "BDTOPO"
@@ -15,7 +15,7 @@ optim:
   loss: "lossbinaire"
   lr: 0.0001
   momentum: 0.9
-  module: "binarydeeplabv3"
+  module: "resnet50"
   batch size: 9
   batch size test: 4
   max epochs: 50
