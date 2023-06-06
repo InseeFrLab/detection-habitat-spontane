@@ -2,6 +2,7 @@ import gc
 import os
 import sys
 from datetime import datetime
+import csv
 
 import mlflow
 import numpy as np
@@ -25,8 +26,11 @@ from classes.optim.losses import CrossEntropySelfmade
 from torch.nn import CrossEntropyLoss
 from classes.optim.optimizer import generate_optimization_elements
 from data.components.dataset import PleiadeDataset
+from data.components.classification_patch import PatchClassification
 from models.components.segmentation_models import DeepLabv3Module
+from models.components.classification_models import ResNet50Module
 from models.segmentation_module import SegmentationModule
+
 from train_pipeline_utils.download_data import load_satellite_data, load_donnees_test
 from train_pipeline_utils.handle_dataset import (
     generate_transform,
@@ -42,11 +46,13 @@ from train_pipeline_utils.prepare_data import(
     check_labelled_images
 )
 
+import torch.nn as nn
 from classes.data.satellite_image import SatelliteImage
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
 from utils.utils import update_storage_access, split_array, remove_dot_file
 from rasterio.errors import RasterioIOError
 from classes.optim.evaluation_model import evaluer_modele_sur_jeu_de_test_segmentation_pleiade
+from models.classification_module import ClassificationModule  
 
 
 def download_data(config):
@@ -109,7 +115,8 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     deps = config_data["dep"]
     src = config_data["source train"]
     labeler = config_data["type labeler"]
-
+    config_task = config_data["task"]
+    
     list_output_dir = []
 
     for i, (year, dep) in enumerate(zip(years, deps)):
@@ -179,12 +186,13 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     (
                         list_filtered_splitted_labeled_images,
                         list_masks,
-                    ) = label_images(list_filtered_splitted_images, labeler)
+                    ) = label_images(list_filtered_splitted_images, labeler, task=config_task)
 
                     save_images_and_masks(
                         list_filtered_splitted_labeled_images,
                         list_masks,
                         output_dir,
+                        task=config_task
                     )
 
         list_output_dir.append(output_dir)
@@ -245,7 +253,7 @@ def prepare_test_data(config, test_dir):
                 np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
 
 
-def instantiate_dataset(config, list_path_images, list_path_labels):
+def instantiate_dataset(config, list_images, list_labels):
     """
     Instantiates the appropriate dataset object
     based on the configuration settings.
@@ -260,7 +268,11 @@ def instantiate_dataset(config, list_path_images, list_path_labels):
     Returns:
         A dataset object of the specified type.
     """
-    dataset_dict = {"PLEIADE": PleiadeDataset}
+    dataset_dict = { 
+                    "PLEIADE": PleiadeDataset,
+                    "CLASSIFICATION": PatchClassification
+                    }
+
     dataset_type = config["donnees"]["dataset"]
 
     # inqtanciation du dataset comple
@@ -270,7 +282,7 @@ def instantiate_dataset(config, list_path_images, list_path_labels):
         dataset_select = dataset_dict[dataset_type]
 
         full_dataset = dataset_select(
-            list_path_images, list_path_labels, config["donnees"]["n channels train"]
+            list_images, list_labels, config["donnees"]["n channels train"]
         )
 
     return full_dataset
@@ -312,36 +324,65 @@ def instantiate_dataloader(config, list_output_dir):
     # génération des paths en fonction du type de Données
     # (Sentinel, PLEIADES) VS Dataset préannotés
 
+    config_task = config["donnees"]["task"]
     if config["donnees"]["source train"] in ["PLEIADES", "SENTINEL2"]:
-        list_path_labels = []
-        list_path_images = []
+        
+        list_labels = []
+        list_images = []
+            
         for dir in list_output_dir:
-            # dir = list_output_dir[0]
-            labels = os.listdir(dir + "/labels") 
+            if config_task == "segmentation":
+                
+                # dir = list_output_dir[0]
+                labels = os.listdir(dir + "/labels") 
+                
+                list_labels = np.concatenate((
+                    list_labels,
+                    np.sort([dir + "/labels/" + name for name in labels])
+                ))
+                                    
+            if config_task == "classification":
+                list_labels_dir = []
+                with open(dir + "/labels/" + labels[0], 'r') as csvfile:
+                    reader = csv.reader(csvfile)
+                
+                    # Ignorer l'en-tête du fichier CSV s'il y en a un
+                    next(reader)
+                    
+                    # Parcourir les lignes du fichier CSV et extraire la deuxième colonne
+                    for row in reader:
+                        image_path = row[0]
+                        mask = row[1]  # Index 1 correspond à la deuxième colonne (index 0 pour la première)
+                        list_labels_dir.append([image_path, mask])
+
+                list_labels_dir = sorted(list_labels_dir, key=lambda x: x[0])
+                list_labels_dir = np.array([sous_liste[1] for sous_liste in list_labels_dir])
+
+                list_labels = np.concatenate((
+                        list_labels,
+                        list_labels_dir
+                    ))
+            
+            # Même opération peu importe la tâche 
             images = os.listdir(dir + "/images")
 
-            list_path_labels = np.concatenate((
-                list_path_labels,
-                np.sort([dir + "/labels/" + name for name in labels])
-            ))
-            
-            list_path_images = np.concatenate((
-                list_path_images,
+            list_images = np.concatenate((
+                list_images,
                 np.sort([dir + "/images/" + name for name in images])
-            ))
+            ))            
 
     train_idx, val_idx = select_indices_to_split_dataset(
-        len(list_path_images),
+        len(list_images),
         config["optim"]["val prop"]
     )
     
     # récupération de la classe de Dataset souhaitée
     train_dataset = instantiate_dataset(
-        config, list_path_images[train_idx], list_path_labels[train_idx]
+        config, list_images[train_idx], list_labels[train_idx]
     )
 
     valid_dataset = instantiate_dataset(
-        config, list_path_images[val_idx], list_path_labels[val_idx]
+        config, list_images[val_idx], list_labels[val_idx]
     )
 
     # on applique les transforms respectives
@@ -380,10 +421,18 @@ def instantiate_dataloader(config, list_output_dir):
     list_path_images = np.sort([output_images_path + name_image for name_image in list_name_image])
     list_path_labels = np.sort([output_labels_path + name_label for name_label in list_name_label])
 
-    dataset_test = instantiate_dataset(
-        config, list_path_images, list_path_labels
-    )
-    
+    if config["donnees"]["task"] == "segmentation":
+        dataset_test = instantiate_dataset(
+            config, list_path_images, list_path_labels
+        )
+    else:
+        config2 = config.copy()
+        config2["donnees"]["dataset"] = "PLEIADE"
+
+        dataset_test = instantiate_dataset(
+            config2, list_path_images, list_path_labels
+        )
+        
     dataset_test.transforms = t_preproc
     
     batch_size_test = config["optim"]["batch size test"]
@@ -408,7 +457,10 @@ def instantiate_model(config):
         object: Instance of the specified module.
     """
     module_type = config["optim"]["module"]
-    module_dict = {"deeplabv3": DeepLabv3Module}
+    module_dict = {
+        "deeplabv3": DeepLabv3Module, 
+        "resnet50": ResNet50Module
+    }
     nchannel = config["donnees"]["n channels train"]
 
     if module_type not in module_dict:
@@ -436,7 +488,8 @@ def instantiate_loss(config):
     loss_dict = {
                 "softiou": SoftIoULoss,
                 "crossentropy": CrossEntropyLoss,
-                "crossentropyselmade": CrossEntropySelfmade
+                "crossentropyselmade": CrossEntropySelfmade,
+                "lossbinaire": nn.BCELoss
                 }
 
     if loss_type not in loss_dict:
@@ -460,15 +513,28 @@ def instantiate_lightning_module(config, model):
     """
     list_params = generate_optimization_elements(config)
 
-    lightning_module = SegmentationModule(
-        model=model,
-        loss=instantiate_loss(config),
-        optimizer=list_params[0],
-        optimizer_params=list_params[1],
-        scheduler=list_params[2],
-        scheduler_params=list_params[3],
-        scheduler_interval=list_params[4],
-    )
+    if config["donnees"]["task"] == "segmentation":
+        lightning_module = SegmentationModule(
+            model=model,
+            loss=instantiate_loss(config),
+            optimizer=list_params[0],
+            optimizer_params=list_params[1],
+            scheduler=list_params[2],
+            scheduler_params=list_params[3],
+            scheduler_interval=list_params[4],
+        )
+    
+    if config["donnees"]["task"] == "classification":
+        lightning_module = ClassificationModule(
+            model=model,
+            loss=instantiate_loss(config),
+            optimizer=list_params[0],
+            optimizer_params=list_params[1],
+            scheduler=list_params[2],
+            scheduler_params=list_params[3],
+            scheduler_interval=list_params[4],
+        )
+
     return lightning_module
 
 
@@ -483,7 +549,7 @@ def instantiate_trainer(config, lightning_module):
         model: The PyTorch model to use for segmentation.
 
     Returns:
-        SegmentationModule: A PyTorch Lightning module for segmentation.
+        trainer: return a trainer object
     """
     # def callbacks
     checkpoint_callback = ModelCheckpoint(

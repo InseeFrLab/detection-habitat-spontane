@@ -3,12 +3,12 @@ import torch.nn as nn
 import torchvision
 from torchvision.models.resnet import ResNet50_Weights
 
-class BinaryClassificationModule(nn.Module):
+class ResNet50Module(nn.Module):
     """
     Binary classification model based on DeepLabv3.
     """
 
-    def __init__(self, nchannel=3, size = 32):
+    def __init__(self):
         super().__init__()
         model = torchvision.models.resnet50(
                     weights=ResNet50_Weights.DEFAULT
