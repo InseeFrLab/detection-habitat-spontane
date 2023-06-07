@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import torchvision
 from torchvision.models.resnet import ResNet50_Weights
-
+torch.set_grad_enabled(True)
 
 class ResNet50Module(nn.Module):
     """
@@ -14,6 +14,9 @@ class ResNet50Module(nn.Module):
         self.model = torchvision.models.resnet50(
                     weights=ResNet50_Weights.DEFAULT
                 )
+        for param in self.model.parameters():
+            param.requires_grad = True
+
         self.model.fc  = nn.Linear(2048, 2)
         self.model.sigmoid = nn.Sigmoid()
 
