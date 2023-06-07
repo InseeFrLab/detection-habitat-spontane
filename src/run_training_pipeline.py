@@ -22,7 +22,7 @@ from yaml.loader import SafeLoader
 import train_pipeline_utils.handle_dataset as hd
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
-from classes.optim.losses import CrossEntropySelfmade
+from classes.optim.losses import (CrossEntropySelfmade, BCELossSelfmade)
 from torch.nn import CrossEntropyLoss
 from classes.optim.optimizer import generate_optimization_elements
 from data.components.dataset import PleiadeDataset
@@ -500,7 +500,7 @@ def instantiate_loss(config):
                 "softiou": SoftIoULoss,
                 "crossentropy": CrossEntropyLoss,
                 "crossentropyselmade": CrossEntropySelfmade,
-                "lossbinaire": nn.BCELoss
+                "lossbinaire": BCELossSelfmade
                 }
 
     if loss_type not in loss_dict:
@@ -607,7 +607,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         None
     """
     # Open the file and load the file
-    with open("config.yml") as f:
+    with open("../config.yml") as f:
         config = yaml.load(f, Loader=SafeLoader)
 
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
@@ -648,7 +648,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         with mlflow.start_run(run_name=run_name):
             mlflow.autolog()    
             mlflow.log_artifact(
-                "config.yml",
+                "../config.yml",
                 artifact_path="config.yml"
             )
             trainer.fit(light_module, train_dl, valid_dl)
