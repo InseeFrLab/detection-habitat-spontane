@@ -72,6 +72,7 @@ class PatchClassification(Dataset):
             #label = torch.tensor(label)
 
         img = img.type(torch.float)
+        #img = (img - img.min()) / (img.max() - img.min())
         label = label.type(torch.float)
         metadata = {"pathimage": pathim, "class": label}
         return img, label, metadata
