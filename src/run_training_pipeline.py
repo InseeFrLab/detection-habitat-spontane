@@ -661,7 +661,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 light_module_checkpoint = light_module.load_from_checkpoint(
                     loss = instantiate_loss(config),
                     checkpoint_path=trainer.checkpoint_callback.best_model_path, # je créé un module qui charge
-                    model=light_module.model,
+                    model=model,
                     optimizer=light_module.optimizer,
                     optimizer_params=light_module.optimizer_params,
                     scheduler=light_module.scheduler,
@@ -688,7 +688,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             light_module_checkpoint = light_module.load_from_checkpoint(
                 loss = instantiate_loss(config),
                 checkpoint_path=trainer.checkpoint_callback.best_model_path, # je créé un module qui charge
-                model=light_module.model,
+                model=model,
                 optimizer=light_module.optimizer,
                 optimizer_params=light_module.optimizer_params,
                 scheduler=light_module.scheduler,

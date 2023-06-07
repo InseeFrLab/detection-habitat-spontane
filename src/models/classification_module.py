@@ -9,7 +9,6 @@ from torch import nn, optim
 
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
 from classes.data.satellite_image import SatelliteImage
-from utils.plot_utils import plot_list_segmentation_labeled_satellite_image
 
 
 class ClassificationModule(pl.LightningModule):
@@ -81,12 +80,9 @@ class ClassificationModule(pl.LightningModule):
         Returns: Tensor
         """
         images, labels, dic = batch
-
+        
         output = self.forward(images)
-        _, preds = torch.max(output, 1)
 
-        print("prediction: ", preds[:10])
-        print("labels: ", labels[:10])
         loss = self.loss(output, labels)
 
         self.log("train_loss", loss, on_epoch=True)
@@ -102,13 +98,10 @@ class ClassificationModule(pl.LightningModule):
         Returns: Tensor
         """
         images, labels, dic = batch
-        
         output = self.forward(images)
-        _, preds = torch.max(output, 1)
-
-        print("prediction: ", preds[:10])
-        print("prediction_size: ", preds.size())
-        print("labels: ", labels[:10])
+        
+        print("output: ", output)
+        print("labels: ", labels)
         print("labels_size: ", labels.size())
         loss = self.loss(output, labels)
 
@@ -126,12 +119,7 @@ class ClassificationModule(pl.LightningModule):
         """
         images, labels, dic = batch
         output = self.forward2(images)
-        _, preds = torch.max(output, 1)
 
-        print("prediction: ", preds[:10])
-        print("prediction_size: ", preds.size)
-        print("labels: ", labels[:10])
-        print("labels_size: ", labels.size)
         loss = self.loss(output, labels)
         self.log("test_loss", loss, on_epoch=True)
 
