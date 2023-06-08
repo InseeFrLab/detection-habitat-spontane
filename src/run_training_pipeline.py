@@ -22,7 +22,7 @@ from yaml.loader import SafeLoader
 import train_pipeline_utils.handle_dataset as hd
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
-from classes.optim.losses import (CrossEntropySelfmade, BCELossSelfmade)
+from classes.optim.losses import CrossEntropySelfmade
 from torch.nn import CrossEntropyLoss
 from classes.optim.optimizer import generate_optimization_elements
 from data.components.dataset import PleiadeDataset
@@ -500,7 +500,7 @@ def instantiate_loss(config):
                 "softiou": SoftIoULoss,
                 "crossentropy": CrossEntropyLoss,
                 "crossentropyselmade": CrossEntropySelfmade,
-                "lossbinaire": BCELossSelfmade
+                "lossbinaire": nn.BCELoss
                 }
 
     if loss_type not in loss_dict:

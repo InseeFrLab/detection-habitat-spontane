@@ -9,6 +9,7 @@ from torch import nn, optim
 
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
 from classes.data.satellite_image import SatelliteImage
+from classes.optim.evaluation_model import calculate_pourcentage_loss
 
 
 class ClassificationModule(pl.LightningModule):
@@ -58,17 +59,6 @@ class ClassificationModule(pl.LightningModule):
             batch (tensor): Batch of images to perform forward-pass.
         Returns (Tuple[tensor, tensor]): Table, Column prediction.
         """
-        self.model.train()
-        return self.model(batch)
-
-    def forward2(self, batch):
-        """
-        Perform forward-pass.
-        Args:
-            batch (tensor): Batch of images to perform forward-pass.
-        Returns (Tuple[tensor, tensor]): Table, Column prediction.
-        """
-        self.model.eval()
         return self.model(batch)
 
     def training_step(self, batch, batch_idx):
@@ -80,10 +70,18 @@ class ClassificationModule(pl.LightningModule):
         Returns: Tensor
         """
         images, labels, dic = batch
-        
         output = self.forward(images)
 
-        loss = self.loss(output, labels)
+        output = output.to("cpu")
+        labels = labels.to("cpu")
+        
+        target = labels.long()
+        
+        targets_one_hot = torch.zeros(target.shape[0], 2)
+        targets_one_hot = targets_one_hot.scatter_(1, target.unsqueeze(1), 1)
+
+        loss = self.loss(output, targets_one_hot)
+        loss = self.loss(output, targets_one_hot)
 
         self.log("train_loss", loss, on_epoch=True)
 
@@ -99,13 +97,21 @@ class ClassificationModule(pl.LightningModule):
         """
         images, labels, dic = batch
         output = self.forward(images)
+
+        output = output.to("cpu")
+        labels = labels.to("cpu")
         
-        print("output: ", output)
-        print("labels: ", labels)
-        print("labels_size: ", labels.size())
-        loss = self.loss(output, labels)
+        target = labels.long()
+        
+        targets_one_hot = torch.zeros(target.shape[0], 2)
+        targets_one_hot = targets_one_hot.scatter_(1, target.unsqueeze(1), 1)
+
+        loss = self.loss(output, targets_one_hot)
+
+        loss_pourcentage = calculate_pourcentage_loss(output, labels)
 
         self.log("validation_loss", loss, on_epoch=True)
+        self.log("validation_missclassed", loss_pourcentage, on_epoch=True)
 
         return loss
 
@@ -118,9 +124,17 @@ class ClassificationModule(pl.LightningModule):
         Returns: Tensor
         """
         images, labels, dic = batch
-        output = self.forward2(images)
+        output = self.forward(images)
 
-        loss = self.loss(output, labels)
+        output = output.to("cpu")
+        labels = labels.to("cpu")
+        
+        target = labels.long()
+        
+        targets_one_hot = torch.zeros(target.shape[0], 2)
+        targets_one_hot = targets_one_hot.scatter_(1, target.unsqueeze(1), 1)
+
+        loss = self.loss(output, targets_one_hot)
         self.log("test_loss", loss, on_epoch=True)
 
         return loss

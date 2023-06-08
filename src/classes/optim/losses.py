@@ -55,40 +55,6 @@ class CrossEntropySelfmade(nn.Module):
         loss = criterion(output, target)
         return loss
 
-class BCELossSelfmade(nn.Module):
-    """
-    PyTorch module that calculates the BCE loss
-    between the predicted output and the target output.
-    
-    """
-    def __init__(self):
-        """
-        Constructor.
-
-        """
-        super(BCELossSelfmade, self).__init__()
-
-    def forward(self, output, target):
-        """
-        Calculates the cross-entropy loss between the predicted 
-        output and the target output.
-
-        Args:
-            output (torch.Tensor): The predicted output.
-            target (torch.Tensor): The target output.
-
-        Returns:
-            torch.Tensor: The calculated cross-entropy loss.
-
-        """
-        target = target.to("cpu")
-        output = output.to("cpu")
-
-        criterion = nn.BCELoss()
-        loss = criterion(output, target)
-        return loss
-
-
 # Exemple de CustomLoss
 class CustomLoss(nn.Module):
     def __init__(self):
