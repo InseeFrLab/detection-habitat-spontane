@@ -117,3 +117,30 @@ def calculate_IOU(output, labels):
     return IOU
 
 # calculate num and denomionateur IOU
+
+def calculate_pourcentage_loss(output, labels):
+    """
+    Calculate Intersection Over Union indicator
+    based on output segmentation mask of a model
+    and the true segmentations mask
+
+    Args:
+        output: the output of the segmentation
+        label: the true segmentation mask
+
+    """
+    probability_class_1 = output[:, 1]
+
+
+    # Set a threshold for class prediction
+    threshold = 0.53
+
+    # Make predictions based on the threshold
+    predictions = torch.where(probability_class_1 < threshold, torch.tensor([1]), torch.tensor([0]))
+
+
+    predicted_classes = predictions.type(torch.float)
+
+    misclassified_percentage = (predicted_classes != labels).float().mean()
+
+    return misclassified_percentage
