@@ -91,6 +91,95 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
                 mlflow.log_artifact(plot_file, artifact_path="plots")
             
         del images, label, dic
+
+def evaluer_modele_sur_jeu_de_test_classification_pleiade(
+    test_dl,
+    model,
+    tile_size,
+    batch_size,
+    use_mlflow=False
+):  
+    
+    # tile_size = 250
+    # batch_size  = 4
+    model.eval()
+    npatch = int((2000/tile_size)**2)
+    nbatchforfullimage = int(npatch/batch_size)
+
+    if not npatch % nbatchforfullimage == 0:
+        print("Le nombre de patchs \
+            n'est pas divisible par la taille d'un batch")
+        return None
+
+    list_labeled_satellite_image = []
+
+    for idx, batch in enumerate(test_dl):
+        # idx, batch = 0, next(iter(test_dl))   
+        print(idx)
+        images, label, dic = batch
+        
+        model = model.to("cuda:0")
+        images = images.to("cuda:0")
+        
+        output_model = model(images)
+        output_model = output_model.to("cpu")
+        probability_class_1 = output_model[:, 1]
+
+        # Set a threshold for class prediction
+        threshold = 0.51
+
+        # Make predictions based on the threshold
+        predictions = torch.where(probability_class_1 > threshold, torch.tensor([1]), torch.tensor([0]))
+        predicted_classes = predictions.type(torch.float)
+
+        for i in range(batch_size):
+            pthimg = dic["pathimage"][i]
+            si = SatelliteImage.from_raster(
+                file_path=pthimg,
+                dep=None,
+                date=None,
+                n_bands=3
+            )
+            si.normalize()
+
+            if int(predicted_classes[i]) == 0:
+                mask_pred = np.zeros((tile_size, tile_size))
+                mask_pred = mask_pred.astype(np.uint8)
+
+            elif int(predicted_classes[i]) == 1:
+                mask_pred = np.ones((tile_size, tile_size))
+                mask_pred = (mask_pred*255).astype(np.uint8)
+
+            list_labeled_satellite_image.append( 
+                SegmentationLabeledSatelliteImage(
+                    satellite_image=si,
+                    label=mask_pred,
+                    source="",
+                    labeling_date=""
+                )
+            )
+
+        if ((idx+1) % nbatchforfullimage) == 0:
+            print("ecriture image")
+            if not os.path.exists("img/"):
+                os.makedirs("img/")
+
+            fig1 = plot_list_segmentation_labeled_satellite_image(
+                list_labeled_satellite_image, [0, 1, 2]
+                )
+    
+            filename = pthimg.split('/')[-1]
+            filename = filename.split('.')[0]
+            filename = '_'.join(filename.split('_')[0:6])
+            plot_file = filename + ".png"
+        
+            fig1.savefig(plot_file)
+            list_labeled_satellite_image = []
+            
+            if use_mlflow:
+                mlflow.log_artifact(plot_file, artifact_path="plots")
+            
+        del images, label, dic
     
 
 def calculate_IOU(output, labels):
@@ -117,3 +206,30 @@ def calculate_IOU(output, labels):
     return IOU
 
 # calculate num and denomionateur IOU
+
+def calculate_pourcentage_loss(output, labels):
+    """
+    Calculate Intersection Over Union indicator
+    based on output segmentation mask of a model
+    and the true segmentations mask
+
+    Args:
+        output: the output of the segmentation
+        label: the true segmentation mask
+
+    """
+    probability_class_1 = output[:, 1]
+
+
+    # Set a threshold for class prediction
+    threshold = 0.51
+
+    # Make predictions based on the threshold
+    predictions = torch.where(probability_class_1 > threshold, torch.tensor([1]), torch.tensor([0]))
+
+
+    predicted_classes = predictions.type(torch.float)
+
+    misclassified_percentage = (predicted_classes != labels).float().mean()
+
+    return misclassified_percentage

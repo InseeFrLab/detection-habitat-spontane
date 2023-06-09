@@ -51,7 +51,10 @@ from classes.data.satellite_image import SatelliteImage
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
 from utils.utils import update_storage_access, split_array, remove_dot_file
 from rasterio.errors import RasterioIOError
-from classes.optim.evaluation_model import evaluer_modele_sur_jeu_de_test_segmentation_pleiade
+from classes.optim.evaluation_model import (
+    evaluer_modele_sur_jeu_de_test_segmentation_pleiade,
+    evaluer_modele_sur_jeu_de_test_classification_pleiade
+    )
 from models.classification_module import ClassificationModule  
 
 
@@ -607,7 +610,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         None
     """
     # Open the file and load the file
-    with open("config.yml") as f:
+    with open("../config.yml") as f:
         config = yaml.load(f, Loader=SafeLoader)
 
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
@@ -621,8 +624,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     # list_output_dir = ["../splitted_data2"]
 
     train_dl, valid_dl, test_dl = instantiate_dataloader(
-    config, list_output_dir
-    )
+                                    config, list_output_dir
+                                    )
     
     # train_dl.dataset[0][0].shape
     light_module = instantiate_lightning_module(config)
@@ -648,7 +651,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         with mlflow.start_run(run_name=run_name):
             mlflow.autolog()    
             mlflow.log_artifact(
-                "config.yml",
+                "../config.yml",
                 artifact_path="config.yml"
             )
             trainer.fit(light_module, train_dl, valid_dl)
@@ -669,13 +672,24 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                     scheduler_interval=light_module.scheduler_interval
 
                 )
-                evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
-                        test_dl,
-                        model,
-                        tile_size,
-                        batch_size_test,
-                        config["mlflow"]
-                    )
+
+                if config["donnees"]["task"] == "segmentation":
+                    evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
+                            test_dl,
+                            model,
+                            tile_size,
+                            batch_size_test,
+                            config["mlflow"]
+                        )
+                
+                elif config["donnees"]["task"] == "classification":
+                    evaluer_modele_sur_jeu_de_test_classification_pleiade(
+                            test_dl,
+                            model,
+                            tile_size,
+                            batch_size_test,
+                            config["mlflow"]
+                        )
     
     else:
         trainer.fit(light_module, train_dl, valid_dl)
@@ -697,15 +711,25 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
                 )
             
-            model = light_module_checkpoint.model   
+            model = light_module_checkpoint.model
 
-            evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
-                    test_dl,
-                    model,
-                    tile_size,
-                    batch_size_test,
-                    config["mlflow"]
-                )
+            if config["donnees"]["task"] == "segmentation":
+                evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
+                        test_dl,
+                        model,
+                        tile_size,
+                        batch_size_test,
+                        config["mlflow"]
+                    )
+            
+            elif config["donnees"]["task"] == "classification":
+                evaluer_modele_sur_jeu_de_test_classification_pleiade(
+                        test_dl,
+                        model,
+                        tile_size,
+                        batch_size_test,
+                        config["mlflow"]
+                    )
         # trainer.test(light_module, test_dl)
 
 

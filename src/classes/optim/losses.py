@@ -55,7 +55,6 @@ class CrossEntropySelfmade(nn.Module):
         loss = criterion(output, target)
         return loss
 
-
 # Exemple de CustomLoss
 class CustomLoss(nn.Module):
     def __init__(self):
