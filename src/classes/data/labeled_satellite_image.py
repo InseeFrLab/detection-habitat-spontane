@@ -7,6 +7,7 @@ from typing import List, Literal, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image, ImageDraw
 
 from classes.data.satellite_image import SatelliteImage
 from utils.utils import get_indices_from_tile_length
@@ -61,9 +62,7 @@ class SegmentationLabeledSatelliteImage:
         ]
 
         list_labelled_images = [
-            SegmentationLabeledSatelliteImage(
-                im, label, self.source, self.labeling_date
-            )
+            SegmentationLabeledSatelliteImage(im, label, self.source, self.labeling_date)
             for im, label in zip(list_sat, splitted_labels)
         ]
 
@@ -88,9 +87,7 @@ class SegmentationLabeledSatelliteImage:
             self.satellite_image.normalize()
 
         fig, ax = plt.subplots(figsize=(5, 5))
-        ax.imshow(
-            np.transpose(self.satellite_image.array, (1, 2, 0))[:, :, bands_indices]
-        )
+        ax.imshow(np.transpose(self.satellite_image.array, (1, 2, 0))[:, :, bands_indices])
         ax.imshow(self.label, alpha=alpha)
         plt.xticks([])
         plt.yticks([])
@@ -117,9 +114,7 @@ class SegmentationLabeledSatelliteImage:
         show_mask = show_mask.astype(np.uint8)
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 10))
-        ax1.imshow(
-            np.transpose(self.satellite_image.array, (1, 2, 0))[:, :, bands_indices]
-        )
+        ax1.imshow(np.transpose(self.satellite_image.array, (1, 2, 0))[:, :, bands_indices])
         ax1.axis("off")
         ax2.imshow(show_mask)
         plt.show()
@@ -144,6 +139,10 @@ class DetectionLabeledSatelliteImage:
             source (Literal["RIL", "BDTOPO"]): Labeling source.
             labeling_date (datetime): Date of labeling data.
         """
+        self.satellite_image = satellite_image
+        self.label = label
+        self.source = source
+        self.labeling_date = labeling_date
 
     def split(self, nfolds: int) -> List[DetectionLabeledSatelliteImage]:
         """
@@ -156,3 +155,31 @@ class DetectionLabeledSatelliteImage:
             List[DetectionLabeledSatelliteImage]: _description_
         """
         raise NotImplementedError()
+
+    def plot(self, bands_indices: List):
+        """
+        Plot a subset of bands from a satellite image and its
+        corresponding labels as an image.
+
+        Args:
+        bands_indices (List): List of indices of bands to plot from the
+        satellite image. The indices should be integers between 0 and
+        the number of bands - 1.
+        """
+        image = self.satellite_image.array.copy()
+        # Normalisation ?
+
+        image = Image.fromarray(
+            np.transpose(image.astype(np.uint8), (1, 2, 0))[:, :, bands_indices], mode="RGB"
+        )
+        # Drawing bounding boxes
+        for x, y, xx, yy in self.label:
+            c1 = (int(x.item()), int(y.item()))
+            c2 = (int(xx.item()), int(yy.item()))
+            draw = ImageDraw.Draw(image)
+            draw.rectangle((c1, c2))
+
+        fig, ax = plt.subplots(figsize=(5, 5))
+        ax.imshow(image)
+
+        return plt.gcf()

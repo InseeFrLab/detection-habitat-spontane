@@ -48,9 +48,22 @@ class Labeler(ABC):
         """
         raise NotImplementedError()
 
-    def create_detection_label(
-        self, satellite_image: SatelliteImage
-    ) -> List[Tuple[int]]:
+    def create_label(self, satellite_image: SatelliteImage, task: str):
+        """
+        Create a label for a SatelliteImage.
+
+        Args:
+            satellite_image (SatelliteImage): Satellite image.
+            task (str): Task.
+        """
+        if task == "segmentation":
+            return self.create_segmentation_label(satellite_image)
+        elif task == "detection":
+            return self.create_detection_label(satellite_image)
+        else:
+            raise NotImplementedError("Task must be 'segmentation'" "or 'detection'.")
+
+    def create_detection_label(self, satellite_image: SatelliteImage) -> List[Tuple[int]]:
         """
         Create an object detection label for a SatelliteImage.
 
@@ -100,9 +113,7 @@ class RILLabeler(Labeler):
                 2 for flat buffers and 3 for square buffers.
         """
         super(RILLabeler, self).__init__(labeling_date, dep)
-        self.labeling_data = load_ril(
-            millesime=str(self.labeling_date.year), dep=self.dep
-        )
+        self.labeling_data = load_ril(millesime=str(self.labeling_date.year), dep=self.dep)
 
         self.buffer_size = buffer_size
         self.cap_style = cap_style
@@ -118,17 +129,13 @@ class RILLabeler(Labeler):
             np.array: Segmentation mask.
         """
         if self.labeling_data.crs != satellite_image.crs:
-            self.labeling_data.geometry = self.labeling_data.geometry.to_crs(
-                satellite_image.crs
-            )
+            self.labeling_data.geometry = self.labeling_data.geometry.to_crs(satellite_image.crs)
 
         # Filtering geometries from RIL
         xmin, ymin, xmax, ymax = satellite_image.bounds
         patch = self.labeling_data.cx[xmin:xmax, ymin:ymax].copy()
 
-        patch.geometry = patch.geometry.buffer(
-            self.buffer_size, cap_style=self.cap_style
-        )
+        patch.geometry = patch.geometry.buffer(self.buffer_size, cap_style=self.cap_style)
 
         if patch.empty:
             rasterized = np.zeros(satellite_image.array.shape[1:])
@@ -163,9 +170,7 @@ class BDTOPOLabeler(Labeler):
             dep (Literal): Departement.
         """
         super(BDTOPOLabeler, self).__init__(labeling_date, dep)
-        self.labeling_data = load_bdtopo(
-            millesime=str(self.labeling_date.year), dep=self.dep
-        )
+        self.labeling_data = load_bdtopo(millesime=str(self.labeling_date.year), dep=self.dep)
 
     def create_segmentation_label(self, satellite_image: SatelliteImage) -> np.array:
         """
@@ -179,9 +184,7 @@ class BDTOPOLabeler(Labeler):
             np.array: Segmentation mask.
         """
         if self.labeling_data.crs != satellite_image.crs:
-            self.labeling_data.geometry = self.labeling_data.geometry.to_crs(
-                satellite_image.crs
-            )
+            self.labeling_data.geometry = self.labeling_data.geometry.to_crs(satellite_image.crs)
 
         # Filtering geometries from BDTOPO
         xmin, ymin, xmax, ymax = satellite_image.bounds
@@ -203,9 +206,7 @@ class BDTOPOLabeler(Labeler):
 
         return rasterized
 
-    def create_segmentation_label_filtered(
-        self, satellite_image: SatelliteImage
-    ) -> np.array:
+    def create_segmentation_label_filtered(self, satellite_image: SatelliteImage) -> np.array:
         """
         Create a filtered segmentation label (mask) from BDTOPO
         data for a SatelliteImage. It keeps the buildings labelled as
@@ -218,9 +219,7 @@ class BDTOPOLabeler(Labeler):
             np.array: Segmentation mask.
         """
         if self.labeling_data.crs != satellite_image.crs:
-            self.labeling_data.geometry = self.labeling_data.geometry.to_crs(
-                satellite_image.crs
-            )
+            self.labeling_data.geometry = self.labeling_data.geometry.to_crs(satellite_image.crs)
 
         # Filtering geometries from BDTOPO
         xmin, ymin, xmax, ymax = satellite_image.bounds
@@ -273,9 +272,7 @@ class RIL_BDTOPOLabeler(Labeler):
         self.cap_style = cap_style
 
         self.labeling_data_ril = load_ril(str(self.labeling_date.year), self.dep)
-        self.labeling_data_bdtopo = load_bdtopo(
-            str(self.labeling_date.year), self.dep
-        )
+        self.labeling_data_bdtopo = load_bdtopo(str(self.labeling_date.year), self.dep)
 
     def create_segmentation_label(self, satellite_image: SatelliteImage) -> np.array:
         """
@@ -294,8 +291,8 @@ class RIL_BDTOPOLabeler(Labeler):
             )
 
         if self.labeling_data_bdtopo.crs != satellite_image.crs:
-            self.labeling_data_bdtopo.geometry = (
-                self.labeling_data_bdtopo.geometry.to_crs(satellite_image.crs)
+            self.labeling_data_bdtopo.geometry = self.labeling_data_bdtopo.geometry.to_crs(
+                satellite_image.crs
             )
 
         # Geometries from BDTOPO and RIL
@@ -303,15 +300,11 @@ class RIL_BDTOPOLabeler(Labeler):
         patch_ril = self.labeling_data_ril.cx[xmin:xmax, ymin:ymax].copy()
         patch_bdtopo = self.labeling_data_bdtopo.cx[xmin:xmax, ymin:ymax].copy()
 
-        patch_ril.geometry = patch_ril.geometry.buffer(
-            self.buffer_size, self.cap_style
-        )
+        patch_ril.geometry = patch_ril.geometry.buffer(self.buffer_size, self.cap_style)
 
         # Extract polygons from patch_ril that do not intersect
         # patch_bdtopo
-        non_intersecting_polygons = patch_ril[
-            ~patch_ril.intersects(patch_bdtopo.unary_union)
-        ]
+        non_intersecting_polygons = patch_ril[~patch_ril.intersects(patch_bdtopo.unary_union)]
 
         # Merge patch_bdtopo polygons with non-intersecting polygons
         merged_polygons = gpd.GeoDataFrame(
