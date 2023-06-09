@@ -133,10 +133,10 @@ def calculate_pourcentage_loss(output, labels):
 
 
     # Set a threshold for class prediction
-    threshold = 0.53
+    threshold = 0.51
 
     # Make predictions based on the threshold
-    predictions = torch.where(probability_class_1 < threshold, torch.tensor([1]), torch.tensor([0]))
+    predictions = torch.where(probability_class_1 > threshold, torch.tensor([1]), torch.tensor([0]))
 
 
     predicted_classes = predictions.type(torch.float)
