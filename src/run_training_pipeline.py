@@ -19,13 +19,14 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from yaml.loader import SafeLoader
 
-from classes.data.labeled_satellite_image import (  # noqa: E501
+from classes.data.labeled_satellite_image import (
     SegmentationLabeledSatelliteImage,
 )
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
 from classes.optim.evaluation_model import (
     evaluer_modele_sur_jeu_de_test_segmentation_pleiade,
+    evaluer_modele_sur_jeu_de_test_segmentation_sentinel
 )
 from classes.optim.losses import CrossEntropySelfmade
 from classes.optim.optimizer import generate_optimization_elements
@@ -574,9 +575,9 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     torch.cuda.empty_cache()
     gc.collect()
 
-    # remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr" # noqa: E501
-    # experiment_name = "segmentation"
-    # run_name = "testjudith"
+    remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr" # noqa: E501
+    experiment_name = "segmentation"
+    run_name = "testjudith"
 
     if config["mlflow"]:
         update_storage_access()
@@ -601,6 +602,16 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                     tile_size,
                     batch_size_test,
                     config["mlflow"],
+                )
+
+            else:
+                evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
+                    test_dl,
+                    model,
+                    tile_size,
+                    batch_size_test,
+                    config["n bands"],
+                    config["mlflow"]
                 )
 
     else:
