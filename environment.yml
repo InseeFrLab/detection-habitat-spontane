@@ -2,7 +2,8 @@ bucket: "projet-slums-detection"
 
 sources:
   TEST:
-    segmentation: donnees-test/segmentation
+    # segmentation: donnees-test/segmentation
+    segmentation: donnees-test/SENTINEL/segmentation
     change-detection: donnees-test/change_detection
   PAPERS:
     S2Looking: Donnees/PAPERS/S2Looking

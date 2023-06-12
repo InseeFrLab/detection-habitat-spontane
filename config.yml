@@ -1,14 +1,14 @@
 donnees:
-  source train: "SENTINEL2"
-  dataset: "PLEIADE" 
+  source train: "SENTINEL1-2"
+  dataset: "SENTINEL"
   year: [2022]
   dep: ["976"]
   type labeler: "RIL"
   buffer size: 10
-  n channels train: 12
-  n bands: 12
+  n channels train: 13
+  n bands: 13
   tile size: 250
-  augmentation: False
+  augmentation: True
   task: "segmentation"
 
 optim:
