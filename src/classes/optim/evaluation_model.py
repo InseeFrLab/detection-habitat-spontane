@@ -26,7 +26,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
     batch_size,
     use_mlflow=False
 ):
-    
+
     npatch = int((2000/tile_size)**2)
     nbatchforfullimage = int(npatch/batch_size)
 
@@ -38,13 +38,13 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
     list_labeled_satellite_image = []
 
     for idx, batch in enumerate(test_dl):
-        # idx, batch = 0, next(iter(test_dl))   
+        # idx, batch = 0, next(iter(test_dl))
         print(idx)
         images, label, dic = batch
-        
+
         model = model.to("cuda:0")
         images = images.to("cuda:0")
-        
+
         output_model = model(images)
         mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
 
@@ -58,7 +58,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
             )
             si.normalize()
 
-            list_labeled_satellite_image.append( 
+            list_labeled_satellite_image.append(
                 SegmentationLabeledSatelliteImage(
                     satellite_image=si,
                     label=mask_pred[i],
@@ -75,20 +75,80 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
             fig1 = plot_list_segmentation_labeled_satellite_image(
                 list_labeled_satellite_image, [0, 1, 2]
                 )
-    
+
             filename = pthimg.split('/')[-1]
             filename = filename.split('.')[0]
             filename = '_'.join(filename.split('_')[0:6])
             plot_file = filename + ".png"
-        
+
             fig1.savefig(plot_file)
             list_labeled_satellite_image = []
-            
+
             if use_mlflow:
                 mlflow.log_artifact(plot_file, artifact_path="plots")
-            
+
         del images, label, dic
-    
+
+
+def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
+    test_dl,
+    model,
+    tile_size,
+    batch_size,
+    n_bands,
+    use_mlflow=False,
+):
+
+    for idx, batch in enumerate(test_dl):
+        # idx, batch = 0, next(iter(test_dl))
+        print(idx)
+        images, label, dic = batch
+
+        model = model.to("cuda:0")
+        images = images.to("cuda:0")
+
+        output_model = model(images)
+        mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
+
+        for i in range(batch_size):
+            pthimg = dic["pathimage"][i]
+            si = SatelliteImage.from_raster(
+                file_path=pthimg,
+                dep=None,
+                date=None,
+                n_bands=n_bands
+            )
+            si.normalize()
+
+            labeled_satellite_image = (
+                SegmentationLabeledSatelliteImage(
+                    satellite_image=si,
+                    label=mask_pred[i],
+                    source="",
+                    labeling_date=""
+                )
+            )
+
+            print("ecriture image")
+            if not os.path.exists("img/"):
+                os.makedirs("img/")
+
+            fig1 = plot_list_segmentation_labeled_satellite_image(
+                [labeled_satellite_image], [3, 2, 1]
+                )
+
+            filename = pthimg.split('/')[-1]
+            filename = filename.split('.')[0]
+            filename = '_'.join(filename.split('_')[0:6])
+            plot_file = filename + ".png"
+
+            fig1.savefig(plot_file)
+
+            if use_mlflow:
+                mlflow.log_artifact(plot_file, artifact_path="plots")
+
+            del images, label, dic
+
 
 def calculate_IOU(output, labels):
     """
