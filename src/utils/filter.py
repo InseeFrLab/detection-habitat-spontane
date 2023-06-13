@@ -19,25 +19,22 @@ from utils.utils import get_environment, get_file_system
 
 def is_too_water(image: SatelliteImage, water_value_threshold=75) -> bool:
     """
-    Determine if a satellite image has too much water represented\
+    Determine if a satellite image has too much water\
         based on the NDWI.
 
     This function calculates the number of pixels that are in the water\
         and deletes the image if there are too many.
-    A pixel is considered as water it its NDWI > 0.
-
-    The image is considered too black if the proportion of black pixels
-    is greater than or equal to the specified threshold (black_area_threshold).
+    A pixel is considered as water if its NDWI > 0.
+    The image is considered as water if the proportion of water pixels\
+        is greater than or equal to the specified threshold.
 
     Args:
         image (SatelliteImage): The input satellite image.
-        black_value_threshold (int, optional): The threshold value
-            for considering a pixel as black. Default is 100.
-        black_area_threshold (float, optional): The threshold for
-            the proportion of black pixels. Default is 0.5.
+        water_value_threshold (int, optional): The threshold value
+            for considering a pixel as water. Default is 75.
 
     Returns:
-        bool: True if the proportion of black pixels is greater than or equal
+        bool: True if the proportion of water pixels is greater than or equal
             to the threshold, False otherwise.
     """
 
