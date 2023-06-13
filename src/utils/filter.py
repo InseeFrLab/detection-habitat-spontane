@@ -113,7 +113,7 @@ def is_too_black2(image: SatelliteImage, black_area=0.5) -> bool:
 
 def has_cloud(
     image: SatelliteImage,
-    threshold: int = 250,
+    threshold: float = 0.98,
     min_size: int = 50000,
 ) -> bool:
     """
@@ -128,7 +128,7 @@ def has_cloud(
         An integer representing the threshold for coverage of the center of
         clouds in the image. Pixels with a cloud coverage value higher than
         this threshold are classified as covered by clouds.
-        Defaults to 250 (white pixels).
+        Defaults to 0.98 (white pixels).
     min_size (int, optional):
         An integer representing the minimum size (in pixels) of a cloud
         region that will be retained in the output mask. Defaults to 50,000
@@ -159,10 +159,10 @@ def has_cloud(
     
     if not copy_image.normalized:
         copy_image.normalize()
-    
+
     image = copy_image.array
     image = image[[0, 1, 2], :, :]
-    image = (image*255).astype(np.uint8)
+    image = (image*np.max(image)).astype(np.float64)
     image = image.transpose(1, 2, 0)
 
     # Convert the RGB image to grayscale
@@ -184,7 +184,7 @@ def has_cloud(
 
 
 def mask_cloud(
-    image: SatelliteImage, threshold: int = 250, min_size: int = 50000
+    image: SatelliteImage, threshold: float = 0.98, min_size: int = 50000
 ) -> np.ndarray:
     """
     Detects clouds in a SatelliteImage using a threshold-based approach
@@ -200,7 +200,7 @@ def mask_cloud(
             The threshold value to use for detecting clouds on the image
             transformed into grayscale. A pixel is considered part of a
             cloud if its value is greater than this threshold.
-            Default to 250.
+            Default to 0.98.
         min_size (int):
             The minimum size (in pixels) of a cloud region to be
             considered valid.
@@ -232,7 +232,7 @@ def mask_cloud(
     
     image = copy_image.array
     image = image[[0, 1, 2], :, :]
-    image = (image*255).astype(np.uint8)
+    image = (image*np.max(image)).astype(np.float64)
     image = image.transpose(1, 2, 0)
 
     # Convert the RGB image to grayscale
@@ -263,8 +263,8 @@ def mask_cloud(
 
 def mask_full_cloud(
     image: SatelliteImage,
-    threshold_center: int = 250,
-    threshold_full: int = 130,
+    threshold_center: float = 0.98,
+    threshold_full: float = 0.7,
     min_size: int = 50000,
 ) -> np.ndarray:
     """
@@ -280,12 +280,12 @@ def mask_full_cloud(
         An integer representing the threshold for coverage of the center of
         clouds in the image. Pixels with a cloud coverage value higher than
         this threshold are classified as cloud-covered.
-        Defaults to 250 (white pixels).
+        Defaults to 0.98 (white pixels).
     threshold_full (int, optional):
         An integer representing the threshold for coverage of the full clouds
         in the image. Pixels with a cloud coverage value higher than this
         threshold are classified as covered by clouds.
-        Defaults to 130 (light grey pixels).
+        Defaults to 0.7 (light grey pixels).
     min_size (int, optional):
         An integer representing the minimum size (in pixels) of a cloud region
         that will be retained in the output mask.
