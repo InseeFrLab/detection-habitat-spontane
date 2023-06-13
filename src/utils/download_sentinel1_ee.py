@@ -129,6 +129,7 @@ def export_s1_grd_first(start_date, AOI, s1_grd, DOM):
         path_local,
         f"{bucket}/{path_s3}",
         f"{DEPs[DOM.upper()]}",
+        int(start_date[0:4]),
         250,
         1,
         False,
@@ -170,6 +171,7 @@ def export_s1_grd_mean(start_date, AOI, s1_grd, DOM):
         path_local,
         f"{bucket}/{path_s3}",
         f"{DEPs[DOM.upper()]}",
+        int(start_date[0:4]),
         250,
         1,
         False,
@@ -204,6 +206,7 @@ def upload_satelliteImages(
     lpath,
     rpath,
     dep,
+    year,
     dim,
     n_bands,
     check_nbands12=False,
@@ -254,8 +257,8 @@ def upload_satelliteImages(
             try:
                 image = SatelliteImage.from_raster(
                     file_path=filename + ".tif",
-                    dep=972,
-                    date=2022,
+                    dep=dep,
+                    date=year,
                     n_bands=12,
                 )
                 exportToMinio(filename + ".tif", rpath)
@@ -269,20 +272,14 @@ def upload_satelliteImages(
 
 
 if __name__ == "__main__":
-    START_DATE = "2021-08-20"
-    END_DATE = "2021-09-01"
+    START_DATE = "2022-08-20"
+    END_DATE = "2022-09-01"
 
     EPSGs = utils.mappings.name_dep_to_crs
     DEPs = utils.mappings.name_dep_to_num_dep
     AOIs = utils.mappings.name_dep_to_aoi
 
-    # export_s1(
-    #     "Guadeloupe",
-    #     AOIs,
-    #     EPSGs,
-    #     START_DATE,
-    #     END_DATE
-    # )
+    export_s1("Guadeloupe", AOIs, EPSGs, START_DATE, END_DATE)
 
     # export_s1(
     #     "Martinique",
