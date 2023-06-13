@@ -8,7 +8,6 @@ import numpy as np
 from rasterio.features import rasterize, shapes
 from scipy.ndimage import label
 from shapely.geometry import Polygon, box
-from tqdm import tqdm
 
 from classes.data.labeled_satellite_image import (
     DetectionLabeledSatelliteImage,
@@ -16,6 +15,44 @@ from classes.data.labeled_satellite_image import (
 )
 from classes.data.satellite_image import SatelliteImage
 from utils.utils import get_environment, get_file_system
+
+
+def is_too_water(image: SatelliteImage, water_value_threshold=75) -> bool:
+    """
+    Determine if a satellite image has too much water represented\
+        based on the NDWI.
+
+    This function calculates the number of pixels that are in the water\
+        and deletes the image if there are too many.
+    A pixel is considered as water it its NDWI > 0.
+
+    The image is considered too black if the proportion of black pixels
+    is greater than or equal to the specified threshold (black_area_threshold).
+
+    Args:
+        image (SatelliteImage): The input satellite image.
+        black_value_threshold (int, optional): The threshold value
+            for considering a pixel as black. Default is 100.
+        black_area_threshold (float, optional): The threshold for
+            the proportion of black pixels. Default is 0.5.
+
+    Returns:
+        bool: True if the proportion of black pixels is greater than or equal
+            to the threshold, False otherwise.
+    """
+
+    array = image.array
+    NDWI = np.zeros((250, 250))
+
+    for i in range(250):
+        for j in range(250):
+            if not np.isnan(array[2, i, j]) and not np.isnan(array[7, i, j]):
+                if (int(array[2, i, j]) - int(array[7, i, j])) / (
+                    int(array[2, i, j]) + int(array[7, i, j])
+                ) < 0:
+                    NDWI[i][j] = 1
+    if np.sum(NDWI) >= water_value_threshold * 250:
+        return True
 
 
 def is_too_black(
@@ -154,15 +191,15 @@ def has_cloud(
         >>> has_cloud(image_1)
         True
     """
-    
+
     copy_image = image.copy()
-    
+
     if not copy_image.normalized:
         copy_image.normalize()
-    
+
     image = copy_image.array
     image = image[[0, 1, 2], :, :]
-    image = (image*255).astype(np.uint8)
+    image = (image * 255).astype(np.uint8)
     image = image.transpose(1, 2, 0)
 
     # Convert the RGB image to grayscale
@@ -226,13 +263,13 @@ def mask_cloud(
         >>> ax.imshow(mask, alpha=0.3)
     """
     copy_image = image.copy()
-    
+
     if not copy_image.normalized:
         copy_image.normalize()
-    
+
     image = copy_image.array
     image = image[[0, 1, 2], :, :]
-    image = (image*255).astype(np.uint8)
+    image = (image * 255).astype(np.uint8)
     image = image.transpose(1, 2, 0)
 
     # Convert the RGB image to grayscale
@@ -250,7 +287,7 @@ def mask_cloud(
     mask = np.zeros_like(labeled)
 
     if num_features >= 1:
-        #for i in tqdm(range(1, num_features + 1)):  # Display the progress bar
+        # for i in tqdm(range(1, num_features + 1)): # Display the progress bar
         for i in range(1, num_features + 1):
             if region_sizes[sorted_labels[i]] >= min_size:
                 mask[labeled == sorted_labels[i]] = 1

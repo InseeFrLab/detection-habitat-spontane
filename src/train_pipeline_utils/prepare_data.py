@@ -3,7 +3,7 @@ import os
 import numpy as np
 import rasterio
 
-from utils.filter import is_too_black
+from utils.filter import is_too_black, is_too_water
 
 
 def check_labelled_images(output_directory_name):
@@ -39,44 +39,6 @@ def check_labelled_images(output_directory_name):
         os.makedirs(output_masks_path)
         print("Directory created")
         return False
-
-
-# def split_images(file_path, n_bands):
-#     """
-#     splits the images if they are not already at the expected size.
-
-#     Args:
-#         file path: a string representing the path to the directory \
-#         that contains the data to be splitted.
-#         n_bands: an integer representing the number of \
-#         bands in the input images.
-
-#     Returns:
-#         list[SatelliteImage] : the list containing the splitted data.
-#     """
-
-#     # print("Entre dans la fonction split_images")
-#     list_name = os.listdir(file_path)
-#     list_path = [file_path + "/" + name for name in list_name]
-
-#     list_images = [
-#         SatelliteImage.from_raster(
-#             file_path=path, dep=None, date=None, n_bands=n_bands
-#         )
-#         for path in list_path
-#     ]
-
-#     if list_images[0].array.shape[1] != 250:
-#         list_splitted_images = [image.split(250) for image in list_images]
-#         list_splitted_images = sum(list_splitted_images, [])
-#     else:
-#         list_splitted_images = list_images
-
-#     # print("Nombre d'images splitées : ", len(list_splitted_images))
-#     return list_splitted_images
-
-# src = config_data["source train"]
-# list_images = list_splitted_images
 
 
 def filter_images(src, list_images, list_array_cloud):
@@ -144,7 +106,12 @@ def filter_images_sentinel(list_images):
     """
 
     # print("Entre dans la fonction filter_images_sentinel")
-    return list_images
+    list_filtered_splitted_images = []
+    for splitted_image in list_images:
+        if is_too_water(splitted_image, 75):
+            list_filtered_splitted_images.append(splitted_image)
+
+    return list_filtered_splitted_images
 
 
 def label_images(list_images, labeler):
@@ -168,9 +135,9 @@ def label_images(list_images, labeler):
 
     for satellite_image in list_images:
         mask = labeler.create_segmentation_label(satellite_image)
-        if np.sum(mask) != 0:
-            list_filtered_splitted_labeled_images.append(satellite_image)
-            list_masks.append(mask)
+        # if np.sum(mask) != 0:
+        list_filtered_splitted_labeled_images.append(satellite_image)
+        list_masks.append(mask)
 
     # print(len(list_filtered_splitted_labeled_images), len(list_masks))
     return list_filtered_splitted_labeled_images, list_masks
@@ -194,15 +161,15 @@ def save_images_and_masks(list_images, list_masks, output_directory_name):
     # print("Entre dans la fonction save_images_and_masks")
     output_images_path = output_directory_name + "/images"
     output_masks_path = output_directory_name + "/labels"
-    i = 0
+
     for image, mask in zip(list_images, list_masks):
         # image = list_images[0]
         # bb = image.bounds
 
         # filename = str(bb[0]) + "_" + str(bb[1]) + "_" \
         #   + "{:03d}".format(i)
-        filename = image.filename.split(".")[0] + "_" + "{:03d}".format(i)
-        i = i + 1
+        filename = image.filename.split(".")[0]
+
         try:
             image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
             np.save(output_masks_path + "/" + filename + ".npy", mask)
