@@ -19,14 +19,14 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from yaml.loader import SafeLoader
 
-from classes.data.labeled_satellite_image import (
+from classes.data.labeled_satellite_image import (  # noqa: E501
     SegmentationLabeledSatelliteImage,
 )
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
 from classes.optim.evaluation_model import (
     evaluer_modele_sur_jeu_de_test_segmentation_pleiade,
-    evaluer_modele_sur_jeu_de_test_segmentation_sentinel
+    evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
 )
 from classes.optim.losses import CrossEntropySelfmade
 from classes.optim.optimizer import generate_optimization_elements
@@ -114,16 +114,16 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     years = config_data["year"]
     deps = config_data["dep"]
     src = config_data["source train"]
-    labeler = config_data["type labeler"]
+    type_labeler = config_data["type labeler"]
 
     list_output_dir = []
 
     for i, (year, dep) in enumerate(zip(years, deps)):
         date = datetime.strptime(str(year) + "0101", "%Y%m%d")
-        if labeler == "RIL":
+        if type_labeler == "RIL":
             buffer_size = config_data["buffer size"]
             labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
-        elif labeler == "BDTOPO":
+        elif type_labeler == "BDTOPO":
             labeler = BDTOPOLabeler(date, dep=dep)
 
         output_dir = (
@@ -143,8 +143,6 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
             list_path = [dir + "/" + filename for filename in os.listdir(dir)]
 
             for path in tqdm(list_path):
-                # path = list_path[0]
-                # path  = dir + "/"+ "ORT_2022_0691_1641_U20N_8Bits.jp2"
                 try:
                     si = SatelliteImage.from_raster(
                         file_path=path,
@@ -517,7 +515,7 @@ def instantiate_trainer(config, lightning_module):
         monitor="validation_IOU", save_top_k=1, save_last=True, mode="max"
     )
     early_stop_callback = EarlyStopping(
-        monitor="validation_loss", mode="min", patience=20
+        monitor="validation_loss", mode="min", patience=5
     )
     lr_monitor = LearningRateMonitor(logging_interval="step")
     list_callbacks = [
@@ -575,9 +573,9 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     torch.cuda.empty_cache()
     gc.collect()
 
-    remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr" # noqa: E501
+    remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"  # noqa: E501
     experiment_name = "segmentation"
-    run_name = "testjudith"
+    run_name = "BDTOPOonS1+2"
 
     if config["mlflow"]:
         update_storage_access()
@@ -611,7 +609,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                     tile_size,
                     batch_size_test,
                     config["n bands"],
-                    config["mlflow"]
+                    config["mlflow"],
                 )
 
     else:
