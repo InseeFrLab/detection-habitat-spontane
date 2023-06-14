@@ -5,6 +5,7 @@ from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 
 from classes.data.satellite_image import SatelliteImage
 from utils.mappings import name_dep_to_num_dep
@@ -143,7 +144,7 @@ def plot_list_segmentation_labeled_satellite_image(
     for i in range(0, height - tile_size + 1, stride):
         for j in range(0, width - tile_size + 1, stride):
             output_image[
-                i : i + tile_size, j : j + tile_size, :
+                i: i + tile_size, j: j + tile_size, :
             ] = np.transpose(
                 mat_list_images[compteur_ligne, compteur_col].array,
                 (1, 2, 0),
@@ -155,7 +156,7 @@ def plot_list_segmentation_labeled_satellite_image(
             show_mask = np.zeros((label.shape[0], label.shape[1], 3))
             show_mask[label == 1, :] = [255, 255, 255]
             show_mask = show_mask.astype(np.uint8)
-            output_mask[i : i + tile_size, j : j + tile_size, :] = show_mask
+            output_mask[i: i + tile_size, j: j + tile_size, :] = show_mask
             compteur_col += 1
 
         compteur_col = 0
@@ -426,9 +427,9 @@ def plot_square_images(
 
         plot_list_satellite_images(list_images, bands_indices)
 
-        
+
 def plot_list_images_square(folder_path, borne_inf,borne_sup):
-    
+
     """
     Plot a square grid of images from a folder. You must specify a lower limit and an upper limit,
     to be able to display the images of the folder between these two limits. The difference of the
@@ -442,7 +443,7 @@ def plot_list_images_square(folder_path, borne_inf,borne_sup):
     Returns:
         Plot of the images.
     """
-    
+
     list_filepaths = os.listdir(folder_path)[borne_inf:borne_sup+1]
     size = int(math.sqrt(len(list_filepaths)))
     bands_indices = [0,1,2]
@@ -481,3 +482,106 @@ def plot_list_images_square(folder_path, borne_inf,borne_sup):
 
     # Show the plot
     plt.show()
+
+
+def creer_array_to_plot(
+    pth_image
+):
+
+    """
+    Gives the correctly formatted arrays corresponding to an image to plot.
+
+    Args:
+        pth_image (list[str]): paths to the images to plot.
+
+    Returns:
+        the correctly formatted arrays corresponding to the entry image.
+    """
+
+    si = SatelliteImage.from_raster(pth_image, 974, 2000, 12)
+    # si.normalized()
+    si.array.shape
+    bands_indices = [3, 2, 1]
+    array = si.array
+    normalized_array = (array.astype(np.float32)-np.min(array)) / (np.max(array)/3- np.min(array))
+    # normalized_array = array
+    array_to_plot = np.transpose(
+        normalized_array,
+        (1, 2, 0))[:, :, bands_indices]
+
+    return array_to_plot
+
+
+def represent_image_label(
+    list_array_to_plot,
+    list_label,
+):
+
+    """
+    Plot a square grid of images and their masks from their paths.
+
+    Args:
+        list_array_to_plot (list[str]): paths to the images to plot.
+        list_label (list[str]): paths to the masks to plot.
+
+    Returns:
+        Calls a function that plots the images and their masks.
+    """
+    N = len(list_label)
+    nrow = int(math.sqrt(N))
+    fig, axes = plt.subplots(nrow, 2*nrow, figsize=(20, 10))
+
+    # Iterate over the RGB arrays and plot them in the left grid
+    for i, ax in enumerate(axes[:, :nrow].flat):
+        array_to_plot = creer_array_to_plot(list_array_to_plot[i])
+        ax.imshow(array_to_plot)
+        ax.axis('off')
+
+    # Iterate over the 0-1 arrays and plot them in the right grid
+    for i, ax in enumerate(axes[:, nrow:].flat):
+        ax.imshow(list_label[i], cmap='binary')
+        ax.axis('off')
+
+    # Adjust spacing between subplots
+    plt.subplots_adjust(wspace=0, hspace=0)
+
+    # Show the plot
+    plt.show()
+    plt.gcf()
+    plt.savefig("test.png")
+
+
+def plot_list_images_and_masks_square(
+    train_dataset,
+    size_of_grid,
+):
+
+    """
+    Calls a function that plot a square grid of images and their masks\
+        from their folder. You must specify the size of the grid.
+
+    Args:
+        train_dataset (dataloader): the dataloader from which\
+            the dataset should be extracted.
+        size_of_the_grid (int): the number of images you want on a line\
+            (the grid is a square so the number on a column will be the same).
+
+    Returns:
+        Calls a function that plots the images and their masks.
+    """
+    dataset_train = train_dataset.dataset
+
+    list_array_to_plot = []
+    for i in range(size_of_grid):
+        input, label, dic = dataset_train[i]
+        pth_image = dic["pathimage"]
+        list_array_to_plot.append(pth_image)
+
+    list_label = []
+    list_path = []
+
+    for i in range(size_of_grid):
+        list_label.append(np.array(dataset_train[i][1]))
+        list_path.append(dataset_train[i][2]["pathimage"])
+
+    return represent_image_label(list_array_to_plot, list_label)
