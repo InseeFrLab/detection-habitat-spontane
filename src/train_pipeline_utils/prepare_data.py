@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import rasterio
+import random
 
 from utils.filter import is_too_black, is_too_water
 
@@ -114,7 +115,7 @@ def filter_images_sentinel(list_images):
     return list_filtered_splitted_images
 
 
-def label_images(list_images, labeler):
+def label_images(list_images, labeler, prop):
     """
     labels the images according to type of labeler desired.
 
@@ -123,6 +124,8 @@ def label_images(list_images, labeler):
             to be labeled.
         labeler : a Labeler object representing the labeler \
             used to create segmentation labels.
+        prop : the proportion of the images without label (0 for no empty data,
+            50 for an equal proportion between empty and no empty data, etc)
 
     Returns:
         list[SatelliteImage] : the list containing the splitted and \
@@ -130,14 +133,35 @@ def label_images(list_images, labeler):
     """
 
     # print("Entre dans la fonction label_images")
-    list_masks = []
     list_filtered_splitted_labeled_images = []
+    list_masks = []
+    list_filtered_splitted_labeled_images_empty = []
+    list_masks_empty = []
 
     for satellite_image in list_images:
         mask = labeler.create_segmentation_label(satellite_image)
-        # if np.sum(mask) != 0:
-        list_filtered_splitted_labeled_images.append(satellite_image)
-        list_masks.append(mask)
+        if np.sum(mask) != 0:
+            list_filtered_splitted_labeled_images_empty.append(satellite_image)
+            list_masks_empty.append(mask)
+        else:
+            list_filtered_splitted_labeled_images.append(satellite_image)
+            list_masks.append(mask)
+
+    length_labelled = len(list_filtered_splitted_labeled_images)
+    lenght_unlabelled = prop*length_labelled
+    if lenght_unlabelled < len(list_filtered_splitted_labeled_images_empty):
+        list_to_add = random.sample(
+            list_filtered_splitted_labeled_images_empty,
+            lenght_unlabelled)
+        for i in list_to_add:
+            idx = list_filtered_splitted_labeled_images_empty.index(i)
+            list_filtered_splitted_labeled_images.append(i)
+            list_masks.append(list_masks_empty[idx])
+    else:
+        list_filtered_splitted_labeled_images.extend(
+            list_filtered_splitted_labeled_images_empty
+        )
+        list_masks.extend(list_masks_empty)
 
     # print(len(list_filtered_splitted_labeled_images), len(list_masks))
     return list_filtered_splitted_labeled_images, list_masks
