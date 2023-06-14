@@ -1,8 +1,10 @@
 import os
-
 import numpy as np
 import rasterio
 import csv
+import pandas as pd
+from tqdm import tqdm
+
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import Labeler
 from utils.filter import has_cloud, is_too_black2, is_too_black, mask_full_cloud, patch_nocloud
@@ -206,3 +208,60 @@ def save_images_and_masks(list_images, list_masks, output_directory_name, task="
     return None
 
 
+def extract_proportional_subset(input_file="src/train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler.csv", output_file="src/train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv", target_column="Classification", max_size = 15000):
+    # Charger le fichier CSV initial
+    df = pd.read_csv(input_file)
+    
+    # Diviser le dataframe en deux dataframes en fonction de la valeur de la colonne cible
+    df_0 = df[df[target_column] == 0]
+    df_1 = df[df[target_column] == 1]
+    
+    # Calculer le nombre d'échantillons à extraire de chaque classe
+    sample_size_0 = min(int(max_size / 2), len(df_0))
+    sample_size_1 = min(max_size - sample_size_0, len(df_1))
+    
+    # Extraire aléatoirement les échantillons de chaque classe
+    df_sample_0 = df_0.sample(sample_size_0)
+    df_sample_1 = df_1.sample(sample_size_1)
+    
+    # Concaténer les dataframes échantillons
+    df_sample = pd.concat([df_sample_0, df_sample_1])
+    
+    # Enregistrer le dataframe échantillon dans un nouveau fichier CSV
+    df_sample.to_csv(output_file, index=False)
+
+def filter_images_by_path(csv_file = "src/train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv", image_folder="src/train_data-classification-PLEIADES-RIL-972-2022/images", path_column="Path_image"):
+    # Charger le fichier CSV
+    df = pd.read_csv(csv_file)
+    
+    # Extraire la colonne "path_image" sous forme de liste
+    path_list = df[path_column].tolist()
+    
+    # Parcourir les fichiers dans le dossier d'images
+    for filename in os.listdir(image_folder):
+        image_path = os.path.join(image_folder, filename)
+        
+        # Vérifier si le chemin de l'image n'est pas dans la liste des chemins du fichier CSV
+        if image_path not in path_list:
+            # Supprimer l'image du dossier
+            os.remove(image_path)
+
+def copy_images_by_path(csv_file = "src/train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv", source_folder="src/train_data-classification-PLEIADES-RIL-972-2022/images", destination_folder = "src/train_data-classification-PLEIADES-RIL-972-2022/images2", path_column="Path_image"):
+    # Charger le fichier CSV
+    df = pd.read_csv(csv_file)
+    
+    # Extraire la colonne "path_image" sous forme de liste
+    path_list = df[path_column].tolist()
+    
+    # Vérifier si le dossier de destination existe, sinon le créer
+    if not os.path.exists(destination_folder):
+        os.makedirs(destination_folder)
+    
+    # Parcourir les fichiers dans le dossier source d'images
+    for filename in tqdm(os.listdir(source_folder)):
+        image_path = os.path.splitext(filename)[0]
+        
+        # Vérifier si le chemin de l'image n'est pas dans la liste des chemins du fichier CSV
+        if image_path in path_list:
+            # Copier l'image vers le dossier de destination
+            shutil.copy(os.path.join(source_folder, filename), destination_folder)
