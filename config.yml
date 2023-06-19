@@ -7,7 +7,7 @@ donnees:
   buffer size: 10
   n channels train: 3
   n bands: 3
-  tile size: 250
+  tile size: 50
   augmentation: False
   task: "classification"
 
@@ -16,8 +16,8 @@ optim:
   lr: 0.0001
   momentum: 0.9
   module: "resnet50"
-  batch size: 9
-  batch size test: 4
+  batch size: 225
+  batch size test: 100
   max epochs: 50
   val prop: 0.2
   accumulate batch : 3

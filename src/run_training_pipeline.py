@@ -176,32 +176,36 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     continue
 
                 else:
-                    filename = path.split("/")[-1].split(".")[0] 
-                    list_splitted_mask_cloud = None
+                    list_si_filtered, __ = label_images([si], labeler)
 
-                    if filename in list_name_cloud:
-                        mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
-                        list_splitted_mask_cloud = split_array(mask_full_cloud, config_data["tile size"])
+                    if list_si_filtered:
+                        si = list_si_filtered[0]
+                        filename = path.split("/")[-1].split(".")[0] 
+                        list_splitted_mask_cloud = None
+
+                        if filename in list_name_cloud:
+                            mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
+                            list_splitted_mask_cloud = split_array(mask_full_cloud, config_data["tile size"])
+                            
+                        list_splitted_images = si.split(config_data["tile size"]) 
                         
-                    list_splitted_images = si.split(config_data["tile size"]) 
-                    
-                    list_filtered_splitted_images = filter_images(
-                        config_data["source train"],
-                        list_splitted_images,
-                        list_splitted_mask_cloud 
-                    )
+                        list_filtered_splitted_images = filter_images(
+                            config_data["source train"],
+                            list_splitted_images,
+                            list_splitted_mask_cloud 
+                        )
 
-                    (
-                        list_filtered_splitted_labeled_images,
-                        list_masks,
-                    ) = label_images(list_filtered_splitted_images, labeler, task=config_task)
+                        (
+                            list_filtered_splitted_labeled_images,
+                            list_masks,
+                        ) = label_images(list_filtered_splitted_images, labeler, task=config_task)
 
-                    save_images_and_masks(
-                        list_filtered_splitted_labeled_images,
-                        list_masks,
-                        output_dir,
-                        task=config_task
-                    )
+                        save_images_and_masks(
+                            list_filtered_splitted_labeled_images,
+                            list_masks,
+                            output_dir,
+                            task=config_task
+                        )
 
         list_output_dir.append(output_dir)
         nb = len(os.listdir(output_dir + "/images"))
