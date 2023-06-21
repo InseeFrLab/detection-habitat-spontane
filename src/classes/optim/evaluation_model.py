@@ -25,8 +25,8 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
     tile_size,
     batch_size,
     use_mlflow=False
-):  
-    
+):
+
     # tile_size = 250
     # batch_size  = 4
     model.eval()
@@ -41,13 +41,13 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
     list_labeled_satellite_image = []
 
     for idx, batch in enumerate(test_dl):
-        # idx, batch = 0, next(iter(test_dl))   
+        # idx, batch = 0, next(iter(test_dl))
         print(idx)
         images, label, dic = batch
-        
+
         model = model.to("cuda:0")
         images = images.to("cuda:0")
-        
+
         output_model = model(images)
         mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
 
@@ -78,19 +78,20 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
             fig1 = plot_list_segmentation_labeled_satellite_image(
                 list_labeled_satellite_image, [0, 1, 2]
                 )
-    
+
             filename = pthimg.split('/')[-1]
             filename = filename.split('.')[0]
             filename = '_'.join(filename.split('_')[0:6])
             plot_file = filename + ".png"
-        
+
             fig1.savefig(plot_file)
             list_labeled_satellite_image = []
-            
+
             if use_mlflow:
                 mlflow.log_artifact(plot_file, artifact_path="plots")
-            
+
         del images, label, dic
+
 
 def evaluer_modele_sur_jeu_de_test_classification_pleiade(
     test_dl,
@@ -98,10 +99,8 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
     tile_size,
     batch_size,
     use_mlflow=False
-):  
-    
-    # tile_size = 250
-    # batch_size  = 4
+):
+
     model.eval()
     npatch = int((2000/tile_size)**2)
     nbatchforfullimage = int(npatch/batch_size)
@@ -114,13 +113,12 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
     list_labeled_satellite_image = []
 
     for idx, batch in enumerate(test_dl):
-        # idx, batch = 0, next(iter(test_dl))   
         print(idx)
         images, label, dic = batch
-        
+
         model = model.to("cuda:0")
         images = images.to("cuda:0")
-        
+
         output_model = model(images)
         output_model = output_model.to("cpu")
         probability_class_1 = output_model[:, 1]
@@ -165,20 +163,20 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
             fig1 = plot_list_segmentation_labeled_satellite_image(
                 list_labeled_satellite_image, [0, 1, 2]
                 )
-    
+
             filename = pthimg.split('/')[-1]
             filename = filename.split('.')[0]
             filename = '_'.join(filename.split('_')[0:6])
             plot_file = filename + ".png"
-        
+
             fig1.savefig(plot_file)
             list_labeled_satellite_image = []
-            
+
             if use_mlflow:
                 mlflow.log_artifact(plot_file, artifact_path="plots")
-            
+
         del images, label, dic
-    
+
 
 def calculate_IOU(output, labels):
     """
@@ -205,6 +203,7 @@ def calculate_IOU(output, labels):
 
 # calculate num and denomionateur IOU
 
+
 def calculate_pourcentage_loss(output, labels):
     """
     Calculate the pourcentage of wrong predicted classes
@@ -217,7 +216,6 @@ def calculate_pourcentage_loss(output, labels):
 
     """
     probability_class_1 = output[:, 1]
-
 
     # Set a threshold for class prediction
     threshold = 0.51
