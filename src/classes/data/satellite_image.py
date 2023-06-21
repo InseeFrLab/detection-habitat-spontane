@@ -177,6 +177,8 @@ class SatelliteImage:
         plt.title(f"Dimension of image {copy_image.array.shape[1:]}")
         plt.show()
 
+        return plt.gcf()
+
     @staticmethod
     def from_raster(
         file_path: str,
