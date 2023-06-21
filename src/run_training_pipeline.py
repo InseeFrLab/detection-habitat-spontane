@@ -176,32 +176,36 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     continue
 
                 else:
-                    filename = path.split("/")[-1].split(".")[0] 
-                    list_splitted_mask_cloud = None
+                    list_si_filtered, __ = label_images([si], labeler)
 
-                    if filename in list_name_cloud:
-                        mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
-                        list_splitted_mask_cloud = split_array(mask_full_cloud, config_data["tile size"])
+                    if list_si_filtered:
+                        si = list_si_filtered[0]
+                        filename = path.split("/")[-1].split(".")[0] 
+                        list_splitted_mask_cloud = None
+
+                        if filename in list_name_cloud:
+                            mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
+                            list_splitted_mask_cloud = split_array(mask_full_cloud, config_data["tile size"])
+                            
+                        list_splitted_images = si.split(config_data["tile size"]) 
                         
-                    list_splitted_images = si.split(config_data["tile size"]) 
-                    
-                    list_filtered_splitted_images = filter_images(
-                        config_data["source train"],
-                        list_splitted_images,
-                        list_splitted_mask_cloud 
-                    )
+                        list_filtered_splitted_images = filter_images(
+                            config_data["source train"],
+                            list_splitted_images,
+                            list_splitted_mask_cloud 
+                        )
 
-                    (
-                        list_filtered_splitted_labeled_images,
-                        list_masks,
-                    ) = label_images(list_filtered_splitted_images, labeler, task=config_task)
+                        (
+                            list_filtered_splitted_labeled_images,
+                            list_masks,
+                        ) = label_images(list_filtered_splitted_images, labeler, task=config_task)
 
-                    save_images_and_masks(
-                        list_filtered_splitted_labeled_images,
-                        list_masks,
-                        output_dir,
-                        task=config_task
-                    )
+                        save_images_and_masks(
+                            list_filtered_splitted_labeled_images,
+                            list_masks,
+                            output_dir,
+                            task=config_task
+                        )
 
         list_output_dir.append(output_dir)
         nb = len(os.listdir(output_dir + "/images"))
@@ -381,8 +385,10 @@ def instantiate_dataloader(config, list_output_dir):
             ))            
 
     train_idx, val_idx = select_indices_to_split_dataset(
+        config_task,
         len(list_images),
-        config["optim"]["val prop"]
+        config["optim"]["val prop"],
+        list_labels
     )
     
     # récupération de la classe de Dataset souhaitée
@@ -610,7 +616,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         None
     """
     # Open the file and load the file
-    with open("../config.yml") as f:
+    with open("../config.yml") as f: 
         config = yaml.load(f, Loader=SafeLoader)
 
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
@@ -635,8 +641,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     gc.collect()
 
     # remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"
-    # experiment_name = "segmentation"
-    # run_name = "deeplabV42"
+    # experiment_name = "classification"
+    # run_name = "binary_50_0.51"
 
 
     if config["mlflow"]:
@@ -741,7 +747,7 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
-#nohup python run_training_pipeline.py https://projet-slums-detection-874257.user.lab.sspcloud.fr segmentation testnohup2 > out.txt &
+#nohup python run_training_pipeline.py https://projet-slums-detection-874257.user.lab.sspcloud.fr classification binaray_50_0.51_validation_prop > out.txt &
 # https://www.howtogeek.com/804823/nohup-command-linux/ 
  #TO DO :
 # test routine sur S2Looking dataset

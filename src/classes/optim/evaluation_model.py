@@ -143,12 +143,10 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
             si.normalize()
 
             if int(predicted_classes[i]) == 0:
-                mask_pred = np.zeros((tile_size, tile_size))
-                mask_pred = mask_pred.astype(np.uint8)
+                mask_pred = np.full((tile_size, tile_size, 3), 255, dtype=np.uint8)
 
             elif int(predicted_classes[i]) == 1:
-                mask_pred = np.ones((tile_size, tile_size))
-                mask_pred = (mask_pred*255).astype(np.uint8)
+                mask_pred = np.full((tile_size, tile_size, 3), 0, dtype=np.uint8)
 
             list_labeled_satellite_image.append( 
                 SegmentationLabeledSatelliteImage(
@@ -209,13 +207,13 @@ def calculate_IOU(output, labels):
 
 def calculate_pourcentage_loss(output, labels):
     """
-    Calculate Intersection Over Union indicator
-    based on output segmentation mask of a model
-    and the true segmentations mask
+    Calculate the pourcentage of wrong predicted classes
+    based on output classification predictions of a model
+    and the true classes.
 
     Args:
-        output: the output of the segmentation
-        label: the true segmentation mask
+        output: the output of the classification
+        labels: the true classes
 
     """
     probability_class_1 = output[:, 1]
@@ -227,9 +225,31 @@ def calculate_pourcentage_loss(output, labels):
     # Make predictions based on the threshold
     predictions = torch.where(probability_class_1 > threshold, torch.tensor([1]), torch.tensor([0]))
 
-
     predicted_classes = predictions.type(torch.float)
 
     misclassified_percentage = (predicted_classes != labels).float().mean()
 
     return misclassified_percentage
+
+
+def proportion_ones(labels):
+    """
+    Calculate the proportion of ones in the validation dataloader.
+
+    Args:
+        labels: the true classes
+
+    """
+
+    # Compter le nombre de zéros
+    num_zeros = int(torch.sum(labels == 0))
+
+    # Compter le nombre de uns
+    num_ones = int(torch.sum(labels == 1))
+
+    prop_ones = num_ones/(num_zeros + num_ones)
+
+    # Arrondi deux chiffres après la virgule
+    prop_ones = round(prop_ones, 2)
+
+    return prop_ones

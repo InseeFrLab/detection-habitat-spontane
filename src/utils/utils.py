@@ -79,6 +79,25 @@ def get_transform_for_tiles(
     return Affine.translation(x - transform.c, y - transform.f) * transform
 
 
+def get_transform_for_tiles2(
+    transform: Affine, row, col
+) -> Affine:
+    """
+    Compute the transform matrix of a tile
+
+    Args:
+        transform (Affine): an affine transform matrix.
+        row_off (int): _description_
+        col_off (int): _description_
+
+    Returns:
+        Affine: The affine transform matrix for the given tile
+    """
+
+    x, y = transform * (col, row)
+    return Affine.translation(x - transform.c, y - transform.f) * transform
+
+
 def get_bounds_for_tiles(
     transform: Affine, row_indices: Tuple, col_indices: Tuple
 ) -> Tuple:
@@ -102,6 +121,35 @@ def get_bounds_for_tiles(
     row_max = row_indices[1]
     col_min = col_indices[0]
     col_max = col_indices[1]
+
+    left, bottom = transform * (col_min, row_max)
+    right, top = transform * (col_max, row_min)
+    return rasterio.coords.BoundingBox(left, bottom, right, top)
+
+
+def get_bounds_for_tiles2(
+    transform: Affine, row, col, tile_length
+) -> Tuple:
+    """
+    Given an Affine transformation, and indices for a tile's row and column,
+    returns the bounding coordinates (left, bottom, right, top) of the tile.
+
+    Args:
+        transform: An Affine transformation
+        row_indices (Tuple): A tuple containing the minimum and maximum
+            indices for the tile's row
+        col_indices (Tuple): A tuple containing the minimum and maximum
+            indices for the tile's column
+
+    Returns:
+        Tuple: A tuple containing the bounding coordinates
+            (left, bottom, right, top) of the tile
+    """
+
+    row_min = row
+    row_max = row + tile_length
+    col_min = col
+    col_max = col + tile_length
 
     left, bottom = transform * (col_min, row_max)
     right, top = transform * (col_max, row_min)
