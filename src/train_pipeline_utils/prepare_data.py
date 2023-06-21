@@ -208,41 +208,47 @@ def save_images_and_masks(list_images, list_masks, output_directory_name, task="
     return None
 
 
-def extract_proportional_subset(input_file="src/train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler.csv", output_file="src/train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv", target_column="Classification", max_size = 15000):
+def extract_proportional_subset(input_file="train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler.csv", output_file="train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv", target_column="Classification"):
     # Charger le fichier CSV initial
     df = pd.read_csv(input_file)
-    
+  
     # Diviser le dataframe en deux dataframes en fonction de la valeur de la colonne cible
     df_0 = df[df[target_column] == 0]
     df_1 = df[df[target_column] == 1]
-    
-    # Calculer le nombre d'échantillons à extraire de chaque classe
-    sample_size_0 = min(int(max_size / 2), len(df_0))
-    sample_size_1 = min(max_size - sample_size_0, len(df_1))
-    
+     
     # Extraire aléatoirement les échantillons de chaque classe
-    df_sample_0 = df_0.sample(sample_size_0)
-    df_sample_1 = df_1.sample(sample_size_1)
-    
+    df_sample_0 = df_0.sample(len(df_1))
+
     # Concaténer les dataframes échantillons
-    df_sample = pd.concat([df_sample_0, df_sample_1])
-    
+    df_sample = pd.concat([df_sample_0, df_1])
+   
     # Enregistrer le dataframe échantillon dans un nouveau fichier CSV
     df_sample.to_csv(output_file, index=False)
 
-def filter_images_by_path(csv_file = "src/train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv", image_folder="src/train_data-classification-PLEIADES-RIL-972-2022/images", path_column="Path_image"):
+def filter_images_by_path(csv_file = "train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv", image_folder="train_data-classification-PLEIADES-RIL-972-2022/images", path_column="Path_image"):
     # Charger le fichier CSV
     df = pd.read_csv(csv_file)
     
     # Extraire la colonne "path_image" sous forme de liste
-    path_list = df[path_column].tolist()
+    list_name = df[path_column].tolist()
+    # list_image_name_to_delete = [
+    #     image_folder + "/" + filename 
+    #     for filename in tqdm(os.listdir(image_folder))
+    #     if filename not in path_list
+    #     ]
+    list_name_jp2 = [name+".jp2" for name in list_name]
     
     # Parcourir les fichiers dans le dossier d'images
+<<<<<<< HEAD
     for filename in tqdm(os.listdir(source_folder)):
         image_path = os.path.join(image_folder, filename)
+=======
+    for filename in tqdm(os.listdir(image_folder)):
+>>>>>>> cd20d2f25edb1096c1f711444f02ec93891c6526
         
         # Vérifier si le chemin de l'image n'est pas dans la liste des chemins du fichier CSV
-        if image_path not in path_list:
+        if filename not in list_name_jp2:
+            image_path = os.path.join(image_folder, filename)
             # Supprimer l'image du dossier
             os.remove(image_path)
 
