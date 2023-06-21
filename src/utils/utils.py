@@ -79,25 +79,6 @@ def get_transform_for_tiles(
     return Affine.translation(x - transform.c, y - transform.f) * transform
 
 
-def get_transform_for_tiles2(
-    transform: Affine, row, col
-) -> Affine:
-    """
-    Compute the transform matrix of a tile
-
-    Args:
-        transform (Affine): an affine transform matrix.
-        row_off (int): _description_
-        col_off (int): _description_
-
-    Returns:
-        Affine: The affine transform matrix for the given tile
-    """
-
-    x, y = transform * (col, row)
-    return Affine.translation(x - transform.c, y - transform.f) * transform
-
-
 def get_bounds_for_tiles(
     transform: Affine, row_indices: Tuple, col_indices: Tuple
 ) -> Tuple:

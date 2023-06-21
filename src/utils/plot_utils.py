@@ -2,7 +2,7 @@ import os
 import re
 from datetime import date
 from typing import List
-
+import math
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -88,6 +88,30 @@ def plot_list_satellite_images(
 
     return plt.gcf()
 
+def plot_list_sat_images_square(    
+    list_images: List,
+    bands_indices: List,
+):
+    size = int(math.sqrt(len(list_images)))
+
+    # Create a figure and axes
+    fig, axs = plt.subplots(nrows=size, ncols=size, figsize=(10,10))
+
+    # Iterate over the grid of masks and plot them
+    for i in range(size):
+        for j in range(size):
+            axs[i, j].imshow(
+                list_images[i*size + j].array.transpose(1,2,0)[:, :, bands_indices]
+            )
+
+    # Remove any unused axes
+    for i in range(size):
+        for j in range(size):
+            axs[i, j].set_axis_off()
+
+    # Show the plot
+    plt.show()
+
 
 def plot_list_segmentation_labeled_satellite_image(
     list_labeled_image: List,
@@ -171,6 +195,40 @@ def plot_list_segmentation_labeled_satellite_image(
     ax[1].set_axis_off()
 
     return plt.gcf()
+
+def plot_list_labeled_sat_images(    
+    list_labeled_image: List,
+    bands_indices: List,
+):
+    list_images = [iml.satellite_image for iml in list_labeled_image]
+    list_labels = [iml.label for iml in list_labeled_image]
+
+    size = int(math.sqrt(len(list_filepaths_images)))
+
+    # Create a figure and axes
+    fig, axs = plt.subplots(nrows=size, ncols=2*size, figsize=(20,10))
+
+    # Iterate over the grid of masks and plot them
+    for i in range(size):
+        for j in range(size):
+            axs[i, j].imshow(
+                list_images[i*size + j].array.transpose(1,2,0)[:, :, bands_indices]
+            )
+
+
+    for i in range(size):
+        for j in range(size):
+            axs[i, j+size].imshow(
+                list_labels[i*size + j], cmap = "gray"
+            )
+
+    # Remove any unused axes
+    for i in range(size):
+        for j in range(2*size):
+            axs[i, j].set_axis_off()
+
+    # Show the plot
+    plt.show()
 
 
 def plot_infrared_simple_mask(satellite_image: SatelliteImage):
