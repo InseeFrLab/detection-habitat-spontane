@@ -239,7 +239,12 @@ def filter_images_by_path(csv_file = "train_data-classification-PLEIADES-RIL-972
     list_name_jp2 = [name+".jp2" for name in list_name]
     
     # Parcourir les fichiers dans le dossier d'images
+<<<<<<< HEAD
+    for filename in tqdm(os.listdir(source_folder)):
+        image_path = os.path.join(image_folder, filename)
+=======
     for filename in tqdm(os.listdir(image_folder)):
+>>>>>>> cd20d2f25edb1096c1f711444f02ec93891c6526
         
         # Vérifier si le chemin de l'image n'est pas dans la liste des chemins du fichier CSV
         if filename not in list_name_jp2:

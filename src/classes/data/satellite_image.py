@@ -18,7 +18,6 @@ from utils.utils import (
     get_indices_from_tile_length,
     get_transform_for_tiles,
     get_bounds_for_tiles2,
-    get_transform_for_tiles2,
 )
 
 
@@ -107,14 +106,15 @@ class SatelliteImage:
             List[SatelliteImage]: _description_
         """
         original_array = self.array.copy()
-        m, n, __ = original_array.shape
+        #original_array = np.transpose(original_array)
+        __, m, n = original_array.shape
         sub_arrays = []
         rows = []
         cols = []
 
         for i in range(0, m, tile_length):
             for j in range(0, n, tile_length):
-                sub_array = original_array[i:i+tile_length, j:j+tile_length, :]
+                sub_array = original_array[:, i:i+tile_length, j:j+tile_length]
                 sub_arrays.append(sub_array)
                 rows.append(i)
                 cols.append(j)
@@ -124,7 +124,7 @@ class SatelliteImage:
                 array=sub_array,
                 crs=self.crs,
                 bounds=get_bounds_for_tiles2(self.transform, row, col, tile_length),
-                transform=get_transform_for_tiles2(
+                transform=get_transform_for_tiles(
                     self.transform, row, col
                 ),
                 n_bands=self.n_bands,
