@@ -238,7 +238,7 @@ def filter_images_by_path(csv_file = "src/train_data-classification-PLEIADES-RIL
     path_list = df[path_column].tolist()
     
     # Parcourir les fichiers dans le dossier d'images
-    for filename in os.listdir(image_folder):
+    for filename in tqdm(os.listdir(source_folder)):
         image_path = os.path.join(image_folder, filename)
         
         # Vérifier si le chemin de l'image n'est pas dans la liste des chemins du fichier CSV
