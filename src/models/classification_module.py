@@ -9,7 +9,10 @@ from torch import nn, optim
 
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
 from classes.data.satellite_image import SatelliteImage
-from classes.optim.evaluation_model import calculate_pourcentage_loss
+from classes.optim.evaluation_model import (
+    calculate_pourcentage_loss,
+    proportion_ones
+)
 
 
 class ClassificationModule(pl.LightningModule):
@@ -81,9 +84,11 @@ class ClassificationModule(pl.LightningModule):
         targets_one_hot = targets_one_hot.scatter_(1, target.unsqueeze(1), 1)
 
         loss = self.loss(output, targets_one_hot)
-        loss = self.loss(output, targets_one_hot)
+
+        prop_ones = proportion_ones(labels)
 
         self.log("train_loss", loss, on_epoch=True)
+        print(prop_ones)
 
         return loss
 
@@ -109,9 +114,11 @@ class ClassificationModule(pl.LightningModule):
         loss = self.loss(output, targets_one_hot)
 
         loss_pourcentage = calculate_pourcentage_loss(output, labels)
+        prop_ones = proportion_ones(labels)
 
         self.log("validation_loss", loss, on_epoch=True)
         self.log("validation_missclassed", loss_pourcentage, on_epoch=True)
+        print(prop_ones)
 
         return loss
 

@@ -385,8 +385,10 @@ def instantiate_dataloader(config, list_output_dir):
             ))            
 
     train_idx, val_idx = select_indices_to_split_dataset(
+        config_task,
         len(list_images),
-        config["optim"]["val prop"]
+        config["optim"]["val prop"],
+        list_labels
     )
     
     # récupération de la classe de Dataset souhaitée
@@ -614,7 +616,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         None
     """
     # Open the file and load the file
-    with open("../config.yml") as f:
+    with open("../config.yml") as f: 
         config = yaml.load(f, Loader=SafeLoader)
 
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
@@ -639,8 +641,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     gc.collect()
 
     # remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"
-    # experiment_name = "segmentation"
-    # run_name = "deeplabV42"
+    # experiment_name = "classification"
+    # run_name = "binary_50_0.51"
 
 
     if config["mlflow"]:
@@ -745,7 +747,7 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
-#nohup python run_training_pipeline.py https://projet-slums-detection-874257.user.lab.sspcloud.fr segmentation testnohup2 > out.txt &
+#nohup python run_training_pipeline.py https://projet-slums-detection-874257.user.lab.sspcloud.fr classification binaray_50_0.51_validation_prop > out.txt &
 # https://www.howtogeek.com/804823/nohup-command-linux/ 
  #TO DO :
 # test routine sur S2Looking dataset
