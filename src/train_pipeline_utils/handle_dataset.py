@@ -3,17 +3,41 @@ from albumentations.pytorch.transforms import ToTensorV2
 import random
 
 
-def select_indices_to_split_dataset(len_dataset, prop_val):
+def select_indices_to_split_dataset(config_task, len_dataset, prop_val, list_labels):
 
-    num_val_indices = int(prop_val * len_dataset)
-    
-    all_indices = list(range(len_dataset))
-    random.shuffle(all_indices)
-    
-    # Split the shuffled list into train and validation indices
-    val_indices = all_indices[:num_val_indices]
-    train_indices = all_indices[num_val_indices:]
-    
+    if config_task == "segmentation":
+        num_val_indices = int(prop_val * len_dataset)
+
+        all_indices = list(range(len_dataset))
+        random.shuffle(all_indices)
+
+        # Split the shuffled list into train and validation indices
+        val_indices = all_indices[:num_val_indices]
+        train_indices = all_indices[num_val_indices:]
+
+    elif config_task == "classification":
+        # Séparation des indices en fonction des étiquettes
+        zero_indices = [i for i, label in enumerate(list_labels) if label == "0"]
+        one_indices = [i for i, label in enumerate(list_labels) if label == "1"]
+
+        # Mélange aléatoire des indices
+        random.shuffle(zero_indices)
+        random.shuffle(one_indices)
+
+        # Calcul du nombre d'indices de chaque classe pour l'ensemble de validation
+        num_val_zeros = int(prop_val * len(zero_indices))
+        num_val_ones = int(prop_val * len(one_indices))
+
+        # Sélection des indices pour l'ensemble de validation
+        val_indices = zero_indices[:num_val_zeros] + one_indices[:num_val_ones]
+
+        # Sélection des indices pour l'ensemble d'entraînement
+        train_indices = zero_indices[num_val_zeros:] + one_indices[num_val_ones:]
+
+        # Mélange aléatoire des indices d'entraînement et de validation
+        random.shuffle(train_indices)
+        random.shuffle(val_indices)
+
     return train_indices, val_indices
 
 
