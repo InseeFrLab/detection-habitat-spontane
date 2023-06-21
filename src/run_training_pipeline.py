@@ -178,7 +178,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     (
                         list_filtered_splitted_labeled_images,
                         list_masks,
-                    ) = label_images(list_filtered_splitted_images, labeler)
+                    ) = label_images(list_filtered_splitted_images, labeler, 1)
 
                     save_images_and_masks(
                         list_filtered_splitted_labeled_images,
@@ -391,7 +391,7 @@ def instantiate_dataloader(config, list_output_dir):
     list_name_image = os.listdir(output_images_path)
     list_name_label = os.listdir(output_labels_path)
 
-    list_path_images = np.sort(
+    list_path_images_test = np.sort(
         [output_images_path + name_image for name_image in list_name_image]
     )
     list_path_labels = np.sort(
@@ -399,7 +399,7 @@ def instantiate_dataloader(config, list_output_dir):
     )
 
     dataset_test = instantiate_dataset(
-        config, list_path_images, list_path_labels
+        config, list_path_images_test, list_path_labels
     )
 
     dataset_test.transforms = t_preproc
@@ -608,7 +608,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                     model,
                     tile_size,
                     batch_size_test,
-                    config["n bands"],
+                    config["donnees"]["n bands"],
                     config["mlflow"],
                 )
 

@@ -39,16 +39,17 @@ def is_too_water(image: SatelliteImage, water_value_threshold=75) -> bool:
     """
 
     array = image.array
-    NDWI = np.zeros((250, 250))
+    tile_size = array.shape[2]
+    NDWI = np.zeros((tile_size, tile_size))
 
-    for i in range(250):
-        for j in range(250):
+    for i in range(tile_size):
+        for j in range(tile_size):
             if not np.isnan(array[2, i, j]) and not np.isnan(array[7, i, j]):
                 if (int(array[2, i, j]) - int(array[7, i, j])) / (
                     int(array[2, i, j]) + int(array[7, i, j])
                 ) < 0:
                     NDWI[i][j] = 1
-    if np.sum(NDWI) >= water_value_threshold * 250:
+    if np.sum(NDWI) >= water_value_threshold * tile_size:
         return True
 
 

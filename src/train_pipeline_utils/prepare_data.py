@@ -125,7 +125,7 @@ def label_images(list_images, labeler, prop):
         labeler : a Labeler object representing the labeler \
             used to create segmentation labels.
         prop : the proportion of the images without label (0 for no empty data,
-            50 for an equal proportion between empty and no empty data, etc)
+            1 for an equal proportion between empty and no empty data, etc)
 
     Returns:
         list[SatelliteImage] : the list containing the splitted and \
@@ -141,6 +141,9 @@ def label_images(list_images, labeler, prop):
     for satellite_image in list_images:
         mask = labeler.create_segmentation_label(satellite_image)
         if np.sum(mask) != 0:
+            list_filtered_splitted_labeled_images.append(satellite_image)
+            list_masks.append(mask)
+        else:
             list_filtered_splitted_labeled_images_empty.append(satellite_image)
             list_masks_empty.append(mask)
         else:
