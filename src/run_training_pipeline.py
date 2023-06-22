@@ -22,6 +22,7 @@ from yaml.loader import SafeLoader
 from classes.data.labeled_satellite_image import (  # noqa: E501
     SegmentationLabeledSatelliteImage,
 )
+import train_pipeline_utils.handle_dataset as hd
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
 from classes.optim.evaluation_model import (
@@ -43,6 +44,8 @@ from train_pipeline_utils.handle_dataset import (
     generate_transform_sentinel,
     select_indices_to_split_dataset,
 )
+
+from classes.optim.losses import SoftIoULoss
 from train_pipeline_utils.prepare_data import (
     check_labelled_images,
     filter_images,
@@ -50,6 +53,12 @@ from train_pipeline_utils.prepare_data import (
     save_images_and_masks,
 )
 from utils.utils import remove_dot_file, split_array, update_storage_access
+
+from classes.data.satellite_image import SatelliteImage
+from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
+from utils.utils import update_storage_access, split_array, remove_dot_file
+from rasterio.errors import RasterioIOError
+from classes.optim.evaluation_model import evaluer_modele_sur_jeu_de_test_segmentation_pleiade
 
 
 def download_data(config):
@@ -119,16 +128,26 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     list_output_dir = []
 
     for i, (year, dep) in enumerate(zip(years, deps)):
+        # i, year , dep = 0,years[0],deps[0]
+        output_dir = (
+            "train_data"
+            + "-"
+            + src
+            + "-"
+            + labeler
+            + "-"
+            + dep
+            + "-"
+            + str(year)
+            + "/"
+        )
+
         date = datetime.strptime(str(year) + "0101", "%Y%m%d")
         if type_labeler == "RIL":
             buffer_size = config_data["buffer size"]
             labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
         elif type_labeler == "BDTOPO":
             labeler = BDTOPOLabeler(date, dep=dep)
-
-        output_dir = (
-            "../train_data" + "-" + src + "-" + dep + "-" + str(year) + "/"
-        )
 
         if not check_labelled_images(output_dir):
             list_name_cloud = []
@@ -187,6 +206,8 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     )
 
         list_output_dir.append(output_dir)
+        nb = len(os.listdir(output_dir + "/images"))
+        print(str(nb) + " couples images/masques retenus")
 
     return list_output_dir
 
@@ -340,9 +361,10 @@ def instantiate_dataloader(config, list_output_dir):
             )
 
     train_idx, val_idx = select_indices_to_split_dataset(
-        len(list_path_images), config["optim"]["val prop"]
+        len(list_path_images),
+        config["optim"]["val prop"]
     )
-
+    
     # récupération de la classe de Dataset souhaitée
     train_dataset = instantiate_dataset(
         config, list_path_images[train_idx], list_path_labels[train_idx]
@@ -455,9 +477,10 @@ def instantiate_loss(config):
     print("Entre dans la fonction instantiate_loss")
     loss_type = config["optim"]["loss"]
     loss_dict = {
-        "crossentropy": CrossEntropyLoss,
-        "crossentropyselmade": CrossEntropySelfmade,
-    }
+                "softiou": SoftIoULoss,
+                "crossentropy": CrossEntropyLoss,
+                "crossentropyselmade": CrossEntropySelfmade
+                }
 
     if loss_type not in loss_dict:
         raise ValueError("Invalid loss type")
@@ -561,7 +584,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     prepare_test_data(config, test_dir)
 
     train_dl, valid_dl, test_dl = instantiate_dataloader(
-        config, list_output_dir
+    config, list_output_dir
     )
 
     model = instantiate_model(config)
@@ -573,9 +596,10 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     torch.cuda.empty_cache()
     gc.collect()
 
-    remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"  # noqa: E501
-    experiment_name = "segmentation"
-    run_name = "BDTOPOonS1+2"
+    # remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"
+    # experiment_name = "segmentation"
+    # run_name = "deeplabV42"
+
 
     if config["mlflow"]:
         update_storage_access()
@@ -589,11 +613,24 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             mlflow.autolog()
             mlflow.log_artifact("../config.yml", artifact_path="config.yml")
             trainer.fit(light_module, train_dl, valid_dl)
-            model = light_module.model
             tile_size = config["donnees"]["tile size"]
             batch_size_test = config["optim"]["batch size test"]
 
             if config["donnees"]["source train"] == "PLEIADES":
+
+                light_module_checkpoint = light_module.load_from_checkpoint(
+                    loss = instantiate_loss(config),
+                    checkpoint_path=trainer.checkpoint_callback.best_model_path, # je créé un module qui charge
+                    model=light_module.model,
+                    optimizer=light_module.optimizer,
+                    optimizer_params=light_module.optimizer_params,
+                    scheduler=light_module.scheduler,
+                    scheduler_params=light_module.scheduler_params,
+                    scheduler_interval=light_module.scheduler_interval
+
+                )
+                model = light_module_checkpoint.model   
+                
                 evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
                     test_dl,
                     model,
@@ -614,11 +651,25 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     else:
         trainer.fit(light_module, train_dl, valid_dl)
-        model = light_module.model
         tile_size = config["donnees"]["tile size"]
         batch_size_test = config["optim"]["batch size test"]
 
         if config["donnees"]["source train"] == "PLEIADES":
+
+            light_module_checkpoint = light_module.load_from_checkpoint(
+                loss = instantiate_loss(config),
+                checkpoint_path=trainer.checkpoint_callback.best_model_path, # je créé un module qui charge
+                model=light_module.model,
+                optimizer=light_module.optimizer,
+                optimizer_params=light_module.optimizer_params,
+                scheduler=light_module.scheduler,
+                scheduler_params=light_module.scheduler_params,
+                scheduler_interval=light_module.scheduler_interval
+
+                )
+            
+            model = light_module_checkpoint.model   
+
             evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
                 test_dl, model, tile_size, batch_size_test, config["mlflow"]
             )
@@ -633,20 +684,13 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
-# remote_server_uri = "https://projet-slums-detection-200178.user.lab.sspcloud.fr" # noqa: E501
-# experiment_name = "segmentation"
-# run_name = "testclem2"
-
-# TO DO :
+#nohup python run_training_pipeline.py https://projet-slums-detection-874257.user.lab.sspcloud.fr segmentation testnohup2 > out.txt &
+# https://www.howtogeek.com/804823/nohup-command-linux/ 
+ #TO DO :
 # test routine sur S2Looking dataset
-
-# diminution du nombre d'images DL : pour test
-
 # import os
 
 # list_data_dir = ["../data/PLEIADES/2022/MARTINIQUE/"]
-
-
 # def delete_files_in_dir(dir_path,length_delete):
 #    # Get a list of all the files in the directory
 #  files = os.listdir(dir_path)[:length_delete]
@@ -656,5 +700,5 @@ if __name__ == "__main__":
 #        if os.path.isfile(file_path):
 #            os.remove(file_path)
 
-
+        
 # delete_files_in_dir(list_data_dir[0], 600)
