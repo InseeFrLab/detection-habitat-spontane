@@ -67,8 +67,8 @@ class SatelliteImage:
         Returns:
             List[SatelliteImage]: _description_
         """
-        if tile_length % 2:
-            raise ValueError("Tile length has to be an even number.")
+        # if tile_length % 2:
+        #     raise ValueError("Tile length has to be an even number.")
 
         m = self.array.shape[1]
         n = self.array.shape[2]

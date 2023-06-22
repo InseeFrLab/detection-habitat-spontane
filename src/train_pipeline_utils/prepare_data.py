@@ -104,7 +104,7 @@ def filter_images_sentinel(list_images):
     # print("Entre dans la fonction filter_images_sentinel")
     list_filtered_splitted_images = []
     for splitted_image in list_images:
-        if is_too_water(splitted_image, 75):
+        if not is_too_water(splitted_image, 0.95):
             list_filtered_splitted_images.append(splitted_image)
 
     return list_filtered_splitted_images
@@ -130,9 +130,9 @@ def label_images(list_images, labeler):
     for satellite_image in list_images:
         label = labeler.create_segmentation_label(satellite_image)
         if np.sum(label) != 0:
-            balancing_dict[satellite_image.name] = 1
+            balancing_dict[satellite_image.filename] = 1
         else:
-            balancing_dict[satellite_image.name] = 0
+            balancing_dict[satellite_image.filename] = 0
         labels.append(label)
 
     return labels, balancing_dict
@@ -157,13 +157,13 @@ def save_images_and_masks(list_images, list_masks, output_directory_name):
     output_images_path = output_directory_name + "/images"
     output_masks_path = output_directory_name + "/labels"
 
-    for image, mask in zip(list_images, list_masks):
+    for i, (image, mask) in enumerate(zip(list_images, list_masks)):
         # image = list_images[0]
         # bb = image.bounds
 
         # filename = str(bb[0]) + "_" + str(bb[1]) + "_" \
         #   + "{:03d}".format(i)
-        filename = image.filename.split(".")[0]
+        filename = f"{image.filename.split('.')[0]}_{i}"
 
         try:
             image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
