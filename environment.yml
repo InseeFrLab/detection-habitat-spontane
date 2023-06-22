@@ -5,6 +5,7 @@ sources:
     # segmentation: donnees-test/segmentation
     segmentation: donnees-test/SENTINEL/segmentation
     change-detection: donnees-test/change_detection
+    classification: donnees-test/classification
   PAPERS:
     S2Looking: Donnees/PAPERS/S2Looking
     LEVIR_CD: Donnees/PAPERS/LEVIR_CD
@@ -12,65 +13,65 @@ sources:
       2022:
           "971": Donnees/PLEIADES/GUADELOUPE/2022/MOSA
           "972": Donnees/PLEIADES/MARTINIQUE/2022/MOSA
-          #"974""974" NA
           "973": Donnees/PLEIADES/Cayenne_200722/16bits/ORT_2022072050325085_U22N
+          "974": Donnees/PLEIADES/REUNION/2022/MOSA
           "976": Donnees/PLEIADES/MAYOTTE/2022/MOSA
 
       2020:
           #"971": NA
           #"972": NA
-          #"974": NA
           #"973": NA
+          #"974": NA
           "976": Donnees/PLEIADES/MAYOTTE/2020/MOSA
       2019:
           #"971": NA
           #"972": NA
-          #"974": NA
           #"973": NA
+          #"974": NA
           "976": Donnees/PLEIADES/MAYOTTE/2019/MOSA
       2018:
-          #"971": NA
+          "971": Donnees/PLEIADES/GUADELOUPE/2018-2019
           #"972": NA
-          "974": Donnees/PLEIADES/REUNION/2018/MOSA
           #"973": NA
-          #"976":
+          "974": Donnees/PLEIADES/REUNION/2018/MOSA
+          #"976": NA
       2017:
           #"971": NA
-          "972": Donnees/PLEIADES/MARTINIQUE/2017-2018/MOSA
-          #"974": NA
+          #"972": Donnees/PLEIADES/MARTINIQUE/2017-2018 structure pb
           #"973": NA
+          #"974": NA
           "976": Donnees/PLEIADES/MAYOTTE/2017/MOSA
   NUAGESPLEIADES:
       2022:
           "971": Donnees/NUAGESPLEIADES/2022/GUADELOUPE
           "972": Donnees/NUAGESPLEIADES/2022/MARTINIQUE
-          #"974""974" NA
           "973": Donnees/NUAGESPLEIADES/2022/GUYANE
+          "974": Donnees/NUAGESPLEIADES/2022/REUNION
           "976": Donnees/NUAGESPLEIADES/2022/MAYOTTE
 
       2020:
           #"971": NA
           #"972": NA
-          #"974": NA
           #"973": NA
+          #"974": NA
           "976": Donnees/NUAGESPLEIADES/2020/MAYOTTE
       2019:
           #"971": NA
           #"972": NA
-          #"974": NA
           #"973": NA
+          #"974": NA
           "976": Donnees/NUAGESPLEIADES/2019/MAYOTTE
       2018:
           #"971": NA
           #"972": NA
-          "974": Donnees/NUAGESPLEIADES/2018/REUNION
           #"973": NA
-          #"976":
+          "974": Donnees/NUAGESPLEIADES/2018/REUNION
+          #"976": NA
       2017:
           #"971": NA
           "972": Donnees/NUAGESPLEIADES/2017/MARTINIQUE
-          #"974": NA
           #"973": NA
+          #"974": NA
           "976": Donnees/NUAGESPLEIADES/2017/MAYOTTE
 
   SENTINEL1:
@@ -165,73 +166,74 @@ local-path:
   TEST:
     segmentation: donnees-test/segmentation
     change-detection: donnees-test/change-detection
+    classification: donnees-test/classification
 
   PAPERS: data/paper_dataset
   PLEIADES:
       2022:
           "971": data/PLEIADES/2022/GUADELOUPE
           "972": data/PLEIADES/2022/MARTINIQUE
-          "974": NA
           "973": data/PLEIADES/2022/GUYANE
+          "974": data/PLEIADES/2022/REUNION
           "976": data/PLEIADES/2022/MAYOTTE
 
       2020:
           #"971": NA
           #"972": NA
-          #"974": NA
           #"973": NA
+          #"974": NA
           "976": data/PLEIADES/2020/MAYOTTE
       2019:
           #"971": NA
           #"972": NA
-          #"974": NA
           #"973": NA
+          #"974": NA
           "976": data/PLEIADES/2019/MAYOTTE
       2018:
           #"971": NA
           #"972": NA
-          "974": data/PLEIADES/2018/REUNION
           #"973": NA
+          "974": data/PLEIADES/2018/REUNION
           #"976": NA
       2017:
 
           #"971": NA
           "972": data/PLEIADES/2017/MARTINIQUE
-          "973":
-          "974": NA
+          #"973": NA
+          #"974": NA
           "976": data/PLEIADES/2017/MAYOTTE
 
   NUAGESPLEIADES:
       2022:
           "971": data/NUAGESPLEIADES/2022/GUADELOUPE
           "972": data/NUAGESPLEIADES/2022/MARTINIQUE
-          #"974""974" NA
           "973": data/NUAGESPLEIADES/2022/GUYANE
+          "974": data/NUAGESPLEIADES/2022/REUNION
           "976": data/NUAGESPLEIADES/2022/MAYOTTE
 
       2020:
           #"971": NA
           #"972": NA
-          #"974": NA
           #"973": NA
+          #"974": NA
           "976": data/NUAGESPLEIADES/2020/MAYOTTE
       2019:
           #"971": NA
           #"972": NA
-          #"974": NA
           #"973": NA
+          #"974": NA
           "976": data/NUAGESPLEIADES/2019/MAYOTTE
       2018:
           #"971": NA
           #"972": NA
-          "974": data/NUAGESPLEIADES/2018/REUNION
           #"973": NA
+          "974": data/NUAGESPLEIADES/2018/REUNION
           #"976":
       2017:
           #"971": NA
           "972": data/NUAGESPLEIADES/2017/MARTINIQUE
-          #"974": NA
           #"973": NA
+          #"974": NA
           "976": data/NUAGESPLEIADES/2017/MAYOTTE
 
   SENTINEL1:
@@ -289,38 +291,38 @@ local-path:
         "972": data/BDTOPO/2021/MARTINIQUE
         "976": data/BDTOPO/2021/MAYOTTE
       2022:
-          "973": data/BDTOPO/2022/BDTOPO_GUYANE
-          "972": data/BDTOPO/2022/BDTOPO_MARTINIQUE
           "971": data/BDTOPO/2022/BDTOPO_GUADELOUPE
+          "972": data/BDTOPO/2022/BDTOPO_MARTINIQUE
+          "973": data/BDTOPO/2022/BDTOPO_GUYANE
           "974": data/BDTOPO/2022/BDTOPO_REUNION
           "976": data/BDTOPO/2022/BDTOPO_MAYOTTE
       2020:
-          "973": data/BDTOPO/2020/BDTOPO_GUYANE
-          "972": data/BDTOPO/2020/BDTOPO_MARTINIQUE
           "971": data/BDTOPO/2020/BDTOPO_GUADELOUPE
+          "972": data/BDTOPO/2020/BDTOPO_MARTINIQUE
+          "973": data/BDTOPO/2020/BDTOPO_GUYANE
           "974": data/BDTOPO/2020/BDTOPO_REUNION
           "976": data/BDTOPO/2020/BDTOPO_MAYOTTE
       2019:
-          "973": data/BDTOPO/2019/BDTOPO_GUYANE
-          "972": data/BDTOPO/2019/BDTOPO_MARTINIQUE
           "971": data/BDTOPO/2019/BDTOPO_GUADELOUPE
+          "972": data/BDTOPO/2019/BDTOPO_MARTINIQUE
+          "973": data/BDTOPO/2019/BDTOPO_GUYANE
           "974": data/BDTOPO/2019/BDTOPO_REUNION
           "976": data/BDTOPO/2019/BDTOPO_MAYOTTE
       2018:
-          "973": data/BDTOPO/2018/BDTOPO_GUYANE
-          "972": data/BDTOPO/2018/BDTOPO_MARTINIQUE
           "971": data/BDTOPO/2018/BDTOPO_GUADELOUPE
+          "972": data/BDTOPO/2018/BDTOPO_MARTINIQUE
+          "973": data/BDTOPO/2018/BDTOPO_GUYANE
           "974": data/BDTOPO/2018/BDTOPO_REUNION
           "976": data/BDTOPO/2018/BDTOPO_MAYOTTE
       2017:
-          "973": data/BDTOPO/2017/BDTOPO_GUYANE
-          "972": data/BDTOPO/2017/BDTOPO_MARTINIQUE
           "971": data/BDTOPO/2017/BDTOPO_GUADELOUPE
+          "972": data/BDTOPO/2017/BDTOPO_MARTINIQUE
+          "973": data/BDTOPO/2017/BDTOPO_GUYANE
           "974": data/BDTOPO/2017/BDTOPO_REUNION
           "976": data/BDTOPO/2017/BDTOPO_MAYOTTE
       2016:
-          "973": data/BDTOPO/2016/BDTOPO_GUYANE
-          "972": data/BDTOPO/2016/BDTOPO_MARTINIQUE
           "971": data/BDTOPO/2016/BDTOPO_GUADELOUPE
+          "972": data/BDTOPO/2016/BDTOPO_MARTINIQUE
+          "973": data/BDTOPO/2016/BDTOPO_GUYANE
           "974": data/BDTOPO/2016/BDTOPO_REUNION
           "976": data/BDTOPO/2016/BDTOPO_MAYOTTE

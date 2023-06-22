@@ -1,28 +1,22 @@
-
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import numpy as np
 import torch
 from albumentations import Compose
 from torch.utils.data import Dataset
-import csv
 
-from classes.data.labeled_satellite_image import (
-    DetectionLabeledSatelliteImage,
-    SegmentationLabeledSatelliteImage,
-)
 from classes.data.satellite_image import SatelliteImage
 
 
-class Patch_Classification(Dataset):
+class PatchClassification(Dataset):
     """
     Custom Dataset class.
     """
 
     def __init__(
         self,
-        list_paths_images: List,
-        list_labels: str,
+        list_paths_images: List[str],
+        list_labels: List[str],
         n_bands: int,
         transforms: Optional[Compose] = None,
     ):
@@ -30,9 +24,11 @@ class Patch_Classification(Dataset):
         Constructor.
 
         Args:
-            list_paths_images (List): list of path of the images
-            list_paths_labels (List): list of paths containing the labels
-            transforms (Compose) : list of transforms
+            list_paths_images (List[str]): List of paths to the images.
+            list_labels (List[str]): List of labels corresponding to the
+            images.
+            n_bands (int): Number of bands in the images.
+            transforms (Compose): List of transforms to apply to the images.
         """
         self.list_paths_images = list_paths_images
         self.list_labels = list_labels
@@ -40,13 +36,15 @@ class Patch_Classification(Dataset):
         self.n_bands = n_bands
 
     def __getitem__(self, idx):
-        """_summary_
+        """
+        Retrieves an item from the dataset.
 
         Args:
-            idx (_type_): _description_
+            idx (int): Index of the item.
 
         Returns:
-            _type_: _description_
+            Tuple[torch.Tensor, torch.Tensor, Dict]: Tuple containing the
+            image, label, and metadata.
         """
         if torch.is_tensor(idx):
             idx = idx.tolist()
@@ -55,27 +53,31 @@ class Patch_Classification(Dataset):
 
         pathim = self.list_paths_images[idx]
         label = int(self.list_labels[idx])
-        
+
         img = SatelliteImage.from_raster(
             file_path=pathim, dep=None, date=None, n_bands=self.n_bands
         ).array
 
         img = np.transpose(img.astype(float), [1, 2, 0])
         label = torch.tensor(label)
-        
+
         if self.transforms:
-            sample = self.transforms(image=img, label=label)
+            sample = self.transforms(image=img)
             img = sample["image"]
-            label = sample["label"]
         else:
             img = torch.tensor(img.astype(float))
             img = img.permute([2, 0, 1])
-            #label = torch.tensor(label)
 
         img = img.type(torch.float)
-        label = label.type(torch.LongTensor)
+        label = label.type(torch.float)
         metadata = {"pathimage": pathim, "class": label}
         return img, label, metadata
 
     def __len__(self):
+        """
+        Returns the length of the dataset.
+
+        Returns:
+            int: Length of the dataset.
+        """
         return len(self.list_paths_images)

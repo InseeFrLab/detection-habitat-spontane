@@ -25,8 +25,22 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
     tile_size,
     batch_size,
     use_mlflow=False
-):  
-    
+):
+    """
+    Evaluates the model on the Pleiade test dataset for image segmentation.
+
+    Args:
+        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        dataset.
+        model (torchvision.models): The segmentation model to evaluate.
+        tile_size (int): The size of each tile in pixels.
+        batch_size (int): The batch size.
+        use_mlflow (bool, optional): Whether to use MLflow for logging
+        artifacts. Defaults to False.
+
+    Returns:
+        None
+    """
     # tile_size = 250
     # batch_size  = 4
     model.eval()
@@ -137,7 +151,110 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
                 os.makedirs("img/")
 
             fig1 = plot_list_segmentation_labeled_satellite_image(
-                [labeled_satellite_image], [3, 2, 1]
+                [labeled_satellite_image], [3, 2, 1])
+
+            filename = pthimg.split('/')[-1]
+            filename = filename.split('.')[0]
+            filename = '_'.join(filename.split('_')[0:6])
+            plot_file = filename + ".png"
+
+            fig1.savefig(plot_file)
+
+            if use_mlflow:
+                mlflow.log_artifact(plot_file, artifact_path="plots")
+
+
+def evaluer_modele_sur_jeu_de_test_classification_pleiade(
+    test_dl,
+    model,
+    tile_size,
+    batch_size,
+    use_mlflow=False
+):
+    """
+    Evaluates the model on the Pleiade test dataset for image classification.
+
+    Args:
+        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        dataset.
+        model (torchvision.models): The classification model to evaluate.
+        tile_size (int): The size of each tile in pixels.
+        batch_size (int): The batch size.
+        use_mlflow (bool, optional): Whether to use MLflow for logging
+        artifacts. Defaults to False.
+
+    Returns:
+        None
+    """
+    model.eval()
+    npatch = int((2000/tile_size)**2)
+    nbatchforfullimage = int(npatch/batch_size)
+
+    if not npatch % nbatchforfullimage == 0:
+        print("Le nombre de patchs \
+            n'est pas divisible par la taille d'un batch")
+        return None
+
+    list_labeled_satellite_image = []
+
+    for idx, batch in enumerate(test_dl):
+        print(idx)
+        images, label, dic = batch
+
+        model = model.to("cuda:0")
+        images = images.to("cuda:0")
+
+        output_model = model(images)
+        output_model = output_model.to("cpu")
+        probability_class_1 = output_model[:, 1]
+
+        # Set a threshold for class prediction
+        threshold = 0.51
+
+        # Make predictions based on the threshold
+        predictions = torch.where(
+            probability_class_1 > threshold,
+            torch.tensor([1]),
+            torch.tensor([0])
+            )
+        predicted_classes = predictions.type(torch.float)
+
+        for i in range(batch_size):
+            pthimg = dic["pathimage"][i]
+            si = SatelliteImage.from_raster(
+                file_path=pthimg,
+                dep=None,
+                date=None,
+                n_bands=3
+            )
+            si.normalize()
+
+            if int(predicted_classes[i]) == 0:
+                mask_pred = np.full(
+                    (tile_size, tile_size, 3), 255, dtype=np.uint8
+                    )
+
+            elif int(predicted_classes[i]) == 1:
+                mask_pred = np.full(
+                    (tile_size, tile_size, 3), 0, dtype=np.uint8
+                    )
+
+            list_labeled_satellite_image.append(
+                SegmentationLabeledSatelliteImage(
+                    satellite_image=si,
+                    label=mask_pred,
+                    source="",
+                    labeling_date=""
+                )
+            )
+
+        if ((idx+1) % nbatchforfullimage) == 0:
+            print("ecriture image")
+            if not os.path.exists("img/"):
+                os.makedirs("img/")
+
+            fig1 = plot_list_segmentation_labeled_satellite_image(
+                list_labeled_satellite_image, [0, 1, 2]
                 )
 
             filename = pthimg.split('/')[-1]
@@ -146,6 +263,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
             plot_file = filename + ".png"
 
             fig1.savefig(plot_file)
+            list_labeled_satellite_image = []
 
             if use_mlflow:
                 mlflow.log_artifact(plot_file, artifact_path="plots")
@@ -174,4 +292,56 @@ def calculate_IOU(output, labels):
 
     return IOU
 
+
 # calculate num and denomionateur IOU
+def calculate_pourcentage_loss(output, labels):
+    """
+    Calculate the pourcentage of wrong predicted classes
+    based on output classification predictions of a model
+    and the true classes.
+
+    Args:
+        output: the output of the classification
+        labels: the true classes
+
+    """
+    probability_class_1 = output[:, 1]
+
+    # Set a threshold for class prediction
+    threshold = 0.51
+
+    # Make predictions based on the threshold
+    predictions = torch.where(
+        probability_class_1 > threshold,
+        torch.tensor([1]),
+        torch.tensor([0])
+        )
+
+    predicted_classes = predictions.type(torch.float)
+
+    misclassified_percentage = (predicted_classes != labels).float().mean()
+
+    return misclassified_percentage
+
+
+def proportion_ones(labels):
+    """
+    Calculate the proportion of ones in the validation dataloader.
+
+    Args:
+        labels: the true classes
+
+    """
+
+    # Count the number of zeros
+    num_zeros = int(torch.sum(labels == 0))
+
+    # Count the number of ones
+    num_ones = int(torch.sum(labels == 1))
+
+    prop_ones = num_ones/(num_zeros + num_ones)
+
+    # Rounded to two digits after the decimal point
+    prop_ones = round(prop_ones, 2)
+
+    return prop_ones
