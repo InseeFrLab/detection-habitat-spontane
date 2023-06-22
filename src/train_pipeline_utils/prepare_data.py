@@ -149,7 +149,7 @@ def label_images(list_images, labeler, task="segmentation"):
     #     ", Nombre de masques : ",
     #     len(list_masks),
     # )
-    return list_filtered_splitted_labeled_images, list_masks
+    return labels
 
 
 def save_images_and_masks(
