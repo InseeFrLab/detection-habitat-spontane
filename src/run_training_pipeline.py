@@ -2,6 +2,7 @@ import gc
 import os
 import sys
 from datetime import datetime
+import json
 
 import mlflow
 import numpy as np
@@ -131,7 +132,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     for i, (year, dep) in enumerate(zip(years, deps)):
         # i, year , dep = 0,years[0],deps[0]
         output_dir = (
-            "train_data"
+            "../train_data"
             + "-"
             + src
             + "-"
@@ -162,6 +163,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
             dir = list_data_dir[i]
             list_path = [dir + "/" + filename for filename in os.listdir(dir)]
 
+            full_balancing_dict = {}
             for path in tqdm(list_path):
                 try:
                     si = SatelliteImage.from_raster(
@@ -170,47 +172,50 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                         date=date,
                         n_bands=config_data["n bands"],
                     )
-
                 except RasterioIOError:
                     print("Erreur de lecture du fichier " + path)
                     continue
 
-                else:
-                    filename = path.split("/")[-1].split(".")[0]
-                    list_splitted_mask_cloud = None
+                filename = path.split("/")[-1].split(".")[0]
+                list_splitted_mask_cloud = None
 
-                    if filename in list_name_cloud:
-                        mask_full_cloud = np.load(
-                            cloud_dir + "/" + filename + ".npy"
-                        )
-                        list_splitted_mask_cloud = split_array(
-                            mask_full_cloud, config_data["tile size"]
-                        )
-
-                    list_splitted_images = si.split(config_data["tile size"])
-
-                    list_filtered_splitted_images = filter_images(
-                        config_data["source train"],
-                        list_splitted_images,
-                        list_splitted_mask_cloud,
+                if filename in list_name_cloud:
+                    mask_full_cloud = np.load(
+                        cloud_dir + "/" + filename + ".npy"
+                    )
+                    list_splitted_mask_cloud = split_array(
+                        mask_full_cloud, config_data["tile size"]
                     )
 
-                    labels, balancing_dict = label_images(
-                        list_filtered_splitted_images,
-                        labeler
-                    )
+                list_splitted_images = si.split(config_data["tile size"])
 
-                    save_images_and_masks(
-                        list_filtered_splitted_images,
-                        labels,
-                        output_dir,
-                    )
+                list_filtered_splitted_images = filter_images(
+                    config_data["source train"],
+                    list_splitted_images,
+                    list_splitted_mask_cloud,
+                )
+
+                labels, balancing_dict = label_images(
+                    list_filtered_splitted_images,
+                    labeler
+                )
+
+                save_images_and_masks(
+                    list_filtered_splitted_images,
+                    labels,
+                    output_dir,
+                )
+
+                for (k, v) in balancing_dict.items():
+                    full_balancing_dict[k] = v
+            with open(output_dir + "/balancing_dict.json", "w") as fp:
+                json.dump(full_balancing_dict, fp)
 
         list_output_dir.append(output_dir)
         nb = len(os.listdir(output_dir + "/images"))
         print(str(nb) + " couples images/masques retenus")
 
-    return list_output_dir, balancing_dict
+    return list_output_dir
 
 
 def prepare_test_data(config, test_dir):
@@ -298,7 +303,7 @@ def instantiate_dataset(config, list_path_images, list_path_labels):
     return full_dataset
 
 
-def instantiate_dataloader(config, list_output_dir, balancing_dict):
+def instantiate_dataloader(config, list_output_dir):
     """
     Instantiates and returns the data loaders for
     training, validation, and testing datasets.
@@ -308,8 +313,6 @@ def instantiate_dataloader(config, list_output_dir, balancing_dict):
     for data loading and processing.
     - list_output_dir (list): A list of strings containing the paths to
     the directories that contain the training data.
-    - balancing_dict (Dict): Dictionary containing info on whether
-    images have buildings.
 
     Returns:
     - train_dataloader (torch.utils.data.DataLoader):
@@ -344,10 +347,13 @@ def instantiate_dataloader(config, list_output_dir, balancing_dict):
     ]:
         list_path_labels = []
         list_path_images = []
-        for dir in list_output_dir:
+        full_balancing_dict = {}
+        for directory in list_output_dir:
             # dir = list_output_dir[0]
-            labels = os.listdir(dir + "/labels")
-            images = os.listdir(dir + "/images")
+            labels = os.listdir(directory + "/labels")
+            images = os.listdir(directory + "/images")
+            with open(directory + "/balancing_dict.json") as json_file:
+                balancing_dict = json.load(json_file)
 
             list_path_labels = np.concatenate(
                 (
@@ -362,6 +368,8 @@ def instantiate_dataloader(config, list_output_dir, balancing_dict):
                     np.sort([dir + "/images/" + name for name in images]),
                 )
             )
+            for k, v in balancing_dict.items():
+                full_balancing_dict[k] = v
 
     indices_to_balance = select_indices_to_balance(
         list_path_images,
@@ -589,13 +597,13 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
 
-    list_output_dir, balancing_dict = prepare_train_data(
+    list_output_dir = prepare_train_data(
         config, list_data_dir, list_masks_cloud_dir
     )
     prepare_test_data(config, test_dir)
 
     train_dl, valid_dl, test_dl = instantiate_dataloader(
-        config, list_output_dir, balancing_dict=balancing_dict
+        config, list_output_dir
     )
 
     model = instantiate_model(config)
@@ -607,7 +615,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     torch.cuda.empty_cache()
     gc.collect()
 
-    # remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"
+    remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"
     # experiment_name = "segmentation"
     # run_name = "deeplabV42"
 

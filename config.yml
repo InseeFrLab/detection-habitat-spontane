@@ -1,25 +1,25 @@
 donnees:
   source train: "SENTINEL1-2"
   dataset: "SENTINEL"
-  year: [2022]
-  dep: ["972"]
+  year: [2021,2022]
+  dep: ["976","976"]
   type labeler: "BDTOPO"
   buffer size: 10
   n channels train: 13
   n bands: 13
-  tile size: 250
+  tile size: 124
   augmentation: True
   task: "segmentation"
 
 optim:
-  loss: "lossbinaire"
+  loss: "crossentropy"
   lr: 0.0001
   momentum: 0.9
-  module: "binarydeeplabv3"
+  module: "deeplabv3"
   batch size: 9
-  batch size test: 4
-  max epochs: 50
+  batch size test: 9
+  max epochs: 2
   val prop: 0.2
-  accumulate batch : 3
+  accumulate batch : 4
 
 mlflow: True

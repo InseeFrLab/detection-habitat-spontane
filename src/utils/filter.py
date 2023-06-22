@@ -17,7 +17,7 @@ from classes.data.satellite_image import SatelliteImage
 from utils.utils import get_environment, get_file_system
 
 
-def is_too_water(image: SatelliteImage, water_value_threshold=75) -> bool:
+def is_too_water(image: SatelliteImage, water_value_threshold=0.95) -> bool:
     """
     Determine if a satellite image has too much water\
         based on the NDWI.
@@ -31,12 +31,14 @@ def is_too_water(image: SatelliteImage, water_value_threshold=75) -> bool:
     Args:
         image (SatelliteImage): The input satellite image.
         water_value_threshold (int, optional): The threshold value
-            for considering a pixel as water. Default is 75.
+            for considering that a picture is in the water. Default is 0.95.
 
     Returns:
         bool: True if the proportion of water pixels is greater than or equal
             to the threshold, False otherwise.
     """
+    if (water_value_threshold < 0) or (water_value_threshold > 1):
+        raise ValueError("Le seuil doit être compris entre 0 et 1.")
 
     array = image.array
     tile_size = array.shape[2]
@@ -49,8 +51,9 @@ def is_too_water(image: SatelliteImage, water_value_threshold=75) -> bool:
                     int(array[2, i, j]) + int(array[7, i, j])
                 ) < 0:
                     NDWI[i][j] = 1
-    if np.sum(NDWI) >= water_value_threshold * tile_size:
+    if np.sum(NDWI) <= (1-water_value_threshold) * tile_size * tile_size:
         return True
+    return False
 
 
 def is_too_black(
