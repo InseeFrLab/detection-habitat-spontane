@@ -384,22 +384,22 @@ def instantiate_dataloader(config, list_output_dir):
             labels = os.listdir(directory + "/labels")
             images = os.listdir(directory + "/images")
             if labels[0][0] == ".":
-                del(labels[0])
-            
+                del labels[0]
+
             if config_task == "segmentation":
                 with open(directory + "/balancing_dict.json") as json_file:
                     balancing_dict = json.load(json_file)
 
                 list_labels = np.concatenate(
                     (
-                        list_path_labels,
-                        np.sort([dir + "/labels/" + name for name in labels]),
+                        list_labels,
+                        np.sort([directory + "/labels/" + name for name in labels]),
                     )
                 )
 
                 for k, v in balancing_dict.items():
                     full_balancing_dict[k] = v
-            
+
             if config_task == "classification":
                 list_labels_dir = []
                 with open(dir + "/labels/" + labels[0], 'r') as csvfile:
@@ -425,15 +425,15 @@ def instantiate_dataloader(config, list_output_dir):
 
             list_images = np.concatenate((
                 list_images,
-                np.sort([dir + "/images/" + name for name in images])
+                np.sort([directory + "/images/" + name for name in images])
             ))
-    
+
     if config_task == "segmentation":
         unbalanced_images = list_images.copy()
         unbalanced_labels = list_labels.copy()
         indices_to_balance = select_indices_to_balance(
             list_images,
-            balancing_dict,
+            full_balancing_dict,
             prop=config["donnees"]["prop"]
         )
         list_images = unbalanced_images[indices_to_balance]

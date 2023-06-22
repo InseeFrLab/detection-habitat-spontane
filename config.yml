@@ -10,6 +10,7 @@ donnees:
   tile size: 124
   augmentation: True
   task: "segmentation"
+  prop: 1
 
 optim:
   loss: "crossentropy"

@@ -129,13 +129,13 @@ def label_images(list_images, labeler, task="segmentation"):
     """
     labels = []
     balancing_dict = {}
-    for satellite_image in list_images:
+    for i, satellite_image in enumerate(list_images):
         mask = labeler.create_segmentation_label(satellite_image)
         if task == "segmentation":
             if np.sum(mask) != 0:
-                balancing_dict[satellite_image.filename] = 1
+                balancing_dict[satellite_image.filename.split('.')[0] + f'_{i}'] = 1
             else:
-                balancing_dict[satellite_image.filename] = 0
+                balancing_dict[satellite_image.filename.split('.')[0] + f'_{i}'] = 0
             labels.append(mask)
         elif task == "classification":
             if np.sum(mask) >= 1:
