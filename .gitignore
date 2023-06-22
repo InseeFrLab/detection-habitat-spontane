@@ -133,3 +133,13 @@ dmypy.json
 /data/
 GCP_credentials.json
 *.tif
+*.jp2
+*.png
+*.npy
+*.md5
+*.cpg
+*.dbf
+*.prj
+*.shp
+*.shx
+*.keep
