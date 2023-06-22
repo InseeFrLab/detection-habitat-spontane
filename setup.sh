@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# PROJECT_DIR=~/work/detection-bidonvilles
-# git clone https://github.com/InseeFrLab/detection-bidonvilles.git $PROJECT_DIR
-# cd $PROJECT_DIR
+PROJECT_DIR=~/work/detection-bidonvilles
+git clone https://github.com/InseeFrLab/detection-bidonvilles.git $PROJECT_DIR
+cd $PROJECT_DIR
 
 git config --global credential.helper store
 
@@ -44,3 +44,5 @@ json_string="${json_string%,*} }"
 
 # Write the JSON string to a file
 echo "$json_string" > GCP_credentials.json
+
+chown -R onyxia:users $PROJECT_DIR/
