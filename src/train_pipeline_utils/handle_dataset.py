@@ -80,8 +80,8 @@ def select_indices_to_balance(
     """
     idx_building = []
     idx_no_building = []
-    for idx, filepath in list_path_images:
-        basename = os.path.basename(filepath)
+    for idx, filepath in enumerate(list_path_images):
+        basename = os.path.basename(filepath).split('.')[0]
         if balancing_dict[basename] == 1:
             idx_building.append(idx)
         else:
