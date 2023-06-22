@@ -43,6 +43,7 @@ from train_pipeline_utils.handle_dataset import (
     generate_transform_pleiades,
     generate_transform_sentinel,
     select_indices_to_split_dataset,
+    select_indices_to_balance
 )
 
 from classes.optim.losses import SoftIoULoss
@@ -134,7 +135,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
             + "-"
             + src
             + "-"
-            + labeler
+            + type_labeler
             + "-"
             + dep
             + "-"
@@ -194,14 +195,14 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                         list_splitted_mask_cloud,
                     )
 
-                    (
-                        list_filtered_splitted_labeled_images,
-                        list_masks,
-                    ) = label_images(list_filtered_splitted_images, labeler, 1)
+                    labels, balancing_dict = label_images(
+                        list_filtered_splitted_images,
+                        labeler
+                    )
 
                     save_images_and_masks(
-                        list_filtered_splitted_labeled_images,
-                        list_masks,
+                        list_filtered_splitted_images,
+                        labels,
                         output_dir,
                     )
 
@@ -209,7 +210,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
         nb = len(os.listdir(output_dir + "/images"))
         print(str(nb) + " couples images/masques retenus")
 
-    return list_output_dir
+    return list_output_dir, balancing_dict
 
 
 def prepare_test_data(config, test_dir):
@@ -297,7 +298,7 @@ def instantiate_dataset(config, list_path_images, list_path_labels):
     return full_dataset
 
 
-def instantiate_dataloader(config, list_output_dir):
+def instantiate_dataloader(config, list_output_dir, balancing_dict):
     """
     Instantiates and returns the data loaders for
     training, validation, and testing datasets.
@@ -307,6 +308,8 @@ def instantiate_dataloader(config, list_output_dir):
     for data loading and processing.
     - list_output_dir (list): A list of strings containing the paths to
     the directories that contain the training data.
+    - balancing_dict (Dict): Dictionary containing info on whether
+    images have buildings.
 
     Returns:
     - train_dataloader (torch.utils.data.DataLoader):
@@ -360,18 +363,26 @@ def instantiate_dataloader(config, list_output_dir):
                 )
             )
 
+    indices_to_balance = select_indices_to_balance(
+        list_path_images,
+        balancing_dict,
+        prop=config["donnees"]["prop"]
+    )
+    balanced_images = list_path_images[indices_to_balance]
+    balanced_labels = list_path_labels[indices_to_balance]
+
     train_idx, val_idx = select_indices_to_split_dataset(
         len(list_path_images),
         config["optim"]["val prop"]
     )
-    
+
     # récupération de la classe de Dataset souhaitée
     train_dataset = instantiate_dataset(
-        config, list_path_images[train_idx], list_path_labels[train_idx]
+        config, balanced_images[train_idx], balanced_labels[train_idx]
     )
 
     valid_dataset = instantiate_dataset(
-        config, list_path_images[val_idx], list_path_labels[val_idx]
+        config, balanced_images[val_idx], balanced_labels[val_idx]
     )
 
     # on applique les transforms respectives
@@ -578,13 +589,13 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
 
-    list_output_dir = prepare_train_data(
+    list_output_dir, balancing_dict = prepare_train_data(
         config, list_data_dir, list_masks_cloud_dir
     )
     prepare_test_data(config, test_dir)
 
     train_dl, valid_dl, test_dl = instantiate_dataloader(
-    config, list_output_dir
+        config, list_output_dir, balancing_dict=balancing_dict
     )
 
     model = instantiate_model(config)

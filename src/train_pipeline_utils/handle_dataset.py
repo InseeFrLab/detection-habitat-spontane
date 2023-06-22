@@ -1,7 +1,8 @@
 import random
-
+from typing import List, Dict
 import albumentations as album
 import yaml
+import os
 from albumentations.pytorch.transforms import ToTensorV2
 
 
@@ -16,6 +17,51 @@ def select_indices_to_split_dataset(len_dataset, prop_val):
     train_indices = all_indices[num_val_indices:]
 
     return train_indices, val_indices
+
+
+def select_indices_to_balance(
+    list_path_images: List,
+    balancing_dict: Dict,
+    prop: float
+):
+    """
+    Select indices to balance Dataset according to a balancing dict
+    containing info on the images that have buildings or not.
+
+    Args:
+        list_path_images (List): List of image paths.
+        balancing_dict (Dict): Balancing dict.
+        prop (float): the proportion of the images without label
+            (0 for no empty data, 1 for an equal proportion between
+            empty and no empty data, etc)
+    """
+    idx_building = []
+    idx_no_building = []
+    for idx, filepath in list_path_images:
+        basename = os.path.basename(filepath)
+        if balancing_dict[basename] == 1:
+            idx_building.append(idx)
+        else:
+            idx_no_building.append(idx)
+
+    # Get images with buildings and without according
+    # to a certain proportion
+    length_labelled = len(idx_building)
+    lenght_unlabelled = prop * length_labelled
+    idx_balanced = idx_building.copy()
+    if lenght_unlabelled < len(idx_no_building):
+        list_to_add = random.sample(
+            idx_no_building,
+            lenght_unlabelled
+        )
+        for i in list_to_add:
+            idx = idx_no_building.index(i)
+            idx_balanced.append(i)
+    else:
+        idx_balanced.extend(
+            idx_no_building
+        )
+    return idx_balanced
 
 
 def generate_transform_pleiades(tile_size, augmentation):

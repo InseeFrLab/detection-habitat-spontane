@@ -110,7 +110,7 @@ def filter_images_sentinel(list_images):
     return list_filtered_splitted_images
 
 
-def label_images(list_images, labeler, prop):
+def label_images(list_images, labeler):
     """
     labels the images according to type of labeler desired.
 
@@ -119,56 +119,23 @@ def label_images(list_images, labeler, prop):
             to be labeled.
         labeler : a Labeler object representing the labeler \
             used to create segmentation labels.
-        prop : the proportion of the images without label (0 for no empty data,
-            1 for an equal proportion between empty and no empty data, etc)
 
     Returns:
         list[SatelliteImage] : the list containing the splitted and \
             filtered data with a not-empty mask and the associated masks.
+        Dict: Dictionary indicating if images contain a building or not.
     """
-
-    # print("Entre dans la fonction label_images")
-    list_filtered_splitted_labeled_images = []
-    list_masks = []
-    list_filtered_splitted_labeled_images_empty = []
-    list_masks_empty = []
-
-    # Store labeled images in two lists depending on whether they 
-    # contain buildings
+    labels = []
+    balancing_dict = {}
     for satellite_image in list_images:
-        mask = labeler.create_segmentation_label(satellite_image)
-        if np.sum(mask) != 0:
-            list_filtered_splitted_labeled_images.append(satellite_image)
-            list_masks.append(mask)
+        label = labeler.create_segmentation_label(satellite_image)
+        if np.sum(label) != 0:
+            balancing_dict[satellite_image.name] = 1
         else:
-            list_filtered_splitted_labeled_images_empty.append(satellite_image)
-            list_masks_empty.append(mask)
+            balancing_dict[satellite_image.name] = 0
+        labels.append(label)
 
-    # Getting images with buildings and without according
-    # to a certain proportion
-    length_labelled = len(list_filtered_splitted_labeled_images)
-    lenght_unlabelled = prop * length_labelled
-    if lenght_unlabelled < len(list_filtered_splitted_labeled_images_empty):
-        list_to_add = random.sample(
-            list_filtered_splitted_labeled_images_empty,
-            lenght_unlabelled)
-        for i in list_to_add:
-            idx = list_filtered_splitted_labeled_images_empty.index(i)
-            list_filtered_splitted_labeled_images.append(i)
-            list_masks.append(list_masks_empty[idx])
-    else:
-        list_filtered_splitted_labeled_images.extend(
-            list_filtered_splitted_labeled_images_empty
-        )
-        list_masks.extend(list_masks_empty)
-
-    # print(
-    #     "Nombre d'images labelisées : ",
-    #     len(list_filtered_splitted_labeled_images),
-    #     ", Nombre de masques : ",
-    #     len(list_masks),
-    # )
-    return list_filtered_splitted_labeled_images, list_masks
+    return labels, balancing_dict
 
 
 def save_images_and_masks(list_images, list_masks, output_directory_name):
