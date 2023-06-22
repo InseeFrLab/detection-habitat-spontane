@@ -54,7 +54,7 @@ class SegmentationModule(pl.LightningModule):
         self.scheduler = scheduler
         self.scheduler_params = scheduler_params
         self.scheduler_interval = scheduler_interval
-        self.list_labeled_satellite_image = []
+        
 
     def forward(self, batch):
         """

@@ -17,7 +17,15 @@ from .mappings import dep_to_crs
 
 
 def remove_dot_file(list_name):
-    # list_name = list_name_image
+    """
+    Removes filenames starting with a dot from the given list.
+
+    Args:
+        list_name (list): A list of filenames.
+
+    Returns:
+        list: The modified list with dot filenames removed.
+    """
     for filename in list_name:
         if filename[0] == ".":
             list_name.remove(filename)
@@ -26,13 +34,24 @@ def remove_dot_file(list_name):
 
 
 def split_array(array, tile_length):
+    """
+    Splits an array into smaller tiles of the specified length.
+
+    Args:
+        array (numpy.ndarray): The input array.
+        tile_length (int): The length of each tile.
+
+    Returns:
+        list: A list of smaller tiles obtained from the input array.
+    """
+
     m = array.shape[0]
     n = array.shape[1]
 
     indices = get_indices_from_tile_length(m, n, tile_length)
 
     list_array = [
-        array[rows[0] : rows[1], cols[0] : cols[1]] for rows, cols in indices
+        array[rows[0]: rows[1], cols[0]: cols[1]] for rows, cols in indices
     ]
 
     return list_array
@@ -103,6 +122,34 @@ def get_bounds_for_tiles(
     row_max = row_indices[1]
     col_min = col_indices[0]
     col_max = col_indices[1]
+
+    left, bottom = transform * (col_min, row_max)
+    right, top = transform * (col_max, row_min)
+    return rasterio.coords.BoundingBox(left, bottom, right, top)
+
+
+def get_bounds_for_tiles2(
+    transform: Affine, row, col, tile_length
+) -> Tuple:
+    """
+    Given an Affine transformation, and indices for a tile's row and column,
+    returns the bounding coordinates (left, bottom, right, top) of the tile.
+
+    Args:
+        transform: An Affine transformation
+        row (int): The minimum indice for the tile's row
+        col (int): The minimum indice for the tile's column
+        tile_length (int): The length of the tile.
+
+    Returns:
+        Tuple: A tuple containing the bounding coordinates
+            (left, bottom, right, top) of the tile
+    """
+
+    row_min = row
+    row_max = row + tile_length
+    col_min = col
+    col_max = col + tile_length
 
     left, bottom = transform * (col_min, row_max)
     right, top = transform * (col_max, row_min)
