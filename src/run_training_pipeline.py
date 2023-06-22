@@ -769,6 +769,5 @@ if __name__ == "__main__":
 #  for file in files:
 #        file_path = os.path.join(dir_path, file)
 #        if os.path.isfile(file_path):
-#            os.remove(file_path)
-       
+#            os.remove(file_path)  
 # delete_files_in_dir(list_data_dir[0], 600)
