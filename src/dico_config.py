@@ -2,6 +2,7 @@ from classes.optim.losses import CrossEntropySelfmade
 from torch.nn import CrossEntropyLoss
 import torch.nn as nn
 
+from data.components.change_detection_dataset import ChangeIsEverywhereDataset, ChangeDetectionDataset
 from data.components.dataset import PleiadeDataset
 from data.components.classification_patch import PatchClassification
 from models.components.segmentation_models import DeepLabv3Module
@@ -17,7 +18,9 @@ from classes.optim.evaluation_model import (
 
 dataset_dict = {
                 "PLEIADE": PleiadeDataset,
-                "CLASSIFICATION": PatchClassification
+                "CLASSIFICATION": PatchClassification,
+                "CHANGEISEVERYWHERE": ChangeIsEverywhereDataset,
+                "CHANGEDETECTIONDATASET": ChangeDetectionDataset,
         }
 
 module_dict = {
@@ -34,10 +37,12 @@ loss_dict = {
 
 task_to_lightningmodule = {
             "segmentation": SegmentationModule,
-            "classification": ClassificationModule
+            "classification": ClassificationModule,
+            "change-detection": SegmentationModule
         }
 
 task_to_evaluation = {
             "segmentation": evaluer_modele_sur_jeu_de_test_segmentation_pleiade,
-            "classification": evaluer_modele_sur_jeu_de_test_classification_pleiade
+            "classification": evaluer_modele_sur_jeu_de_test_classification_pleiade,
+            "change-detection": evaluer_modele_sur_jeu_de_test_segmentation_pleiade
         }
