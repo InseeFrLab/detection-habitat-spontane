@@ -487,3 +487,71 @@ def plot_list_images_square(folder_path, borne_inf, borne_sup):
 
     # Show the plot
     plt.show()
+
+
+def draw_change_is_everywhere_exemples(changeiseverywheredataset, n_exemples):
+
+    """
+    Draws and saves a grid of examples from the ChangeIsEverywhere dataset.
+
+    Args:
+        changeiseverywheredataset (list): The ChangeIsEverywhere dataset containing image paths and labels.
+        n_examples (int): The number of examples to draw.
+
+    Returns:
+        None
+    """
+
+    triplets = [
+        {
+            "pth1": changeiseverywheredataset[i][2]["pathimage1"],
+            "pth2": changeiseverywheredataset[i][2]["pathimage2"],
+            "label": changeiseverywheredataset[i][1]
+        }
+        for i in range(n_exemples)
+    ]
+
+    num_triplets = len(triplets)
+    num_cols = 3  # Number of columns in the subplot grid
+    # Iterate over each triplet and plot the images and labels
+
+    fig, axs = plt.subplots(
+        num_triplets,
+        num_cols,
+        figsize=(15, 15),
+        constrained_layout=True
+    )
+
+    for i, dic in enumerate(triplets):
+        # i = 0
+        pathimage1, pathimage2, label = dic["pth1"],  dic["pth2"], dic["label"]
+
+        # Load the jp2 files
+        image1 = SatelliteImage.from_raster(pathimage1, "972").array
+        image2 = SatelliteImage.from_raster(pathimage2, "972").array
+
+        # Plot the first image in the left subplot
+        axs[i, 0].imshow(np.transpose(image1, (1, 2, 0)))
+        
+        # Plot the second image in the right subplot
+        axs[i, 1].imshow(np.transpose(image2, (1, 2, 0)))
+    
+        # Add the label as the title of the bottom subplot
+        axs[i, 2].imshow(label, cmap='gray')
+        
+        # Remove the ticks and labels in the subplots
+        axs[i, 0].set_xticks([])
+        axs[i, 0].set_yticks([])
+        axs[i, 1].set_xticks([])
+        axs[i, 1].set_yticks([])
+        axs[i, 2].set_xticks([])
+        axs[i, 2].set_yticks([])
+
+    # set the spacing between subplots
+    plt.subplots_adjust(left=0.01)
+    
+    # Adjust the spacing between subplots
+    # Show the plot
+    plt.show()
+    res = plt.gcf()
+    res.savefig("triplet_train.png")
