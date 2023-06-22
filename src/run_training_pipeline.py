@@ -366,14 +366,14 @@ def instantiate_dataloader(config, list_output_dir):
                 with open(dir + "/labels/" + labels[0], 'r') as csvfile:
                     reader = csv.reader(csvfile)
 
-                    # Ignorer l'en-tête du fichier CSV s'il y en a un
+                    # Ignore CSV file header if there is one
                     next(reader)
 
-                    # Parcourir les lignes du fichier CSV
-                    # et extraire la deuxième colonne
+                    # Iterate through the lines of the CSV file
+                    # and extract the second column
                     for row in reader:
                         image_path = row[0]
-                        mask = row[1]  # Index 1 correspond à la deuxième colonne (index 0 pour la première)
+                        mask = row[1]  # Index 1 corresponds to the second column (index 0 for the first)
                         list_labels_dir.append([image_path, mask])
 
                 list_labels_dir = sorted(list_labels_dir, key=lambda x: x[0])
@@ -385,7 +385,7 @@ def instantiate_dataloader(config, list_output_dir):
                     ))
                 print(list_labels)
 
-            # Même opération peu importe la tâche
+            # Same operation no matter the task
             images = os.listdir(dir + "/images")
 
             list_images = np.concatenate((
@@ -399,7 +399,7 @@ def instantiate_dataloader(config, list_output_dir):
         list_labels
     )
 
-    # récupération de la classe de Dataset souhaitée
+    # Retrieving the desired Dataset class
     train_dataset = instantiate_dataset(
         config, list_images[train_idx], list_labels[train_idx]
     )
@@ -408,7 +408,7 @@ def instantiate_dataloader(config, list_output_dir):
         config, list_images[val_idx], list_labels[val_idx]
     )
 
-    # on applique les transforms respectives
+    # Applying the respective transforms
     augmentation = config["donnees"]["augmentation"]
     tile_size = config["donnees"]["tile size"]
 
@@ -420,7 +420,7 @@ def instantiate_dataloader(config, list_output_dir):
     train_dataset.transforms = t_aug
     valid_dataset.transforms = t_preproc
 
-    # création des dataloader
+    # Creation of the dataloaders
     batch_size = config["optim"]["batch size"]
 
     train_dataloader, valid_dataloader = [
@@ -669,7 +669,6 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 artifact_path="config.yml"
             )
             trainer.fit(light_module, train_dl, valid_dl)
-            model = light_module.model
             tile_size = config["donnees"]["tile size"]
             batch_size_test = config["optim"]["batch size test"]
 
@@ -678,7 +677,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 light_module_checkpoint = light_module.load_from_checkpoint(
                     loss=instantiate_loss(config),
                     checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
-                    model=model,
+                    model=light_module.model,
                     optimizer=light_module.optimizer,
                     optimizer_params=light_module.optimizer_params,
                     scheduler=light_module.scheduler,
@@ -686,6 +685,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                     scheduler_interval=light_module.scheduler_interval
 
                 )
+
+                model = light_module_checkpoint.model
 
                 if config["donnees"]["task"] == "segmentation":
                     evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
@@ -707,7 +708,6 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     else:
         trainer.fit(light_module, train_dl, valid_dl)
-        model = light_module.model
         tile_size = config["donnees"]["tile size"]
         batch_size_test = config["optim"]["batch size test"]
 
@@ -715,8 +715,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
             light_module_checkpoint = light_module.load_from_checkpoint(
                 loss=instantiate_loss(config),
-                checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
-                model=model,
+                checkpoint_path=trainer.checkpoint_callback.best_model_path,  # je créé un module qui charge
+                model=light_module.model,
                 optimizer=light_module.optimizer,
                 optimizer_params=light_module.optimizer_params,
                 scheduler=light_module.scheduler,
@@ -770,6 +770,5 @@ if __name__ == "__main__":
 #        file_path = os.path.join(dir_path, file)
 #        if os.path.isfile(file_path):
 #            os.remove(file_path)
-
-        
+       
 # delete_files_in_dir(list_data_dir[0], 600)
