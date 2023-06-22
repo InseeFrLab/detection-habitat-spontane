@@ -139,13 +139,13 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
 
         date = datetime.strptime(str(year) + "0101", "%Y%m%d")
 
-        if labeler == "RIL":
-            buffer_size = config_data["buffer size"]
-            labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
-        elif labeler == "BDTOPO":
-            labeler = BDTOPOLabeler(date, dep=dep)
-
         if not check_labelled_images(output_dir):
+
+            if labeler == "RIL":
+                buffer_size = config_data["buffer size"]
+                labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
+            elif labeler == "BDTOPO":
+                labeler = BDTOPOLabeler(date, dep=dep)
 
             list_name_cloud = []
             if src == "PLEIADES":
@@ -215,56 +215,99 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
 
 def prepare_test_data(config, test_dir):
 
+    n_bands = config["donnees"]["n bands"]
+    tile_size = config["donnees"]["tile size"]
+    
+    output_test = "../test-data"
+    output_labels_path = output_test + "/labels"
+    
+    if not os.path.exists(output_labels_path):
+        os.makedirs(output_labels_path)
+    else:
+        return None
+    
+    labels_path = test_dir + "/masks"
+    list_name_label = os.listdir(labels_path)
+    list_name_label = np.sort(remove_dot_file(list_name_label))
+    list_labels_path = [labels_path + "/" + name for name in list_name_label]
+
     if config["donnees"]["source train"] == "PLEIADES":
+        if config["donnees"]["task"] != "change-detection":
+        
+            images_path = test_dir + "/images"
+            list_name_image = os.listdir(images_path)
+            list_name_image = np.sort(remove_dot_file(list_name_image))
+            list_images_path = [images_path + "/" + name for name in list_name_image]
+            output_images_path = output_test + "/images"
+        
+            for image_path, label_path, name in zip(
+                list_images_path,
+                list_labels_path,
+                list_name_image
+            ):
 
-        images_path = test_dir + "/images"
-        labels_path = test_dir + "/masks"
+                si = SatelliteImage.from_raster(
+                    file_path=image_path, dep=None, date=None, n_bands=n_bands
+                )
+                mask = np.load(label_path)
 
-        list_name_image = os.listdir(images_path)
-        list_name_label = os.listdir(labels_path)
+                lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
+                list_lsi = lsi.split(tile_size)
 
-        list_name_image = np.sort(remove_dot_file(list_name_image))
-        list_name_label = np.sort(remove_dot_file(list_name_label))
+                for i, lsi in enumerate(list_lsi):
+                    file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
 
-        list_images_path = [images_path + "/" + name for name in list_name_image]
-        list_labels_path = [labels_path + "/" + name for name in list_name_label]
-
-        output_test = "../test-data"
-        output_images_path = output_test + "/images"
-        output_labels_path = output_test + "/labels"
-
-        n_bands = config["donnees"]["n bands"]
-        tile_size = config["donnees"]["tile size"]
-
-        if not os.path.exists(output_labels_path):
-            os.makedirs(output_labels_path)
+                    lsi.satellite_image.to_raster(
+                        output_images_path, file_name_i + ".jp2"
+                        )
+                    np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
         else:
-            return None
+            images_path_1 = test_dir + "/images_1"
+            list_name_image_1 = os.listdir(images_path_1)
+            list_name_image_1 = np.sort(remove_dot_file(list_name_image_1))
+            list_images_path_1 = [images_path_1 + "/" + name for name in list_name_image_1]
+            output_images_path_1 = output_test + "/images_1"
 
-        for image_path, label_path, name in zip(
-            list_images_path,
-            list_labels_path,
-            list_name_image
-        ):
+            images_path_2 = test_dir + "/images_2"
+            list_name_image_2 = os.listdir(images_path_2)
+            list_name_image_2 = np.sort(remove_dot_file(list_name_image_2))
+            list_images_path_2 = [images_path_2 + "/" + name for name in list_name_image_2]
+            output_images_path_2 = output_test + "/images_2"
 
-            si = SatelliteImage.from_raster(
-                file_path=image_path, dep=None, date=None, n_bands=n_bands
-            )
-            mask = np.load(label_path)
+            for image_path_1, image_path_2, label_path, name in zip(
+                list_images_path_1,
+                list_images_path_2,
+                list_labels_path,
+                list_name_image_1
+            ):
 
-            lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
-            list_lsi = lsi.split(tile_size)
+                si1 = SatelliteImage.from_raster(
+                    file_path=image_path_1, dep=None, date=None, n_bands=n_bands
+                )
+                si2 = SatelliteImage.from_raster(
+                    file_path=image_path_2, dep=None, date=None, n_bands=n_bands
+                )
+                mask = np.load(label_path)
 
-            for i, lsi in enumerate(list_lsi):
-                file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+                lsi1 = SegmentationLabeledSatelliteImage(si1, mask, "", "")
+                lsi2 = SegmentationLabeledSatelliteImage(si2, mask, "", "")
+                
+                list_lsi1 = lsi1.split(tile_size)
+                list_lsi2 = lsi2.split(tile_size)
 
-                lsi.satellite_image.to_raster(
-                    output_images_path, file_name_i + ".jp2"
-                    )
-                np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
+                for i, (lsi1, lsi2) in enumerate(zip(list_lsi1, list_lsi2)):
+                    file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+
+                    lsi1.satellite_image.to_raster(
+                        output_images_path_1, file_name_i + ".jp2"
+                        )
+                    lsi2.satellite_image.to_raster(
+                        output_images_path_2, file_name_i + ".jp2"
+                        )
+                    np.save(output_labels_path + "/" + file_name_i + ".npy", lsi1.label)
 
 
-def instantiate_dataset(config, list_images, list_labels):
+def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, test = False):
     """
     Instantiates the appropriate dataset object
     based on the configuration settings.
@@ -279,17 +322,25 @@ def instantiate_dataset(config, list_images, list_labels):
     Returns:
         A dataset object of the specified type.
     """
-    dataset_type = config["donnees"]["dataset"]
+    if not test:
+        dataset_type = config["donnees"]["dataset"]
+    else:
+        dataset_type = config["donnees"]["dataset-test"]
 
     # instanciation du dataset comple
     if dataset_type not in dataset_dict:
         raise ValueError("Invalid dataset type")
     else:
         dataset_select = dataset_dict[dataset_type]
-
-        full_dataset = dataset_select(
-            list_images, list_labels, config["donnees"]["n channels train"]
-        )
+       
+        if list_images_2 is None :
+            full_dataset = dataset_select(
+                list_images, list_labels, config["donnees"]["n bands"]
+            )
+        else:
+            full_dataset = dataset_select(
+                list_images, list_images_2, list_labels, config["donnees"]["n bands"]
+            )
 
     return full_dataset
 
@@ -341,7 +392,7 @@ def instantiate_dataloader(config, list_output_dir):
             if labels[0][0] == ".":
                 del(labels[0])
 
-            if config_task == "segmentation":
+            if config_task != "classification":
                 list_labels = np.concatenate((
                     list_labels,
                     np.sort([dir + "/labels/" + name for name in labels])
@@ -426,28 +477,32 @@ def instantiate_dataloader(config, list_output_dir):
     # output_labels_path = output_test_task + "/masks/"
 
     output_test = "../test-data"
-    output_images_path = output_test + "/images/"
     output_labels_path = output_test + "/labels/"
-
-    list_name_image = os.listdir(output_images_path)
     list_name_label = os.listdir(output_labels_path)
-
-    list_path_images = np.sort([output_images_path + name_image for name_image in list_name_image])
     list_path_labels = np.sort([output_labels_path + name_label for name_label in list_name_label])
 
-    if config["donnees"]["task"] == "segmentation":
+    if config_task != "change-detection":
+        output_images_path = output_test + "/images/"
+        list_name_image = os.listdir(output_images_path)
+        list_path_images = np.sort([output_images_path + name_image for name_image in list_name_image])
+        
         dataset_test = instantiate_dataset(
-            config, list_path_images, list_path_labels
+            config, list_path_images, list_path_labels, test = True
         )
+        dataset_test.transforms = t_preproc
     else:
-        config2 = config.copy()
-        config2["donnees"]["dataset"] = "PLEIADE"
+
+        output_images_path_1 = output_test + "/images_1/"
+        list_name_image_1 = os.listdir(output_images_path_1)
+        list_path_images_1 = np.sort([output_images_path_1 + name_image for name_image in list_name_image_1])
+        
+        output_images_path_2 = output_test + "/images_2/"
+        list_name_image_2 = os.listdir(output_images_path_2)
+        list_path_images_2 = np.sort([output_images_path_2 + name_image for name_image in list_name_image_2])
 
         dataset_test = instantiate_dataset(
-            config2, list_path_images, list_path_labels
-        )
-
-    dataset_test.transforms = t_preproc
+                config, list_path_images_1, list_path_labels, list_images_2= list_path_images_2, test = True
+            )
 
     batch_size_test = config["optim"]["batch size test"]
     test_dataloader = DataLoader(
@@ -568,6 +623,12 @@ def instantiate_trainer(config, lightning_module):
     if config["donnees"]["task"] == "classification":
         list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback]
 
+    if config["donnees"]["task"] == "change-detection":
+        checkpoint_callback_IOU = ModelCheckpoint(
+                monitor="validation_IOU", save_top_k=1, save_last=True, mode="max"
+                )
+        list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback, checkpoint_callback_IOU]
+
     strategy = "auto"
 
     trainer = pl.Trainer(
@@ -600,7 +661,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
 # list_data_dir = ["../data/PLEIADES/2022/MARTINIQUE"]
 # list_masks_cloud_dir = ["../data/NUAGESPLEIADES/2022/MARTINIQUE"]
-
+    
     list_output_dir = prepare_train_data(
         config, list_data_dir, list_masks_cloud_dir
         )
@@ -717,6 +778,8 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
+#nohup python run_training_pipeline.py https://projet-slums-detection-874257.user.lab.sspcloud.fr change_detection ChangeisEverywhere1  > out.txt &                                                                      
+                                                     
 #nohup python run_training_pipeline.py https://projet-slums-detection-874257.user.lab.sspcloud.fr classification binaray_50_0.51_bis > out.txt &
 # https://www.howtogeek.com/804823/nohup-command-linux/ 
  #TO DO :

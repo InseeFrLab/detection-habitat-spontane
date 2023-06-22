@@ -23,7 +23,7 @@ def select_indices_to_split_dataset(
     """
     len_dataset = len(list_labels)
 
-    if config_task == "segmentation":
+    if config_task != "classification":
         num_val_indices = int(prop_val * len_dataset)
 
         all_indices = list(range(len_dataset))

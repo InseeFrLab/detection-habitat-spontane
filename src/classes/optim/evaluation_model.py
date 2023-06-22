@@ -214,6 +214,9 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
         del images, label, dic
 
 
+
+
+
 def calculate_IOU(output, labels):
     """
     Calculate Intersection Over Union indicator
