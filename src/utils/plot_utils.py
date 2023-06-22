@@ -5,6 +5,7 @@ from typing import List
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import tqdm
 
 from classes.data.satellite_image import SatelliteImage
 from utils.mappings import name_dep_to_num_dep
@@ -88,20 +89,21 @@ def plot_list_satellite_images(
 
     return plt.gcf()
 
-def plot_list_sat_images_square(    
+
+def plot_list_sat_images_square(
     list_images: List,
     bands_indices: List,
 ):
     size = int(math.sqrt(len(list_images)))
 
     # Create a figure and axes
-    fig, axs = plt.subplots(nrows=size, ncols=size, figsize=(10,10))
+    fig, axs = plt.subplots(nrows=size, ncols=size, figsize=(10, 10))
 
     # Iterate over the grid of masks and plot them
     for i in range(size):
         for j in range(size):
             axs[i, j].imshow(
-                list_images[i*size + j].array.transpose(1,2,0)[:, :, bands_indices]
+                list_images[i*size + j].array.transpose(1, 2, 0)[:, :, bands_indices]
             )
 
     # Remove any unused axes
@@ -196,30 +198,30 @@ def plot_list_segmentation_labeled_satellite_image(
 
     return plt.gcf()
 
-def plot_list_labeled_sat_images(    
+
+def plot_list_labeled_sat_images(
     list_labeled_image: List,
     bands_indices: List,
 ):
     list_images = [iml.satellite_image for iml in list_labeled_image]
     list_labels = [iml.label for iml in list_labeled_image]
 
-    size = int(math.sqrt(len(list_filepaths_images)))
+    size = int(math.sqrt(len(list_images)))
 
     # Create a figure and axes
-    fig, axs = plt.subplots(nrows=size, ncols=2*size, figsize=(20,10))
+    fig, axs = plt.subplots(nrows=size, ncols=2*size, figsize=(20, 10))
 
     # Iterate over the grid of masks and plot them
     for i in range(size):
         for j in range(size):
             axs[i, j].imshow(
-                list_images[i*size + j].array.transpose(1,2,0)[:, :, bands_indices]
+                list_images[i*size + j].array.transpose(1, 2, 0)[:, :, bands_indices]
             )
-
 
     for i in range(size):
         for j in range(size):
             axs[i, j+size].imshow(
-                list_labels[i*size + j], cmap = "gray"
+                list_labels[i*size + j], cmap="gray"
             )
 
     # Remove any unused axes
@@ -338,60 +340,6 @@ def plot_infrared_patch_mask(satellite_image: SatelliteImage):
         plt.show()
 
 
-def plot_infrared_complex_mask(satellite_image: SatelliteImage):
-    """Plot the infrared mask based on thresholding on infrared,
-     green and blue to recover certain shades of infrared.
-
-    Args:
-        satellite_image (SatelliteImage): A satellite image with 4 bands.
-
-    Returns:
-        The complex infrared mask of the image.
-    """
-
-    if satellite_image.n_bands < 4:
-        print("This image has no infrared band.")
-
-    else:
-        img = satellite_image.array.copy()
-
-        img = img.transpose(2, 1, 0)
-        shape = img.shape[0:2]
-
-        mask = np.empty(shape, dtype=float)
-
-        # We go through all the pixels and we modify \
-        # them according to the threshold
-        for row in range(img.shape[0]):
-            for col in range(img.shape[1]):
-                b = img[row, col, 1]
-                g = img[row, col, 2]
-                r = img[row, col, 3]
-                mini = min(b, g)
-                maxi = max(b, g)
-
-                if maxi - mini <= 20:  # step 1
-                    if (
-                        r > 200 / 255
-                        and mini >= 110 / 255
-                        and r >= (20 / 255 + mini)
-                    ):
-                        # step 2
-                        mask[row, col] = 1.0  # white
-                    elif r >= (20 / 255 + mini) and r >= 110 / 255:  # step 3
-                        mask[row, col] = 0.0  # black
-                    else:  # step 4
-                        mask[row, col] = 1.0  # white
-
-                else:  # step 4
-                    mask[row, col] = 1.0  # white
-
-        mask = mask.transpose(1, 0)
-
-        plt.imshow(mask, cmap="gray")
-        plt.show()
-
-
 def plot_square_images(
     bands_indices: list,
     distance: int = 1,
@@ -484,13 +432,16 @@ def plot_square_images(
 
         plot_list_satellite_images(list_images, bands_indices)
 
-        
-def plot_list_images_square(folder_path, borne_inf,borne_sup):
-    
+
+def plot_list_images_square(folder_path, borne_inf, borne_sup):
+
     """
-    Plot a square grid of images from a folder. You must specify a lower limit and an upper limit,
-    to be able to display the images of the folder between these two limits. The difference of the
-    two bounds must be a square number to obtain a list of images of square length.
+    Plot a square grid of images from a folder. You must specify a lower limit
+    and an upper limit,
+    to be able to display the images of the folder between these two limits.
+    The difference of the
+    two bounds must be a square number to obtain a list of images of square
+    length.
 
     Args:
         folder_path (str): Path to the folder containing the images.
@@ -500,36 +451,33 @@ def plot_list_images_square(folder_path, borne_inf,borne_sup):
     Returns:
         Plot of the images.
     """
-    
+
     list_filepaths = os.listdir(folder_path)[borne_inf:borne_sup+1]
     size = int(math.sqrt(len(list_filepaths)))
-    bands_indices = [0,1,2]
 
     list_images = []
 
     for filepath in tqdm(list_filepaths):
+        # Retrieve left-top coordinates of all images
+        image = SatelliteImage.from_raster(
+                folder_path + "/" + filepath,
+                date=None,
+                n_bands=3,
+                dep=None
+            )
+        image.normalize()
+        list_images.append(image)
 
-    # Retrieve left-top coordinates of all images
-            image = SatelliteImage.from_raster(
-                    folder_path + "/" + filepath,
-                    date = None, 
-                    n_bands = 3,
-                    dep =None
-                )
-            image.normalize()
-            list_images.append(image)
-
-    mat_list_images = np.transpose(np.array(list_images).reshape(size,size))
-
+    mat_list_images = np.transpose(np.array(list_images).reshape(size, size))
 
     # Create a figure and axes
-    fig, axs = plt.subplots(nrows=size, ncols=size, figsize=(20,20))
+    fig, axs = plt.subplots(nrows=size, ncols=size, figsize=(20, 20))
 
     # Iterate over the grid of masks and plot them
     for i in range(size):
         for j in range(size):
             axs[i, j].imshow(
-                mat_list_images[i, j].array.transpose(1,2,0)
+                mat_list_images[i, j].array.transpose(1, 2, 0)
             )
 
     # Remove any unused axes

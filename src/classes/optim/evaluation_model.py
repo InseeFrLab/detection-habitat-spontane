@@ -26,7 +26,21 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
     batch_size,
     use_mlflow=False
 ):
+    """
+    Evaluates the model on the Pleiade test dataset for image segmentation.
 
+    Args:
+        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        dataset.
+        model (torchvision.models): The segmentation model to evaluate.
+        tile_size (int): The size of each tile in pixels.
+        batch_size (int): The batch size.
+        use_mlflow (bool, optional): Whether to use MLflow for logging
+        artifacts. Defaults to False.
+
+    Returns:
+        None
+    """
     # tile_size = 250
     # batch_size  = 4
     model.eval()
@@ -61,7 +75,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
             )
             si.normalize()
 
-            list_labeled_satellite_image.append( 
+            list_labeled_satellite_image.append(
                 SegmentationLabeledSatelliteImage(
                     satellite_image=si,
                     label=mask_pred[i],
@@ -100,7 +114,21 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
     batch_size,
     use_mlflow=False
 ):
+    """
+    Evaluates the model on the Pleiade test dataset for image classification.
 
+    Args:
+        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        dataset.
+        model (torchvision.models): The classification model to evaluate.
+        tile_size (int): The size of each tile in pixels.
+        batch_size (int): The batch size.
+        use_mlflow (bool, optional): Whether to use MLflow for logging
+        artifacts. Defaults to False.
+
+    Returns:
+        None
+    """
     model.eval()
     npatch = int((2000/tile_size)**2)
     nbatchforfullimage = int(npatch/batch_size)
@@ -127,7 +155,11 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
         threshold = 0.51
 
         # Make predictions based on the threshold
-        predictions = torch.where(probability_class_1 > threshold, torch.tensor([1]), torch.tensor([0]))
+        predictions = torch.where(
+            probability_class_1 > threshold,
+            torch.tensor([1]),
+            torch.tensor([0])
+            )
         predicted_classes = predictions.type(torch.float)
 
         for i in range(batch_size):
@@ -141,12 +173,16 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
             si.normalize()
 
             if int(predicted_classes[i]) == 0:
-                mask_pred = np.full((tile_size, tile_size, 3), 255, dtype=np.uint8)
+                mask_pred = np.full(
+                    (tile_size, tile_size, 3), 255, dtype=np.uint8
+                    )
 
             elif int(predicted_classes[i]) == 1:
-                mask_pred = np.full((tile_size, tile_size, 3), 0, dtype=np.uint8)
+                mask_pred = np.full(
+                    (tile_size, tile_size, 3), 0, dtype=np.uint8
+                    )
 
-            list_labeled_satellite_image.append( 
+            list_labeled_satellite_image.append(
                 SegmentationLabeledSatelliteImage(
                     satellite_image=si,
                     label=mask_pred,
@@ -221,7 +257,11 @@ def calculate_pourcentage_loss(output, labels):
     threshold = 0.51
 
     # Make predictions based on the threshold
-    predictions = torch.where(probability_class_1 > threshold, torch.tensor([1]), torch.tensor([0]))
+    predictions = torch.where(
+        probability_class_1 > threshold,
+        torch.tensor([1]),
+        torch.tensor([0])
+        )
 
     predicted_classes = predictions.type(torch.float)
 
@@ -239,15 +279,15 @@ def proportion_ones(labels):
 
     """
 
-    # Compter le nombre de zéros
+    # Count the number of zeros
     num_zeros = int(torch.sum(labels == 0))
 
-    # Compter le nombre de uns
+    # Count the number of ones
     num_ones = int(torch.sum(labels == 1))
 
     prop_ones = num_ones/(num_zeros + num_ones)
 
-    # Arrondi deux chiffres après la virgule
+    # Rounded to two digits after the decimal point
     prop_ones = round(prop_ones, 2)
 
     return prop_ones

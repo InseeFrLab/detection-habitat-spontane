@@ -5,9 +5,8 @@ import csv
 import pandas as pd
 from tqdm import tqdm
 
-from classes.data.satellite_image import SatelliteImage
-from classes.labelers.labeler import Labeler
-from utils.filter import has_cloud, is_too_black2, is_too_black, mask_full_cloud, patch_nocloud
+from utils.filter import is_too_black
+
 
 def check_labelled_images(output_directory_name):
     """
@@ -43,7 +42,7 @@ def check_labelled_images(output_directory_name):
         return False
 
 
-def filter_images(src, list_images, list_array_cloud = None):
+def filter_images(src, list_images, list_array_cloud=None):
     """
     calls the appropriate function according to the data type.
 
@@ -58,7 +57,7 @@ def filter_images(src, list_images, list_array_cloud = None):
 
     # print("Entre dans la fonction filter_images")
     if src == "PLEIADES":
-        return filter_images_pleiades(list_images,list_array_cloud)
+        return filter_images_pleiades(list_images, list_array_cloud)
     elif src == "SENTINEL2":
         return filter_images_sentinel2(list_images)
 
@@ -128,18 +127,18 @@ def label_images(list_images, labeler, task="segmentation"):
 
     for satellite_image in list_images:
         mask = labeler.create_segmentation_label(satellite_image)
-        if task=="segmentation":
-            if np.sum(mask) >0:
+        if task == "segmentation":
+            if np.sum(mask) > 0:
                 list_filtered_splitted_labeled_images.append(satellite_image)
                 list_masks.append(mask)
 
         if task == "classification":
-            if np.sum(mask) >=1:
+            if np.sum(mask) >= 1:
                 list_masks.append(1)
             else:
                 list_masks.append(0)
             list_filtered_splitted_labeled_images.append(satellite_image)
-        
+
     # print(
     #     "Nombre d'images labelisées : ",
     #     len(list_filtered_splitted_labeled_images),
@@ -148,7 +147,10 @@ def label_images(list_images, labeler, task="segmentation"):
     # )
     return list_filtered_splitted_labeled_images, list_masks
 
-def save_images_and_masks(list_images, list_masks, output_directory_name, task="segmentation"):
+
+def save_images_and_masks(
+    list_images, list_masks, output_directory_name, task="segmentation"
+):
     """
     write the couple images/masks into a specific folder.
 
@@ -162,8 +164,6 @@ def save_images_and_masks(list_images, list_masks, output_directory_name, task="
     Returns:
         str: The name of the output directory.
     """
-    
-
     # print("Entre dans la fonction save_images_and_masks")
     output_images_path = output_directory_name + "/images"
     output_masks_path = output_directory_name + "/labels"
@@ -171,14 +171,14 @@ def save_images_and_masks(list_images, list_masks, output_directory_name, task="
     for image, mask in zip(list_images, list_masks):
         # image = list_images[0]
         #bb = image.bounds
-        
+
         #filename = str(bb[0]) + "_" + str(bb[1]) + "_" \
         #   + "{:03d}".format(i)
-        filename = image.filename.split(".")[0] + "_" + "{:03d}".format(i)
+        filename = image.filename.split(".")[0] + "_" + "{:04d}".format(i)
         i = i + 1
         try:
             image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
-            
+
             if task == "segmentation":
                 np.save(
                     output_masks_path + "/" + filename + ".npy",
@@ -187,13 +187,13 @@ def save_images_and_masks(list_images, list_masks, output_directory_name, task="
             if task == "classification":
                 csv_file_path = output_masks_path + "/" + 'fichierlabeler.csv'
 
-                    # Create the csv file if it does not exist
+                # Create the csv file if it does not exist
                 if not os.path.isfile(csv_file_path):
                     with open(csv_file_path, 'w', newline='') as csvfile:
                         writer = csv.writer(csvfile)
                         writer.writerow(['Path_image', 'Classification'])
                         writer.writerow([filename, mask])
-        
+
                 # Open it if it exists
                 else:
                     with open(csv_file_path, 'a', newline='') as csvfile:
@@ -208,66 +208,73 @@ def save_images_and_masks(list_images, list_masks, output_directory_name, task="
     return None
 
 
-def extract_proportional_subset(input_file="train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler.csv", output_file="train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv", target_column="Classification"):
-    # Charger le fichier CSV initial
+def extract_proportional_subset(
+    input_file="train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler.csv",
+    output_file="train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv",
+    target_column="Classification"
+):
+    """
+    Extracts a proportional subset of samples from a CSV file based on the target column
+    without loss of information on class 1.
+
+    Args:
+        input_file (str): Path to the input CSV file.
+        output_file (str): Path to save the extracted subset to a new CSV file.
+        target_column (str): Name of the target column used for extracting the
+        subset.
+
+    Returns:
+        None
+    """
+
+    # Load the initial CSV file
     df = pd.read_csv(input_file)
-  
-    # Diviser le dataframe en deux dataframes en fonction de la valeur de la colonne cible
+
+    # Split the dataframe into two dataframes based on the target column value
     df_0 = df[df[target_column] == 0]
     df_1 = df[df[target_column] == 1]
-     
-    # Extraire aléatoirement les échantillons de chaque classe
+
+    # Randomly sample the same number of samples from each class
     df_sample_0 = df_0.sample(len(df_1))
 
-    # Concaténer les dataframes échantillons
+    # Concatenate the sample dataframes
     df_sample = pd.concat([df_sample_0, df_1])
-   
-    # Enregistrer le dataframe échantillon dans un nouveau fichier CSV
+
+    # Save the sample dataframe to a new CSV file
     df_sample.to_csv(output_file, index=False)
 
-def filter_images_by_path(csv_file = "train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv", image_folder="train_data-classification-PLEIADES-RIL-972-2022/images", path_column="Path_image"):
-    # Charger le fichier CSV
+
+def filter_images_by_path(
+    csv_file="train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv",
+    image_folder="train_data-classification-PLEIADES-RIL-972-2022/images",
+    path_column="Path_image"
+):
+    """
+    Filters images in a folder based on their paths listed in a CSV file.
+
+    Args:
+        csv_file (str): Path to the CSV file containing the image paths.
+        image_folder (str): Path to the folder containing the images.
+        path_column (str): Name of the column in the CSV file that contains
+        the image paths.
+
+    Returns:
+        None
+    """
+
+    # Load the CSV file
     df = pd.read_csv(csv_file)
-    
-    # Extraire la colonne "path_image" sous forme de liste
+
+    # Extract the "path_image" column as a list
     list_name = df[path_column].tolist()
-    # list_image_name_to_delete = [
-    #     image_folder + "/" + filename 
-    #     for filename in tqdm(os.listdir(image_folder))
-    #     if filename not in path_list
-    #     ]
+
     list_name_jp2 = [name+".jp2" for name in list_name]
-    
-    # Parcourir les fichiers dans le dossier d'images
-<<<<<<< HEAD
-    for filename in tqdm(os.listdir(source_folder)):
-        image_path = os.path.join(image_folder, filename)
-=======
+
+    # Iterate over the files in the image folder
     for filename in tqdm(os.listdir(image_folder)):
->>>>>>> cd20d2f25edb1096c1f711444f02ec93891c6526
-        
-        # Vérifier si le chemin de l'image n'est pas dans la liste des chemins du fichier CSV
+
+        # Check if the image path is not in the list of paths from the CSV file
         if filename not in list_name_jp2:
             image_path = os.path.join(image_folder, filename)
-            # Supprimer l'image du dossier
+            # Remove the image from the folder
             os.remove(image_path)
-
-def copy_images_by_path(csv_file = "src/train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv", source_folder="src/train_data-classification-PLEIADES-RIL-972-2022/images", destination_folder = "src/train_data-classification-PLEIADES-RIL-972-2022/images2", path_column="Path_image"):
-    # Charger le fichier CSV
-    df = pd.read_csv(csv_file)
-    
-    # Extraire la colonne "path_image" sous forme de liste
-    path_list = df[path_column].tolist()
-    
-    # Vérifier si le dossier de destination existe, sinon le créer
-    if not os.path.exists(destination_folder):
-        os.makedirs(destination_folder)
-    
-    # Parcourir les fichiers dans le dossier source d'images
-    for filename in tqdm(os.listdir(source_folder)):
-        image_path = os.path.splitext(filename)[0]
-        
-        # Vérifier si le chemin de l'image n'est pas dans la liste des chemins du fichier CSV
-        if image_path in path_list:
-            # Copier l'image vers le dossier de destination
-            shutil.copy(os.path.join(source_folder, filename), destination_folder)

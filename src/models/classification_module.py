@@ -1,14 +1,9 @@
-import os
 from typing import Dict, Union
 
-import mlflow
-import numpy as np
 import pytorch_lightning as pl
 import torch
 from torch import nn, optim
 
-from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
-from classes.data.satellite_image import SatelliteImage
 from classes.optim.evaluation_model import (
     calculate_pourcentage_loss,
     proportion_ones
@@ -54,7 +49,6 @@ class ClassificationModule(pl.LightningModule):
         self.scheduler_params = scheduler_params
         self.scheduler_interval = scheduler_interval
 
-
     def forward(self, batch):
         """
         Perform forward-pass.
@@ -77,9 +71,9 @@ class ClassificationModule(pl.LightningModule):
 
         output = output.to("cpu")
         labels = labels.to("cpu")
-        
+
         target = labels.long()
-        
+
         targets_one_hot = torch.zeros(target.shape[0], 2)
         targets_one_hot = targets_one_hot.scatter_(1, target.unsqueeze(1), 1)
 
@@ -105,9 +99,9 @@ class ClassificationModule(pl.LightningModule):
 
         output = output.to("cpu")
         labels = labels.to("cpu")
-        
+
         target = labels.long()
-        
+
         targets_one_hot = torch.zeros(target.shape[0], 2)
         targets_one_hot = targets_one_hot.scatter_(1, target.unsqueeze(1), 1)
 
@@ -135,9 +129,9 @@ class ClassificationModule(pl.LightningModule):
 
         output = output.to("cpu")
         labels = labels.to("cpu")
-        
+
         target = labels.long()
-        
+
         targets_one_hot = torch.zeros(target.shape[0], 2)
         targets_one_hot = targets_one_hot.scatter_(1, target.unsqueeze(1), 1)
 

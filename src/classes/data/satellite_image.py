@@ -106,7 +106,6 @@ class SatelliteImage:
             List[SatelliteImage]: _description_
         """
         original_array = self.array.copy()
-        #original_array = np.transpose(original_array)
         __, m, n = original_array.shape
         sub_arrays = []
         rows = []
@@ -123,7 +122,9 @@ class SatelliteImage:
             SatelliteImage(
                 array=sub_array,
                 crs=self.crs,
-                bounds=get_bounds_for_tiles2(self.transform, row, col, tile_length),
+                bounds=get_bounds_for_tiles2(
+                    self.transform, row, col, tile_length
+                ),
                 transform=get_transform_for_tiles(
                     self.transform, row, col
                 ),
@@ -187,20 +188,19 @@ class SatelliteImage:
         self.normalized = True
 
     def copy(self):
-        copy_image = SatelliteImage( 
-                        array = self.array.copy(),
-                        crs = self.crs,
-                        bounds = self.bounds,
-                        transform = self.transform,
-                        n_bands = self.n_bands,
-                        filename = self.filename,
-                        dep = self.dep,
-                        date = self.date,
-                        normalized = self.normalized
+        copy_image = SatelliteImage(
+                        array=self.array.copy(),
+                        crs=self.crs,
+                        bounds=self.bounds,
+                        transform=self.transform,
+                        n_bands=self.n_bands,
+                        filename=self.filename,
+                        dep=self.dep,
+                        date=self.date,
+                        normalized=self.normalized
         )
-        
-        return copy_image
 
+        return copy_image
 
     def plot(self, bands_indices: List):
         """Plot a subset of bands from a 3D array as an image.
@@ -211,7 +211,7 @@ class SatelliteImage:
                 number of bands - 1.
         """
         copy_image = self.copy()
-        
+
         if not copy_image.normalized:
             copy_image.normalize()
 
@@ -221,7 +221,6 @@ class SatelliteImage:
         plt.yticks([])
         plt.title(f"Dimension of image {copy_image.array.shape[1:]}")
         plt.show()
-
 
     @staticmethod
     def from_raster(
