@@ -14,17 +14,35 @@ def generate_optimization_elements(config):
         scheduler, scheduler parameters, and scheduler interval.
 
     """
-    # TO DO à développer selon la config ?
-    optimizer = torch.optim.SGD
-    optimizer_params = {
-        "lr": config["optim"]["lr"],
-        "momentum": config["optim"]["momentum"],
-    }
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
-    scheduler_params = {}
-    scheduler_interval = "epoch"
+    task_liste = ["segmentation", "classification", "change detection"]
+    task = config["donnees"]["task"]
+    
+    if task in task_liste: 
+        if task == "segmentation":
+            optimizer = torch.optim.SGD
+            optimizer_params = {
+                "lr": config["optim"]["lr"],
+                "momentum": config["optim"]["momentum"],
+            }
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
+            scheduler_params = {}
+            scheduler_interval = "epoch"
+        
+        elif task == "classification":
+            optimizer = torch.optim.SGD
+            optimizer_params = {
+                "lr": config["optim"]["lr"],
+                "momentum": config["optim"]["momentum"],
+            }
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
+            scheduler_params = {}
+            scheduler_interval = "epoch"       
 
-    return\
-        optimizer, optimizer_params,\
-        scheduler,  scheduler_params,\
-        scheduler_interval
+        return\
+            optimizer, optimizer_params,\
+            scheduler,  scheduler_params,\
+            scheduler_interval
+
+    else:
+        print("La tâche demandée n'est pas reconnue")
+            
