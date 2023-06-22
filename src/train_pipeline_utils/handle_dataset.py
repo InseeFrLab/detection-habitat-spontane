@@ -3,7 +3,25 @@ from albumentations.pytorch.transforms import ToTensorV2
 import random
 
 
-def select_indices_to_split_dataset(config_task, len_dataset, prop_val, list_labels):
+def select_indices_to_split_dataset(
+    config_task, prop_val, list_labels
+):
+    """
+    Selects indices to split a dataset into training and validation sets based
+    on the configuration task.
+
+    Args:
+        config_task (str): The configuration task.
+        prop_val (float): The proportion of indices to allocate for the
+        validation set.
+        list_labels (list): The list of labels for each data point.
+
+    Returns:
+        tuple: A tuple containing two lists - train_indices and val_indices.
+            train_indices (list): The selected indices for the training set.
+            val_indices (list): The selected indices for the validation set.
+    """
+    len_dataset = len(list_labels)
 
     if config_task == "segmentation":
         num_val_indices = int(prop_val * len_dataset)
@@ -16,25 +34,25 @@ def select_indices_to_split_dataset(config_task, len_dataset, prop_val, list_lab
         train_indices = all_indices[num_val_indices:]
 
     elif config_task == "classification":
-        # Séparation des indices en fonction des étiquettes
+        # Separating indices based on labels
         zero_indices = [i for i, label in enumerate(list_labels) if label == "0"]
         one_indices = [i for i, label in enumerate(list_labels) if label == "1"]
 
-        # Mélange aléatoire des indices
+        # Randomly shuffle the indices
         random.shuffle(zero_indices)
         random.shuffle(one_indices)
 
-        # Calcul du nombre d'indices de chaque classe pour l'ensemble de validation
+        # Calculate the number of indices for each class in the validation set
         num_val_zeros = int(prop_val * len(zero_indices))
         num_val_ones = int(prop_val * len(one_indices))
 
-        # Sélection des indices pour l'ensemble de validation
+        # Select indices for the validation set
         val_indices = zero_indices[:num_val_zeros] + one_indices[:num_val_ones]
 
-        # Sélection des indices pour l'ensemble d'entraînement
+        # Select indices for the training set
         train_indices = zero_indices[num_val_zeros:] + one_indices[num_val_ones:]
 
-        # Mélange aléatoire des indices d'entraînement et de validation
+        # Randomly shuffle the training and validation indices
         random.shuffle(train_indices)
         random.shuffle(val_indices)
 

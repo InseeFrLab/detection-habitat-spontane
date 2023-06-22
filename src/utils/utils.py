@@ -17,21 +17,39 @@ from .mappings import dep_to_crs
 
 
 def remove_dot_file(list_name):
-    #list_name = list_name_image
+    """
+    Removes filenames starting with a dot from the given list.
+
+    Args:
+        list_name (list): A list of filenames.
+
+    Returns:
+        list: The modified list with dot filenames removed.
+    """
     for filename in list_name:
         if filename[0] == ".":
             list_name.remove(filename)
 
     return list_name
-            
+
 
 def split_array(array, tile_length):
+    """
+    Splits an array into smaller tiles of the specified length.
+
+    Args:
+        array (numpy.ndarray): The input array.
+        tile_length (int): The length of each tile.
+
+    Returns:
+        list: A list of smaller tiles obtained from the input array.
+    """
 
     m = array.shape[0]
     n = array.shape[1]
-    
+
     indices = get_indices_from_tile_length(m, n, tile_length)
-    
+
     list_array = [array[rows[0] : rows[1], cols[0] : cols[1]] for rows, cols in indices]
 
     return list_array
@@ -117,10 +135,9 @@ def get_bounds_for_tiles2(
 
     Args:
         transform: An Affine transformation
-        row_indices (Tuple): A tuple containing the minimum and maximum
-            indices for the tile's row
-        col_indices (Tuple): A tuple containing the minimum and maximum
-            indices for the tile's column
+        row (int): The minimum indice for the tile's row
+        col (int): The minimum indice for the tile's column
+        tile_length (int): The length of the tile.
 
     Returns:
         Tuple: A tuple containing the bounding coordinates
@@ -315,4 +332,5 @@ def update_storage_access():
         del os.environ["AWS_SESSION_TOKEN"]
     except KeyError:
         pass
+
 

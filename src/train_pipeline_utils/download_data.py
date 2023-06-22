@@ -9,7 +9,8 @@ from utils.utils import (
 
 def load_satellite_data(year: int, dep: str, src: str):
     """
-    Load satellite data for a given year and territory and a given source of satellite images.
+    Load satellite data for a given year and territory and a given source of
+    satellite images.
 
     This function downloads satellite data from an S3 bucket, \
     updates storage access, and saves the data locally. \

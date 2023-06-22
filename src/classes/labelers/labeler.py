@@ -216,7 +216,8 @@ class BDTOPOLabeler(Labeler):
     ) -> np.array:
         """
         Create a filtered segmentation label (mask) from BDTOPO
-        data for a SatelliteImage. It suppress tall buildings.
+        data for a SatelliteImage. It keeps the buildings labelled as
+        habitations or undefined.
 
         Args:
             satellite_image (SatelliteImage): Satellite image.

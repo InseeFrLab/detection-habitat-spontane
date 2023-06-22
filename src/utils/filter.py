@@ -8,7 +8,6 @@ import numpy as np
 from rasterio.features import rasterize, shapes
 from scipy.ndimage import label
 from shapely.geometry import Polygon, box
-from tqdm import tqdm
 
 from classes.data.labeled_satellite_image import (
     DetectionLabeledSatelliteImage,
@@ -154,9 +153,8 @@ def has_cloud(
         >>> has_cloud(image_1)
         True
     """
-    
     copy_image = image.copy()
-    
+
     if not copy_image.normalized:
         copy_image.normalize()
 
@@ -226,10 +224,10 @@ def mask_cloud(
         >>> ax.imshow(mask, alpha=0.3)
     """
     copy_image = image.copy()
-    
+
     if not copy_image.normalized:
         copy_image.normalize()
-    
+
     image = copy_image.array
     image = image[[0, 1, 2], :, :]
     image = (image*np.max(image)).astype(np.float64)
@@ -243,14 +241,15 @@ def mask_cloud(
 
     region_sizes = np.bincount(labeled.flat)
 
-    # Trier les labels de région en fonction de leur taille décroissante
+    # Sort region labels by decreasing size
     sorted_labels = np.argsort(-region_sizes)
 
     # Minimum size of the cluster
     mask = np.zeros_like(labeled)
 
     if num_features >= 1:
-        #for i in tqdm(range(1, num_features + 1)):  # Display the progress bar
+        # Display the progress bar
+        # for i in tqdm(range(1, num_features + 1)):
         for i in range(1, num_features + 1):
             if region_sizes[sorted_labels[i]] >= min_size:
                 mask[labeled == sorted_labels[i]] = 1
