@@ -223,7 +223,7 @@ def prepare_test_data(config, test_dir):
         list_images_path, list_labels_path, list_name_image
     ):
         si = SatelliteImage.from_raster(
-            file_path=image_path, dep=None, date=None, n_bands=3
+            file_path=image_path, dep=None, date=None, n_bands=config["donnees"]["n bands"]
         )
         mask = np.load(label_path)
 

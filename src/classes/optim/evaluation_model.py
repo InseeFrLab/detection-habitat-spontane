@@ -101,11 +101,11 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
 
     for idx, batch in enumerate(test_dl):
         # idx, batch = 0, next(iter(test_dl))
-        print(idx)
         images, label, dic = batch
 
-        model = model.to("cuda:0")
-        images = images.to("cuda:0")
+        if torch.cuda.is_available():
+            model = model.to("cuda:0")
+            images = images.to("cuda:0")
 
         output_model = model(images)
         mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
@@ -146,8 +146,6 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
 
             if use_mlflow:
                 mlflow.log_artifact(plot_file, artifact_path="plots")
-
-            del images, label, dic
 
 
 def calculate_IOU(output, labels):
