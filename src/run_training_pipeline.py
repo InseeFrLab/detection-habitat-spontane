@@ -19,16 +19,8 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from yaml.loader import SafeLoader
 
-from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
-from classes.optim.losses import CrossEntropySelfmade
-from torch.nn import CrossEntropyLoss
 from classes.optim.optimizer import generate_optimization_elements
-from data.components.dataset import PleiadeDataset
-from data.components.classification_patch import PatchClassification
-from models.components.segmentation_models import DeepLabv3Module
-from models.components.classification_models import ResNet50Module
-from models.segmentation_module import SegmentationModule
 
 from train_pipeline_utils.download_data import (
     load_satellite_data,
@@ -39,8 +31,6 @@ from train_pipeline_utils.handle_dataset import (
     select_indices_to_split_dataset
 )
 
-from classes.optim.losses import SoftIoULoss
-
 from train_pipeline_utils.prepare_data import (
     filter_images,
     label_images,
@@ -48,18 +38,19 @@ from train_pipeline_utils.prepare_data import (
     check_labelled_images
 )
 
-import torch.nn as nn
 from classes.data.satellite_image import SatelliteImage
 from classes.data.labeled_satellite_image import (
     SegmentationLabeledSatelliteImage
 )
 from utils.utils import update_storage_access, split_array, remove_dot_file
-from rasterio.errors import RasterioIOError
-from classes.optim.evaluation_model import (
-    evaluer_modele_sur_jeu_de_test_segmentation_pleiade,
-    evaluer_modele_sur_jeu_de_test_classification_pleiade
-    )
-from models.classification_module import ClassificationModule
+
+from dico_config import (
+    dataset_dict,
+    module_dict,
+    loss_dict,
+    task_to_lightningmodule,
+    task_to_evaluation
+)
 
 
 # with open("../config.yml") as f:
@@ -288,11 +279,6 @@ def instantiate_dataset(config, list_images, list_labels):
     Returns:
         A dataset object of the specified type.
     """
-    dataset_dict = {
-                    "PLEIADE": PleiadeDataset,
-                    "CLASSIFICATION": PatchClassification
-                    }
-
     dataset_type = config["donnees"]["dataset"]
 
     # instanciation du dataset comple
@@ -485,10 +471,6 @@ def instantiate_model(config):
         object: Instance of the specified module.
     """
     module_type = config["optim"]["module"]
-    module_dict = {
-        "deeplabv3": DeepLabv3Module,
-        "resnet50": ResNet50Module
-    }
     nchannel = config["donnees"]["n channels train"]
 
     if module_type not in module_dict:
@@ -513,12 +495,6 @@ def instantiate_loss(config):
         An optimizer object from the `torch.optim` module.
     """
     loss_type = config["optim"]["loss"]
-    loss_dict = {
-                "softiou": SoftIoULoss,
-                "crossentropy": CrossEntropyLoss,
-                "crossentropyselmade": CrossEntropySelfmade,
-                "lossbinaire": nn.BCELoss
-                }
 
     if loss_type not in loss_dict:
         raise ValueError("Invalid loss type")
@@ -540,28 +516,22 @@ def instantiate_lightning_module(config):
         A PyTorch Lightning module for segmentation.
     """
     list_params = generate_optimization_elements(config)
+    task_type = config["donnees"]["task"]
 
-    if config["donnees"]["task"] == "segmentation":
-        lightning_module = SegmentationModule(
-            model=instantiate_model(config),
-            loss=instantiate_loss(config),
-            optimizer=list_params[0],
-            optimizer_params=list_params[1],
-            scheduler=list_params[2],
-            scheduler_params=list_params[3],
-            scheduler_interval=list_params[4],
-        )
+    if task_type not in task_to_lightningmodule:
+        raise ValueError("Invalid task type")
+    else:
+        LightningModule = task_to_lightningmodule[task_type]
 
-    if config["donnees"]["task"] == "classification":
-        lightning_module = ClassificationModule(
-            model=instantiate_model(config),
-            loss=instantiate_loss(config),
-            optimizer=list_params[0],
-            optimizer_params=list_params[1],
-            scheduler=list_params[2],
-            scheduler_params=list_params[3],
-            scheduler_interval=list_params[4],
-        )
+    lightning_module = LightningModule(
+        model=instantiate_model(config),
+        loss=instantiate_loss(config),
+        optimizer=list_params[0],
+        optimizer_params=list_params[1],
+        scheduler=list_params[2],
+        scheduler_params=list_params[3],
+        scheduler_interval=list_params[4],
+    )
 
     return lightning_module
 
@@ -671,6 +641,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             trainer.fit(light_module, train_dl, valid_dl)
             tile_size = config["donnees"]["tile size"]
             batch_size_test = config["optim"]["batch size test"]
+            task_type = config["donnees"]["task"]
 
             if config["donnees"]["source train"] == "PLEIADES":
 
@@ -688,28 +659,24 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
                 model = light_module_checkpoint.model
 
-                if config["donnees"]["task"] == "segmentation":
-                    evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
-                            test_dl,
-                            model,
-                            tile_size,
-                            batch_size_test,
-                            config["mlflow"]
-                        )
+                if task_type not in task_to_evaluation:
+                    raise ValueError("Invalid task type")
+                else:
+                    evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
 
-                elif config["donnees"]["task"] == "classification":
-                    evaluer_modele_sur_jeu_de_test_classification_pleiade(
-                            test_dl,
-                            model,
-                            tile_size,
-                            batch_size_test,
-                            config["mlflow"]
-                        )
+                evaluer_modele_sur_jeu_de_test(
+                        test_dl,
+                        model,
+                        tile_size,
+                        batch_size_test,
+                        config["mlflow"]
+                    )
 
     else:
         trainer.fit(light_module, train_dl, valid_dl)
         tile_size = config["donnees"]["tile size"]
         batch_size_test = config["optim"]["batch size test"]
+        task_type = config["donnees"]["task"]
 
         if config["donnees"]["source train"] == "PLEIADES":
 
@@ -727,23 +694,18 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
             model = light_module_checkpoint.model
 
-            if config["donnees"]["task"] == "segmentation":
-                evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
-                        test_dl,
-                        model,
-                        tile_size,
-                        batch_size_test,
-                        config["mlflow"]
-                    )
+            if task_type not in task_to_evaluation:
+                raise ValueError("Invalid task type")
+            else:
+                evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
 
-            elif config["donnees"]["task"] == "classification":
-                evaluer_modele_sur_jeu_de_test_classification_pleiade(
-                        test_dl,
-                        model,
-                        tile_size,
-                        batch_size_test,
-                        config["mlflow"]
-                    )
+            evaluer_modele_sur_jeu_de_test(
+                    test_dl,
+                    model,
+                    tile_size,
+                    batch_size_test,
+                    config["mlflow"]
+                )
         # trainer.test(light_module, test_dl)
 
 
