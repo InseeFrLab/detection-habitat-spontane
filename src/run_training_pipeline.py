@@ -214,7 +214,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     list_splitted_mask_cloud,
                 )
 
-                labels = label_images(
+                labels, balancing_dict = label_images(
                     list_filtered_splitted_images,
                     labeler,
                     task=config_task
