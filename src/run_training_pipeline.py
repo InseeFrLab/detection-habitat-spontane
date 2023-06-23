@@ -120,12 +120,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
 
     list_output_dir = []
 
-    if labeler == "RIL":
-        buffer_size = config_data["buffer size"]
-        labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
-
-    elif labeler == "BDTOPO":
-        labeler = BDTOPOLabeler(date, dep=dep)
+    
 
     for i, (year, dep) in enumerate(zip(years, deps)):
         # i, year , dep = 0,years[0],deps[0]
@@ -145,6 +140,13 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
         )
 
         date = datetime.strptime(str(year) + "0101", "%Y%m%d")
+
+        if labeler == "RIL":
+            buffer_size = config_data["buffer size"]
+            labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
+
+        elif labeler == "BDTOPO":
+            labeler = BDTOPOLabeler(date, dep=dep)
 
         if not check_labelled_images(output_dir):
 
