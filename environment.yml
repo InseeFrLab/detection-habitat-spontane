@@ -2,10 +2,14 @@ bucket: "projet-slums-detection"
 
 sources:
   TEST:
-    # segmentation: donnees-test/segmentation
-    segmentation: donnees-test/SENTINEL/segmentation
-    change-detection: donnees-test/change_detection
-    classification: donnees-test/classification
+    PLEIADES:
+      segmentation: donnees-test/segmentation
+      change-detection: donnees-test/change_detection
+      classification: donnees-test/classification
+    SENTINEL1-2: 
+      segmentation: donnees-test/SENTINEL/segmentation
+      #change-detection: donnees-test/SENTINEL/change_detection
+      #classification: donnees-test/SENTINEL/classification
   PAPERS:
     S2Looking: Donnees/PAPERS/S2Looking
     LEVIR_CD: Donnees/PAPERS/LEVIR_CD
@@ -164,9 +168,14 @@ sources:
 
 local-path:
   TEST:
-    segmentation: donnees-test/segmentation
-    change-detection: donnees-test/change-detection
-    classification: donnees-test/classification
+    PLEIADES:
+      segmentation: donnees-test/segmentation
+      change-detection: donnees-test/change_detection
+      classification: donnees-test/classification
+    SENTINEL1-2: 
+      segmentation: donnees-test/SENTINEL/segmentation
+      #change-detection: donnees-test/SENTINEL/change_detection
+      #classification: donnees-test/SENTINEL/classification
 
   PAPERS: data/paper_dataset
   PLEIADES:

@@ -16,7 +16,6 @@ from pytorch_lightning.callbacks import (
     ModelCheckpoint,
 )
 from rasterio.errors import RasterioIOError
-from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from yaml.loader import SafeLoader
@@ -24,38 +23,22 @@ from yaml.loader import SafeLoader
 from classes.data.labeled_satellite_image import (  # noqa: E501
     SegmentationLabeledSatelliteImage,
 )
-import train_pipeline_utils.handle_dataset as hd
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
-from classes.optim.evaluation_model import (
-    evaluer_modele_sur_jeu_de_test_segmentation_pleiade,
-    evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
-)
-from classes.optim.losses import CrossEntropySelfmade
 from classes.optim.optimizer import generate_optimization_elements
-from data.components.dataset import PleiadeDataset, SentinelDataset
-from models.components.segmentation_models import DeepLabv3Module
-from models.segmentation_module import SegmentationModule
+
 from train_pipeline_utils.download_data import (
     load_2satellites_data,
     load_donnees_test,
     load_satellite_data,
 )
-from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
-from classes.optim.optimizer import generate_optimization_elements
 
-from train_pipeline_utils.download_data import (
-    load_satellite_data,
-    load_donnees_test
-)
 from train_pipeline_utils.handle_dataset import (
     generate_transform_pleiades,
     generate_transform_sentinel,
     select_indices_to_split_dataset,
     select_indices_to_balance
 )
-
-from classes.optim.losses import SoftIoULoss
 from train_pipeline_utils.prepare_data import (
     check_labelled_images,
     filter_images,
@@ -63,12 +46,6 @@ from train_pipeline_utils.prepare_data import (
     save_images_and_masks,
 )
 from utils.utils import remove_dot_file, split_array, update_storage_access
-
-from classes.data.satellite_image import SatelliteImage
-from classes.data.labeled_satellite_image import (
-    SegmentationLabeledSatelliteImage
-)
-from utils.utils import update_storage_access, split_array, remove_dot_file
 
 from dico_config import (
     dataset_dict,
@@ -116,7 +93,7 @@ def download_data(config):
         list_output_dir.append(output_dir)
 
     print("chargement des données test")
-    test_dir = load_donnees_test(type=config["donnees"]["task"])
+    test_dir = load_donnees_test(type=config["donnees"]["task"], src=config["donnees"]["source train"])
 
     return list_output_dir, list_masks_cloud_dir, test_dir
 
@@ -317,7 +294,6 @@ def instantiate_dataset(config, list_images, list_labels):
         A dataset object of the specified type.
     """
     print("Entre dans la fonction instantiate_dataset")
-    dataset_dict = {"PLEIADES": PleiadeDataset, "SENTINEL": SentinelDataset}
     dataset_type = config["donnees"]["dataset"]
 
     # inqtanciation du dataset complet
@@ -402,7 +378,7 @@ def instantiate_dataloader(config, list_output_dir):
 
             if config_task == "classification":
                 list_labels_dir = []
-                with open(dir + "/labels/" + labels[0], 'r') as csvfile:
+                with open(directory + "/labels/" + labels[0], 'r') as csvfile:
                     reader = csv.reader(csvfile)
 
                     # Ignore CSV file header if there is one
@@ -713,56 +689,12 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             tile_size = config["donnees"]["tile size"]
             batch_size_test = config["optim"]["batch size test"]
             task_type = config["donnees"]["task"]
-
-            if config["donnees"]["source train"] == "PLEIADES":
-
-                light_module_checkpoint = light_module.load_from_checkpoint(
-                    loss=instantiate_loss(config),
-                    checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
-                    model=light_module.model,
-                    optimizer=light_module.optimizer,
-                    optimizer_params=light_module.optimizer_params,
-                    scheduler=light_module.scheduler,
-                    scheduler_params=light_module.scheduler_params,
-                    scheduler_interval=light_module.scheduler_interval
-
-                )
-                model = light_module_checkpoint.model
-
-                if task_type not in task_to_evaluation:
-                    raise ValueError("Invalid task type")
-                else:
-                    evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
-
-                evaluer_modele_sur_jeu_de_test(
-                        test_dl,
-                        model,
-                        tile_size,
-                        batch_size_test,
-                        config["mlflow"]
-                    )
-
-            else:
-                evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
-                    test_dl,
-                    model,
-                    tile_size,
-                    batch_size_test,
-                    config["donnees"]["n bands"],
-                    config["mlflow"],
-                )
-
-    else:
-        trainer.fit(light_module, train_dl, valid_dl)
-        tile_size = config["donnees"]["tile size"]
-        batch_size_test = config["optim"]["batch size test"]
-        task_type = config["donnees"]["task"]
-
-        if config["donnees"]["source train"] == "PLEIADES":
+            source_data = config["donnees"]["source train"]
+            src_task = source_data + task_type
 
             light_module_checkpoint = light_module.load_from_checkpoint(
                 loss=instantiate_loss(config),
-                checkpoint_path=trainer.checkpoint_callback.best_model_path,  # je créé un module qui charge
+                checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
                 model=light_module.model,
                 optimizer=light_module.optimizer,
                 optimizer_params=light_module.optimizer_params,
@@ -770,11 +702,10 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 scheduler_params=light_module.scheduler_params,
                 scheduler_interval=light_module.scheduler_interval
 
-                )
-
+            )
             model = light_module_checkpoint.model
 
-            if task_type not in task_to_evaluation:
+            if src_task not in task_to_evaluation:
                 raise ValueError("Invalid task type")
             else:
                 evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
@@ -784,8 +715,44 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                     model,
                     tile_size,
                     batch_size_test,
+                    config["donnees"]["n bands"],
                     config["mlflow"]
                 )
+
+    else:
+        trainer.fit(light_module, train_dl, valid_dl)
+        tile_size = config["donnees"]["tile size"]
+        batch_size_test = config["optim"]["batch size test"]
+        task_type = config["donnees"]["task"]
+        source_data = config["donnees"]["source train"]
+        src_task = source_data + task_type
+
+        light_module_checkpoint = light_module.load_from_checkpoint(
+            loss=instantiate_loss(config),
+            checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
+            model=light_module.model,
+            optimizer=light_module.optimizer,
+            optimizer_params=light_module.optimizer_params,
+            scheduler=light_module.scheduler,
+            scheduler_params=light_module.scheduler_params,
+            scheduler_interval=light_module.scheduler_interval
+
+        )
+        model = light_module_checkpoint.model
+
+        if src_task not in task_to_evaluation:
+            raise ValueError("Invalid task type")
+        else:
+            evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
+
+        evaluer_modele_sur_jeu_de_test(
+                test_dl,
+                model,
+                tile_size,
+                batch_size_test,
+                config["donnees"]["n bands"],
+                config["mlflow"]
+            )
         # trainer.test(light_module, test_dl)
 
 
@@ -797,7 +764,7 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
-#nohup python run_training_pipeline.py https://projet-slums-detection-874257.user.lab.sspcloud.fr classification binaray_50_0.51_bis > out.txt &
+#nohup python run_training_pipeline.py https://projet-slums-detection-874257.user.lab.sspcloud.fr classification test_classifpleiade_branchsentinel2 > out.txt &
 # https://www.howtogeek.com/804823/nohup-command-linux/ 
  #TO DO :
 # test routine sur S2Looking dataset
