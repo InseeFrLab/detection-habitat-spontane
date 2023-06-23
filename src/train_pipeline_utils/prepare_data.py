@@ -133,9 +133,9 @@ def label_images(list_images, labeler, task="segmentation"):
         mask = labeler.create_segmentation_label(satellite_image)
         if task == "segmentation":
             if np.sum(mask) != 0:
-                balancing_dict[satellite_image.filename.split('.')[0] + f'_{i}'] = 1
+                balancing_dict[satellite_image.filename.split('.')[0] + "_" + "{:04d}".format(i)] = 1
             else:
-                balancing_dict[satellite_image.filename.split('.')[0] + f'_{i}'] = 0
+                balancing_dict[satellite_image.filename.split('.')[0] + "_" + "{:04d}".format(i)] = 0
             labels.append(mask)
         elif task == "classification":
             if np.sum(mask) >= 1:
@@ -149,7 +149,7 @@ def label_images(list_images, labeler, task="segmentation"):
     #     ", Nombre de masques : ",
     #     len(list_masks),
     # )
-    return labels
+    return labels, balancing_dict
 
 
 def save_images_and_masks(
