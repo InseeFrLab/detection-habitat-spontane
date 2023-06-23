@@ -230,7 +230,7 @@ def plot_list_labeled_sat_images(
             axs[i, j].set_axis_off()
 
     # Show the plot
-    plt.show()
+    return plt.gcf()
 
 
 def plot_infrared_simple_mask(satellite_image: SatelliteImage):
