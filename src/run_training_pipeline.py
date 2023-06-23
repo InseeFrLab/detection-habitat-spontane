@@ -256,7 +256,7 @@ def prepare_test_data(config, test_dir):
             list_lsi = lsi.split(tile_size)
 
             for i, lsi in enumerate(list_lsi):
-                file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+                file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
 
                 lsi.satellite_image.to_raster(
                     output_images_path, file_name_i + ".jp2"
@@ -682,7 +682,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
             light_module_checkpoint = light_module.load_from_checkpoint(
                 loss=instantiate_loss(config),
-                checkpoint_path=trainer.checkpoint_callback.best_model_path,  # je créé un module qui charge
+                checkpoint_path="epoch=48-step=8918.ckpt",  # je créé un module qui charge
                 model=light_module.model,
                 optimizer=light_module.optimizer,
                 optimizer_params=light_module.optimizer_params,
@@ -717,7 +717,7 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
-#nohup python run_training_pipeline.py https://projet-slums-detection-874257.user.lab.sspcloud.fr classification binaray_50_0.51_bis > out.txt &
+#nohup python run_training_pipeline.py https://projet-slums-detection-874257.user.lab.sspcloud.fr classification binaray_50_0.51_trois > out.txt &
 # https://www.howtogeek.com/804823/nohup-command-linux/ 
  #TO DO :
 # test routine sur S2Looking dataset
