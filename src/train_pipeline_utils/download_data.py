@@ -55,7 +55,7 @@ def load_satellite_data(year: int, dep: str, src: str):
     return path_local
 
 
-def load_donnees_test(type="segmentation"):
+def load_donnees_test(type="segmentation", src="PLEIADES"):
     """
     Load test data (images,masks) for a given task\
          (segmentation or change detection).
@@ -76,9 +76,9 @@ def load_donnees_test(type="segmentation"):
     environment = get_environment()
 
     bucket = environment["bucket"]
-    path_s3 = environment["sources"]["TEST"][type]
+    path_s3 = environment["sources"]["TEST"][src][type]
     path_local = os.path.join(
-        root_path, environment["local-path"]["TEST"][type]
+        root_path, environment["local-path"]["TEST"][src][type]
     )
 
     if os.path.exists(path_local):
