@@ -22,4 +22,4 @@ optim:
   val prop: 0.2
   accumulate batch : 3
 
-mlflow: True
+mlflow: False
