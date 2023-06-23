@@ -259,7 +259,7 @@ def prepare_test_data(config, test_dir):
         list_lsi = lsi.split(tile_size)
 
         for i, lsi in enumerate(list_lsi):
-            file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+            file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
 
             lsi.satellite_image.to_raster(
                 output_images_path, file_name_i + ".jp2", "jp2"
@@ -270,7 +270,7 @@ def prepare_test_data(config, test_dir):
             list_lsi = lsi.split(tile_size)
 
             for i, lsi in enumerate(list_lsi):
-                file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+                file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
 
                 lsi.satellite_image.to_raster(
                     output_images_path, file_name_i + ".jp2"

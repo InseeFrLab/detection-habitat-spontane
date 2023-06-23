@@ -3,8 +3,10 @@ import numpy as np
 from classes.data.satellite_image import SatelliteImage
 from classes.data.labeled_satellite_image import \
     SegmentationLabeledSatelliteImage
-from utils.plot_utils import \
-    plot_list_segmentation_labeled_satellite_image
+from utils.plot_utils import (
+    plot_list_segmentation_labeled_satellite_image,
+    plot_list_labeled_sat_images
+)
 import os
 import mlflow
 # with open("../config.yml") as f:
@@ -24,6 +26,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
     model,
     tile_size,
     batch_size,
+    n_bands=3,
     use_mlflow=False
 ):
     """
@@ -71,7 +74,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
                 file_path=pthimg,
                 dep=None,
                 date=None,
-                n_bands=3
+                n_bands=n_bands
             )
             si.normalize()
 
@@ -89,14 +92,14 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
             if not os.path.exists("img/"):
                 os.makedirs("img/")
 
-            fig1 = plot_list_segmentation_labeled_satellite_image(
+            fig1 = plot_list_labeled_sat_images(
                 list_labeled_satellite_image, [0, 1, 2]
                 )
 
             filename = pthimg.split('/')[-1]
             filename = filename.split('.')[0]
             filename = '_'.join(filename.split('_')[0:6])
-            plot_file = filename + ".png"
+            plot_file = "img/" + filename + ".png"
 
             fig1.savefig(plot_file)
             list_labeled_satellite_image = []
@@ -169,6 +172,7 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
     model,
     tile_size,
     batch_size,
+    n_bands=3,
     use_mlflow=False
 ):
     """

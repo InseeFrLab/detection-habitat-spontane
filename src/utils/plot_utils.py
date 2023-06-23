@@ -112,7 +112,7 @@ def plot_list_sat_images_square(
             axs[i, j].set_axis_off()
 
     # Show the plot
-    plt.show()
+    return plt.gcf()
 
 
 def plot_list_segmentation_labeled_satellite_image(
