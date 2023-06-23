@@ -127,7 +127,7 @@ def label_images(list_images, labeler, task="segmentation"):
 
     for satellite_image in list_images:
         mask = labeler.create_segmentation_label(satellite_image)
-        if task == "segmentation":
+        if task != "classification":
             if np.sum(mask) > 0:
                 list_filtered_splitted_labeled_images.append(satellite_image)
                 list_masks.append(mask)
@@ -179,7 +179,7 @@ def save_images_and_masks(
         try:
             image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
 
-            if task == "segmentation":
+            if task != "classification":
                 np.save(
                     output_masks_path + "/" + filename + ".npy",
                     mask,
