@@ -19,8 +19,8 @@ optim:
   module: "deeplabv3"
   batch size: 5
   batch size test: 4
-  max epochs: 1
+  max epochs: 100
   val prop: 0.2
-  accumulate batch : 6
+  accumulate batch : 8
 
 mlflow: True

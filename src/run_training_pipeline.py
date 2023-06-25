@@ -506,6 +506,7 @@ def instantiate_dataloader(config, list_output_dir):
         dataset_test = instantiate_dataset(
                 config, list_path_images_1, list_path_labels, list_images_2= list_path_images_2, test = True
             )
+        dataset_test.transforms = t_preproc
 
     batch_size_test = config["optim"]["batch size test"]
     test_dataloader = DataLoader(
@@ -660,6 +661,10 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     with open("../config.yml") as f:
         config = yaml.load(f, Loader=SafeLoader)
 
+    tile_size = config["donnees"]["tile size"]
+    batch_size_test = config["optim"]["batch size test"]
+    task_type = config["donnees"]["task"]
+
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
 
 # list_data_dir = ["../data/PLEIADES/2022/MARTINIQUE"]
@@ -670,7 +675,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         )
     prepare_test_data(config, test_dir)
 
-    # list_output_dir = ["../splitted_data2"]
+    #list_output_dir = ["/home/onyxia/work/detection-habitat-spontane/src/train_data-change-detection-PLEIADES-BDTOPO-972-2022"]
 
     train_dl, valid_dl, test_dl = instantiate_dataloader(
                                     config, list_output_dir
@@ -703,10 +708,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 artifact_path="config.yml"
             )
             trainer.fit(light_module, train_dl, valid_dl)
-            tile_size = config["donnees"]["tile size"]
-            batch_size_test = config["optim"]["batch size test"]
-            task_type = config["donnees"]["task"]
-
+            
             if config["donnees"]["source train"] == "PLEIADES":
 
                 light_module_checkpoint = light_module.load_from_checkpoint(
@@ -718,7 +720,6 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                     scheduler=light_module.scheduler,
                     scheduler_params=light_module.scheduler_params,
                     scheduler_interval=light_module.scheduler_interval
-
                 )
 
                 model = light_module_checkpoint.model
@@ -771,7 +772,6 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                     config["mlflow"]
                 )
         # trainer.test(light_module, test_dl)
-
 
 if __name__ == "__main__":
     # MLFlow params

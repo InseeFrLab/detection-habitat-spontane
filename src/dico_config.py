@@ -12,7 +12,8 @@ from models.segmentation_module import SegmentationModule
 from models.classification_module import ClassificationModule
 from classes.optim.evaluation_model import (
     evaluer_modele_sur_jeu_de_test_segmentation_pleiade,
-    evaluer_modele_sur_jeu_de_test_classification_pleiade
+    evaluer_modele_sur_jeu_de_test_classification_pleiade,
+    evaluer_modele_sur_jeu_de_test_change_detection_pleiade
 )
 
 
@@ -44,5 +45,5 @@ task_to_lightningmodule = {
 task_to_evaluation = {
             "segmentation": evaluer_modele_sur_jeu_de_test_segmentation_pleiade,
             "classification": evaluer_modele_sur_jeu_de_test_classification_pleiade,
-            "change-detection": evaluer_modele_sur_jeu_de_test_segmentation_pleiade
+            "change-detection": evaluer_modele_sur_jeu_de_test_change_detection_pleiade
         }

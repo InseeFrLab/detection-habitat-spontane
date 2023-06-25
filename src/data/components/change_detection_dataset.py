@@ -56,11 +56,11 @@ class ChangeDetectionDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        pathim1 = self.list_paths_images1[idx]
-        pathim2 = self.list_paths_images2[idx]
-
+        pathim1 = self.list_paths_images_1[idx]
+        pathim2 = self.list_paths_images_2[idx]
+        
         pathlabel = self.list_paths_labels[idx]
-
+        
         img1 = SatelliteImage.from_raster(
             file_path=pathim1, dep=None, date=None, n_bands=self.n_bands
         ).array
@@ -69,19 +69,20 @@ class ChangeDetectionDataset(Dataset):
             file_path=pathim2, dep=None, date=None, n_bands=self.n_bands
         ).array
 
-        img1 = np.transpose(img1.astype(float), [1, 2, 0])
-        img2 = np.transpose(img2.astype(float), [1, 2, 0])
         label = torch.tensor(np.load(pathlabel))   
         
-        if self.transforms: # transfo séparée ne marche que pour les transfos non aléatoires
+        if self.transforms:
+            # transfo séparée ne marche que pour les transfos non aléatoires
+            img1 = np.transpose(img1.astype(float), [1, 2, 0]) 
+            img2 = np.transpose(img2.astype(float), [1, 2, 0])
             sample1 = self.transforms(image=img1, label=label)
-            img1 = sample1["image"]
+            img1 = sample1["image"] 
             sample2 = self.transforms(image=img2, label=label)
             img2 = sample2["image"]
             label = sample2["label"]
 
-        img1 = img1.type(torch.float)
-        img2 = img2.type(torch.float)
+        img1 = torch.tensor(img1, dtype = torch.float)
+        img2 = torch.tensor(img2, dtype = torch.float)
 
         img_double = torch.concatenate((img1, img2))
 
@@ -96,7 +97,7 @@ class ChangeDetectionDataset(Dataset):
         return img_double, label, meta_data
 
     def __len__(self):
-        return len(self.list_paths_images)
+        return len(self.list_paths_images_1)
 
 
 class ChangeIsEverywhereDataset(Dataset):
