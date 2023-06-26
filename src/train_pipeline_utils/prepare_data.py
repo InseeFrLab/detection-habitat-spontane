@@ -172,14 +172,14 @@ def save_images_and_masks(
     output_images_path = output_directory_name + "/images"
     output_masks_path = output_directory_name + "/labels"
 
-    if task == "classification":
-        count_ones = list_masks.count(1)
-        count_zeros_sampled = int(count_ones/1)
-        indices_1 = [i for i, lab in enumerate(list_masks) if lab == 1]
-        indices_0 = [i for i, lab in enumerate(list_masks) if lab == 0]
-        random.shuffle(indices_0)
-        selected_indices_0 = indices_0[:count_zeros_sampled]
-        selected_indices = indices_1 + selected_indices_0
+    # if task == "classification":
+    #     count_ones = list_masks.count(1)
+    #     count_zeros_sampled = int(count_ones/1)
+    #     indices_1 = [i for i, lab in enumerate(list_masks) if lab == 1]
+    #     indices_0 = [i for i, lab in enumerate(list_masks) if lab == 0]
+    #     random.shuffle(indices_0)
+    #     selected_indices_0 = indices_0[:count_zeros_sampled]
+    #     selected_indices = indices_1 + selected_indices_0
 
     for i, (image, mask) in enumerate(zip(list_images, list_masks)):
         # image = list_images[0]
