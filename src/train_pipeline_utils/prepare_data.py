@@ -4,8 +4,9 @@ import rasterio
 import csv
 import pandas as pd
 from tqdm import tqdm
+import random
 
-from utils.filter import is_too_black
+from utils.filter import is_too_black, is_too_water
 
 
 def check_labelled_images(output_directory_name):
@@ -58,8 +59,8 @@ def filter_images(src, list_images, list_array_cloud=None):
     # print("Entre dans la fonction filter_images")
     if src == "PLEIADES":
         return filter_images_pleiades(list_images, list_array_cloud)
-    elif src == "SENTINEL2":
-        return filter_images_sentinel2(list_images)
+    else:
+        return filter_images_sentinel(list_images)
 
 
 def filter_images_pleiades(list_images, list_array_cloud):
@@ -90,9 +91,9 @@ def filter_images_pleiades(list_images, list_array_cloud):
     return list_filtered_splitted_images
 
 
-def filter_images_sentinel2(list_images):
+def filter_images_sentinel(list_images):
     """
-    filters the Sentinel2 images.
+    filters the Sentinel images.
 
     Args:
         list_images : the list containing the splitted data to be filtered.
@@ -102,8 +103,13 @@ def filter_images_sentinel2(list_images):
             filtered data.
     """
 
-    # print("Entre dans la fonction filter_images_sentinel2")
-    return list_images
+    # print("Entre dans la fonction filter_images_sentinel")
+    list_filtered_splitted_images = []
+    for splitted_image in list_images:
+        if not is_too_water(splitted_image, 0.95):
+            list_filtered_splitted_images.append(splitted_image)
+
+    return list_filtered_splitted_images
 
 
 def label_images(list_images, labeler, task="segmentation"):
@@ -119,25 +125,23 @@ def label_images(list_images, labeler, task="segmentation"):
     Returns:
         list[SatelliteImage] : the list containing the splitted and \
             filtered data with a not-empty mask and the associated masks.
+        Dict: Dictionary indicating if images contain a building or not.
     """
-
-    # print("Entre dans la fonction label_images")
-    list_masks = []
-    list_filtered_splitted_labeled_images = []
-
-    for satellite_image in list_images:
+    labels = []
+    balancing_dict = {}
+    for i, satellite_image in enumerate(list_images):
         mask = labeler.create_segmentation_label(satellite_image)
         if task == "segmentation":
-            if np.sum(mask) > 0:
-                list_filtered_splitted_labeled_images.append(satellite_image)
-                list_masks.append(mask)
-
-        if task == "classification":
-            if np.sum(mask) >= 1:
-                list_masks.append(1)
+            if np.sum(mask) != 0:
+                balancing_dict[satellite_image.filename.split('.')[0] + "_" + "{:04d}".format(i)] = 1
             else:
-                list_masks.append(0)
-            list_filtered_splitted_labeled_images.append(satellite_image)
+                balancing_dict[satellite_image.filename.split('.')[0] + "_" + "{:04d}".format(i)] = 0
+            labels.append(mask)
+        elif task == "classification":
+            if np.sum(mask) >= 1:
+                labels.append(1)
+            else:
+                labels.append(0)
 
     # print(
     #     "Nombre d'images labelisées : ",
@@ -145,7 +149,7 @@ def label_images(list_images, labeler, task="segmentation"):
     #     ", Nombre de masques : ",
     #     len(list_masks),
     # )
-    return list_filtered_splitted_labeled_images, list_masks
+    return labels, balancing_dict
 
 
 def save_images_and_masks(
@@ -167,12 +171,12 @@ def save_images_and_masks(
     # print("Entre dans la fonction save_images_and_masks")
     output_images_path = output_directory_name + "/images"
     output_masks_path = output_directory_name + "/labels"
-    i = 0
-    for image, mask in zip(list_images, list_masks):
-        # image = list_images[0]
-        #bb = image.bounds
 
-        #filename = str(bb[0]) + "_" + str(bb[1]) + "_" \
+    for i, (image, mask) in enumerate(zip(list_images, list_masks)):
+        # image = list_images[0]
+        # bb = image.bounds
+
+        # filename = str(bb[0]) + "_" + str(bb[1]) + "_" \
         #   + "{:03d}".format(i)
         filename = image.filename.split(".")[0] + "_" + "{:04d}".format(i)
         i = i + 1

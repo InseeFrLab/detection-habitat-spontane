@@ -206,7 +206,13 @@ def export_s2_no_cloud(
     )
 
     upload_satelliteImages(
-        path_local, f"{bucket}/{path_s3}", DEPs[DOM.upper()], 250, 12
+        path_local,
+        f"{bucket}/{path_s3}",
+        DEPs[DOM.upper()],
+        int(start_date[0:4]),
+        250,
+        12,
+        True,
     )
 
     shutil.rmtree(path_local, ignore_errors=True)
@@ -217,26 +223,26 @@ if __name__ == "__main__":
     DEPs = utils.mappings.name_dep_to_num_dep
     AOIs = utils.mappings.name_dep_to_aoi
 
-    START_DATE = "2021-05-01"
-    END_DATE = "2021-09-01"
+    START_DATE = "2022-05-01"
+    END_DATE = "2022-09-01"
     CLOUD_FILTER = 60
     CLD_PRB_THRESH = 40
     NIR_DRK_THRESH = 0.15
     CLD_PRJ_DIST = 2
     BUFFER = 50
 
-    # export_s2_no_cloud(
-    #     "Guadeloupe",
-    #     AOIs,
-    #     EPSGs,
-    #     START_DATE,
-    #     END_DATE,
-    #     CLOUD_FILTER,
-    #     CLD_PRB_THRESH,
-    #     NIR_DRK_THRESH,
-    #     CLD_PRJ_DIST,
-    #     BUFFER,
-    # )
+    export_s2_no_cloud(
+        "Guadeloupe",
+        AOIs,
+        EPSGs,
+        START_DATE,
+        END_DATE,
+        CLOUD_FILTER,
+        CLD_PRB_THRESH,
+        NIR_DRK_THRESH,
+        CLD_PRJ_DIST,
+        BUFFER,
+    )
 
     # export_s2_no_cloud(
     #     "Martinique",
@@ -266,6 +272,19 @@ if __name__ == "__main__":
 
     # export_s2_no_cloud(
     #     "Guyane",
+    #     AOIs,
+    #     EPSGs,
+    #     START_DATE,
+    #     END_DATE,
+    #     CLOUD_FILTER,
+    #     CLD_PRB_THRESH,
+    #     NIR_DRK_THRESH,
+    #     CLD_PRJ_DIST,
+    #     BUFFER,
+    # )
+
+    # export_s2_no_cloud(
+    #     "Reunion",
     #     AOIs,
     #     EPSGs,
     #     START_DATE,
