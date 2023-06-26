@@ -1,7 +1,7 @@
 #!/bin/bash
 
-PROJECT_DIR=~/work/detection-bidonvilles
-git clone https://github.com/InseeFrLab/detection-bidonvilles.git $PROJECT_DIR
+PROJECT_DIR=~/work/detection-habitat-spontane
+git clone https://github.com/InseeFrLab/detection-habitat-spontane.git $PROJECT_DIR
 cd $PROJECT_DIR
 
 git config --global credential.helper store
