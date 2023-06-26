@@ -8,12 +8,8 @@ from download_sentinel1_ee import upload_satelliteImages
 import utils.mappings
 from utils.utils import get_environment, get_root_path, update_storage_access
 
-service_account = (
-    "slums-detection-sa@ee-insee-sentinel.iam.gserviceaccount.com"
-)
-credentials = ee.ServiceAccountCredentials(
-    service_account, "GCP_credentials.json"
-)
+service_account = "slums-detection-sa@ee-insee-sentinel.iam.gserviceaccount.com"
+credentials = ee.ServiceAccountCredentials(service_account, "GCP_credentials.json")
 
 # Initialize the library.
 ee.Initialize(credentials)

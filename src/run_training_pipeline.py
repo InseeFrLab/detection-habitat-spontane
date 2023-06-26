@@ -1,6 +1,7 @@
 import gc
 import json
 import os
+import random
 import sys
 from datetime import datetime
 
@@ -130,7 +131,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     for i, (year, dep) in enumerate(zip(years, deps)):
         # i, year , dep = 0,years[0],deps[0]
         output_dir = (
-            "../train_data"
+            "../train_data2"
             + "-"
             + config_task
             + "-"
@@ -176,36 +177,44 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     print("Erreur de lecture du fichier " + path)
                     continue
 
-                filename = path.split("/")[-1].split(".")[0]
-                list_splitted_mask_cloud = None
+                mask = labeler.create_segmentation_label(si)
+                proba = random.randint(1, 10)
 
-                if filename in list_name_cloud:
-                    mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
-                    list_splitted_mask_cloud = split_array(
-                        mask_full_cloud, config_data["tile size"]
+                if (np.sum(mask) == 0 and proba == 10) or np.sum(mask) != 0:
+                    filename = path.split("/")[-1].split(".")[0]
+                    list_splitted_mask_cloud = None
+
+                    if filename in list_name_cloud:
+                        mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
+                        list_splitted_mask_cloud = split_array(
+                            mask_full_cloud, config_data["tile size"]
+                        )
+
+                    list_splitted_images = si.split(config_data["tile size"])
+
+                    list_filtered_splitted_images = filter_images(
+                        config_data["source train"],
+                        list_splitted_images,
+                        list_splitted_mask_cloud,
                     )
 
-                list_splitted_images = si.split(config_data["tile size"])
+                    labels, balancing_dict = label_images(
+                        list_filtered_splitted_images, labeler, task=config_task
+                    )
 
-                list_filtered_splitted_images = filter_images(
-                    config_data["source train"],
-                    list_splitted_images,
-                    list_splitted_mask_cloud,
-                )
+                    save_images_and_masks(
+                        list_filtered_splitted_images,
+                        labels,
+                        output_dir,
+                        task=config_task,
+                    )
 
-                labels, balancing_dict = label_images(
-                    list_filtered_splitted_images, labeler, task=config_task
-                )
+                    for k, v in balancing_dict.items():
+                        full_balancing_dict[k] = v
 
-                save_images_and_masks(
-                    list_filtered_splitted_images,
-                    labels,
-                    output_dir,
-                    task=config_task,
-                )
+                elif np.sum(mask) == 0 and proba != 10:
+                    continue
 
-                for k, v in balancing_dict.items():
-                    full_balancing_dict[k] = v
             with open(output_dir + "/balancing_dict.json", "w") as fp:
                 json.dump(full_balancing_dict, fp)
 
