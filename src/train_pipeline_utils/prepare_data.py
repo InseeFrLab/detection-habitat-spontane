@@ -132,7 +132,7 @@ def label_images(list_images, labeler, task="segmentation"):
     balancing_dict = {}
     for i, satellite_image in enumerate(list_images):
         mask = labeler.create_segmentation_label(satellite_image)
-        if task == "segmentation":
+        if task != "classification":
             if np.sum(mask) != 0:
                 balancing_dict[
                     satellite_image.filename.split(".")[0] + "_" + "{:04d}".format(i)
@@ -224,7 +224,7 @@ def save_images_and_masks(
         i = i + 1
 
         try:
-            if task == "segmentation":
+            if task != "classification":
                 image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
                 np.save(
                     output_masks_path + "/" + filename + ".npy",

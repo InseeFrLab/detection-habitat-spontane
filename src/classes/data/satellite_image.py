@@ -223,7 +223,7 @@ class SatelliteImage:
         file_path: str,
         dep: Literal["971", "972", "973", "974", "976", "977", "978"],
         date: Optional[date] = None,
-        n_bands: int = 4,
+        n_bands: int = 3,
     ) -> SatelliteImage:
         """
         Factory method to create a Satellite image from a raster file.
