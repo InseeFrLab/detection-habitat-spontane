@@ -38,7 +38,8 @@ name_dep_to_crs = {
     "GUADELOUPE": "4559",
     "MARTINIQUE": "4559",
     "MAYOTTE": "4471",
-    "GUYANE": "4235",
+    "GUYANE": "2972",
+    "REUNION": "2975",
 }
 
 name_dep_to_aoi = {
@@ -65,5 +66,11 @@ name_dep_to_aoi = {
         "south": 4.148,
         "east": -51.813,
         "north": 5.426,
+    },
+    "REUNION": {
+        "west": 55.205,
+        "south": -21.408,
+        "east": 55.861,
+        "north": -20.852,
     },
 }

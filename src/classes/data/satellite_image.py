@@ -68,8 +68,8 @@ class SatelliteImage:
         Returns:
             List[SatelliteImage]: _description_
         """
-        if tile_length % 2:
-            raise ValueError("Tile length has to be an even number.")
+        # if tile_length % 2:
+        #     raise ValueError("Tile length has to be an even number.")
 
         m = self.array.shape[1]
         n = self.array.shape[2]
@@ -221,6 +221,8 @@ class SatelliteImage:
         plt.yticks([])
         plt.title(f"Dimension of image {copy_image.array.shape[1:]}")
         plt.show()
+
+        return plt.gcf()
 
     @staticmethod
     def from_raster(
