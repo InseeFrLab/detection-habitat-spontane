@@ -38,10 +38,13 @@ def generate_optimization_elements(config):
             scheduler_params = {}
             scheduler_interval = "epoch"
 
-        return\
-            optimizer, optimizer_params,\
-            scheduler,  scheduler_params,\
-            scheduler_interval
+        return (
+            optimizer,
+            optimizer_params,
+            scheduler,
+            scheduler_params,
+            scheduler_interval,
+        )
 
     else:
         print("La tâche demandée n'est pas reconnue")

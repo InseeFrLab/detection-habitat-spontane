@@ -1,14 +1,16 @@
-import torch
-import numpy as np
-from classes.data.satellite_image import SatelliteImage
-from classes.data.labeled_satellite_image import \
-    SegmentationLabeledSatelliteImage
-from utils.plot_utils import (
-    plot_list_segmentation_labeled_satellite_image,
-    plot_list_labeled_sat_images
-)
 import os
+
 import mlflow
+import numpy as np
+import torch
+
+from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
+from classes.data.satellite_image import SatelliteImage
+from utils.plot_utils import (
+    plot_list_labeled_sat_images,
+    plot_list_segmentation_labeled_satellite_image,
+)
+
 # with open("../config.yml") as f:
 #     config = yaml.load(f, Loader=SafeLoader)
 
@@ -22,12 +24,7 @@ import mlflow
 
 
 def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
-    test_dl,
-    model,
-    tile_size,
-    batch_size,
-    n_bands=3,
-    use_mlflow=False
+    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
 ):
     """
     Evaluates the model on the Pleiade test dataset for image segmentation.
@@ -47,12 +44,14 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
     # tile_size = 250
     # batch_size  = 4
     model.eval()
-    npatch = int((2000/tile_size)**2)
-    nbatchforfullimage = int(npatch/batch_size)
+    npatch = int((2000 / tile_size) ** 2)
+    nbatchforfullimage = int(npatch / batch_size)
 
     if not npatch % nbatchforfullimage == 0:
-        print("Le nombre de patchs \
-            n'est pas divisible par la taille d'un batch")
+        print(
+            "Le nombre de patchs \
+            n'est pas divisible par la taille d'un batch"
+        )
         return None
 
     list_labeled_satellite_image = []
@@ -71,10 +70,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
         for i in range(batch_size):
             pthimg = dic["pathimage"][i]
             si = SatelliteImage.from_raster(
-                file_path=pthimg,
-                dep=None,
-                date=None,
-                n_bands=n_bands
+                file_path=pthimg, dep=None, date=None, n_bands=n_bands
             )
             si.normalize()
 
@@ -83,22 +79,22 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
                     satellite_image=si,
                     label=mask_pred[i],
                     source="",
-                    labeling_date=""
+                    labeling_date="",
                 )
             )
 
-        if ((idx+1) % nbatchforfullimage) == 0:
+        if ((idx + 1) % nbatchforfullimage) == 0:
             print("ecriture image")
             if not os.path.exists("img/"):
                 os.makedirs("img/")
 
             fig1 = plot_list_labeled_sat_images(
                 list_labeled_satellite_image, [0, 1, 2]
-                )
+            )
 
-            filename = pthimg.split('/')[-1]
-            filename = filename.split('.')[0]
-            filename = '_'.join(filename.split('_')[0:6])
+            filename = pthimg.split("/")[-1]
+            filename = filename.split(".")[0]
+            filename = "_".join(filename.split("_")[0:6])
             plot_file = "img/" + filename + ".png"
 
             fig1.savefig(plot_file)
@@ -118,7 +114,6 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
     n_bands,
     use_mlflow=False,
 ):
-
     for idx, batch in enumerate(test_dl):
         # idx, batch = 0, next(iter(test_dl))
         images, label, dic = batch
@@ -133,20 +128,15 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
         for i in range(batch_size):
             pthimg = dic["pathimage"][i]
             si = SatelliteImage.from_raster(
-                file_path=pthimg,
-                dep=None,
-                date=None,
-                n_bands=n_bands
+                file_path=pthimg, dep=None, date=None, n_bands=n_bands
             )
             si.normalize()
 
-            labeled_satellite_image = (
-                SegmentationLabeledSatelliteImage(
-                    satellite_image=si,
-                    label=mask_pred[i],
-                    source="",
-                    labeling_date=""
-                )
+            labeled_satellite_image = SegmentationLabeledSatelliteImage(
+                satellite_image=si,
+                label=mask_pred[i],
+                source="",
+                labeling_date="",
             )
 
             print("ecriture image")
@@ -154,11 +144,12 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
                 os.makedirs("img/")
 
             fig1 = plot_list_segmentation_labeled_satellite_image(
-                [labeled_satellite_image], [3, 2, 1])
+                [labeled_satellite_image], [3, 2, 1]
+            )
 
-            filename = pthimg.split('/')[-1]
-            filename = filename.split('.')[0]
-            filename = '_'.join(filename.split('_')[0:6])
+            filename = pthimg.split("/")[-1]
+            filename = filename.split(".")[0]
+            filename = "_".join(filename.split("_")[0:6])
             plot_file = filename + ".png"
 
             fig1.savefig(plot_file)
@@ -168,12 +159,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
 
 
 def evaluer_modele_sur_jeu_de_test_classification_pleiade(
-    test_dl,
-    model,
-    tile_size,
-    batch_size,
-    n_bands=3,
-    use_mlflow=False
+    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
 ):
     """
     Evaluates the model on the Pleiade test dataset for image classification.
@@ -191,12 +177,14 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
         None
     """
     model.eval()
-    npatch = int((2000/tile_size)**2)
-    nbatchforfullimage = int(npatch/batch_size)
+    npatch = int((2000 / tile_size) ** 2)
+    nbatchforfullimage = int(npatch / batch_size)
 
     if not npatch % nbatchforfullimage == 0:
-        print("Le nombre de patchs \
-            n'est pas divisible par la taille d'un batch")
+        print(
+            "Le nombre de patchs \
+            n'est pas divisible par la taille d'un batch"
+        )
         return None
 
     list_labeled_satellite_image = []
@@ -219,51 +207,44 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
         predictions = torch.where(
             probability_class_1 > threshold,
             torch.tensor([1]),
-            torch.tensor([0])
-            )
+            torch.tensor([0]),
+        )
         predicted_classes = predictions.type(torch.float)
 
         for i in range(batch_size):
             pthimg = dic["pathimage"][i]
             si = SatelliteImage.from_raster(
-                file_path=pthimg,
-                dep=None,
-                date=None,
-                n_bands=3
+                file_path=pthimg, dep=None, date=None, n_bands=3
             )
             si.normalize()
 
             if int(predicted_classes[i]) == 0:
-                mask_pred = np.full(
-                    (tile_size, tile_size, 3), 255, dtype=np.uint8
-                    )
+                mask_pred = np.full((tile_size, tile_size, 3), 255, dtype=np.uint8)
 
             elif int(predicted_classes[i]) == 1:
-                mask_pred = np.full(
-                    (tile_size, tile_size, 3), 0, dtype=np.uint8
-                    )
+                mask_pred = np.full((tile_size, tile_size, 3), 0, dtype=np.uint8)
 
             list_labeled_satellite_image.append(
                 SegmentationLabeledSatelliteImage(
                     satellite_image=si,
                     label=mask_pred,
                     source="",
-                    labeling_date=""
+                    labeling_date="",
                 )
             )
 
-        if ((idx+1) % nbatchforfullimage) == 0:
+        if ((idx + 1) % nbatchforfullimage) == 0:
             print("ecriture image")
             if not os.path.exists("img/"):
                 os.makedirs("img/")
 
             fig1 = plot_list_labeled_sat_images(
                 list_labeled_satellite_image, [0, 1, 2]
-                )
+            )
 
-            filename = pthimg.split('/')[-1]
-            filename = filename.split('.')[0]
-            filename = '_'.join(filename.split('_')[0:6])
+            filename = pthimg.split("/")[-1]
+            filename = filename.split(".")[0]
+            filename = "_".join(filename.split("_")[0:6])
             plot_file = "img/" + filename + ".png"
 
             fig1.savefig(plot_file)
@@ -316,10 +297,8 @@ def calculate_pourcentage_loss(output, labels):
 
     # Make predictions based on the threshold
     predictions = torch.where(
-        probability_class_1 > threshold,
-        torch.tensor([1]),
-        torch.tensor([0])
-        )
+        probability_class_1 > threshold, torch.tensor([1]), torch.tensor([0])
+    )
 
     predicted_classes = predictions.type(torch.float)
 
@@ -343,7 +322,7 @@ def proportion_ones(labels):
     # Count the number of ones
     num_ones = int(torch.sum(labels == 1))
 
-    prop_ones = num_ones/(num_zeros + num_ones)
+    prop_ones = num_ones / (num_zeros + num_ones)
 
     # Rounded to two digits after the decimal point
     prop_ones = round(prop_ones, 2)

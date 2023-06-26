@@ -1,11 +1,11 @@
 import torch
-from torch import nn
-import torchvision
-from torchvision.models.resnet import ResNet50_Weights
 import torch.multiprocessing as multiprocessing
+import torchvision
+from torch import nn
+from torchvision.models.resnet import ResNet50_Weights
 
 # Increase the shared memory limit
-multiprocessing.set_sharing_strategy('file_system')
+multiprocessing.set_sharing_strategy("file_system")
 
 
 class ResNet50Module(nn.Module):
@@ -26,9 +26,7 @@ class ResNet50Module(nn.Module):
     def __init__(self, nchannel=3):
         super().__init__()
         # Load the pre-trained ResNet50 model
-        self.model = torchvision.models.resnet50(
-                    weights=ResNet50_Weights.DEFAULT
-                )
+        self.model = torchvision.models.resnet50(weights=ResNet50_Weights.DEFAULT)
 
         # Replace the last fully connected layer
         self.model.fc = nn.Linear(2048, 2)

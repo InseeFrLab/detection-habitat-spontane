@@ -1,14 +1,13 @@
+import os
 import random
-from typing import List, Dict
+from typing import Dict, List
+
 import albumentations as album
 import yaml
-import os
 from albumentations.pytorch.transforms import ToTensorV2
 
 
-def select_indices_to_split_dataset(
-    config_task, prop_val, list_labels
-):
+def select_indices_to_split_dataset(config_task, prop_val, list_labels):
     """
     Selects indices to split a dataset into training and validation sets based
     on the configuration task.
@@ -63,9 +62,7 @@ def select_indices_to_split_dataset(
 
 
 def select_indices_to_balance(
-    list_path_images: List,
-    balancing_dict: Dict,
-    prop: float
+    list_path_images: List, balancing_dict: Dict, prop: float
 ):
     """
     Select indices to balance Dataset according to a balancing dict
@@ -81,7 +78,7 @@ def select_indices_to_balance(
     idx_building = []
     idx_no_building = []
     for idx, filepath in enumerate(list_path_images):
-        basename = os.path.basename(filepath).split('.')[0]
+        basename = os.path.basename(filepath).split(".")[0]
         if balancing_dict[basename] == 1:
             idx_building.append(idx)
         else:
@@ -93,17 +90,12 @@ def select_indices_to_balance(
     lenght_unlabelled = prop * length_labelled
     idx_balanced = idx_building.copy()
     if lenght_unlabelled < len(idx_no_building):
-        list_to_add = random.sample(
-            idx_no_building,
-            lenght_unlabelled
-        )
+        list_to_add = random.sample(idx_no_building, lenght_unlabelled)
         for i in list_to_add:
             idx = idx_no_building.index(i)
             idx_balanced.append(i)
     else:
-        idx_balanced.extend(
-            idx_no_building
-        )
+        idx_balanced.extend(idx_no_building)
     return idx_balanced
 
 
@@ -126,7 +118,7 @@ def generate_transform_pleiades(tile_size, augmentation):
 
     transforms_preprocessing = album.Compose(
         [
-           #album.Resize(*image_size, always_apply=True),
+            # album.Resize(*image_size, always_apply=True),
             album.Normalize(),
             ToTensorV2(),
         ]
@@ -135,7 +127,7 @@ def generate_transform_pleiades(tile_size, augmentation):
     if augmentation:
         transforms_augmentation = album.Compose(
             [
-                #album.Resize(300, 300, always_apply=True),
+                # album.Resize(300, 300, always_apply=True),
                 album.RandomResizedCrop(
                     *image_size, scale=(0.7, 1.0), ratio=(0.7, 1)
                 ),
