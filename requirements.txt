@@ -16,6 +16,6 @@ geopandas
 earthengine-api
 geemap
 geedim
-gdal
+gdal==3.4.1
 ee
 satellite_image
