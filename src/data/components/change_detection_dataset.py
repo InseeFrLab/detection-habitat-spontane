@@ -13,8 +13,7 @@ import torch
 from albumentations import Compose
 from torch.utils.data import Dataset
 
-from classes.data.change_detection_triplet \
-    import ChangedetectionTripletS2Looking
+from classes.data.change_detection_triplet import ChangedetectionTripletS2Looking
 from classes.data.satellite_image import SatelliteImage
 
 
@@ -210,9 +209,7 @@ class ChangeDetectionS2LookingDataset(Dataset):
         label = 0
         compteur = 0
         while np.max(label) == 0 and compteur < 15:
-            cdtriplet = ChangedetectionTripletS2Looking(
-                pathim1, pathim2, pathlabel
-            )
+            cdtriplet = ChangedetectionTripletS2Looking(pathim1, pathim2, pathlabel)
             cdtriplet.random_crop(256)
             label = np.array(cdtriplet.label)
             label[label != 0] = 1

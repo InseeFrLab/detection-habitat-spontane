@@ -2,7 +2,8 @@ import torch
 from torch import nn
 
 
-# Une IOU loss différentiable. !! https://home.cs.umanitoba.ca/~ywang/papers/isvc16.pdf
+# Une IOU loss différentiable. !!
+# https://home.cs.umanitoba.ca/~ywang/papers/isvc16.pdf
 class SoftIoULoss(nn.Module):
     """
     Soft IoU (Intersection over Union) loss that is differentiable.
@@ -22,6 +23,7 @@ class SoftIoULoss(nn.Module):
     Returns:
         torch.Tensor: The computed loss value.
     """
+
     def __init__(self, weight=None, size_average=True, n_classes=2):
         super(SoftIoULoss, self).__init__()
 
@@ -42,9 +44,9 @@ class SoftIoULoss(nn.Module):
         inputs = torch.softmax(output, dim=1)
         inter = inputs * target_one_hot
         inter = inter.view(N, 2, -1).sum(2)  # 2 classes
-        union = inputs + target_one_hot - (inputs*target_one_hot)
+        union = inputs + target_one_hot - (inputs * target_one_hot)
         union = union.view(N, 2, -1).sum(2)
-        loss = inter/union
+        loss = inter / union
         return -loss.mean()
 
 
@@ -54,6 +56,7 @@ class CrossEntropySelfmade(nn.Module):
     between the predicted output and the target output.
 
     """
+
     def __init__(self):
         """
         Constructor.
@@ -96,6 +99,7 @@ class CustomLoss(nn.Module):
     Returns:
         torch.Tensor: The computed loss value.
     """
+
     def __init__(self):
         super(CustomLoss, self).__init__()
 
@@ -120,5 +124,7 @@ class CustomLoss(nn.Module):
 
 def to_one_hot(tensor, nClasses):
     n, h, w = tensor.size()
-    one_hot = torch.zeros(n, nClasses, h, w, device="cuda:0").scatter_(1, tensor.view(n, 1, h, w), 1)
+    one_hot = torch.zeros(n, nClasses, h, w, device="cuda:0").scatter_(
+        1, tensor.view(n, 1, h, w), 1
+    )
     return one_hot

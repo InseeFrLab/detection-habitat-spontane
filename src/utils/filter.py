@@ -51,7 +51,7 @@ def is_too_water(image: SatelliteImage, water_value_threshold=0.95) -> bool:
                     int(array[2, i, j]) + int(array[7, i, j])
                 ) < 0:
                     NDWI[i][j] = 1
-    if np.sum(NDWI) <= (1-water_value_threshold) * tile_size * tile_size:
+    if np.sum(NDWI) <= (1 - water_value_threshold) * tile_size * tile_size:
         return True
     return False
 
@@ -83,9 +83,7 @@ def is_too_black(
             to the threshold, False otherwise.
     """
     gray_image = (
-        0.2989 * image.array[0]
-        + 0.5870 * image.array[1]
-        + 0.1140 * image.array[2]
+        0.2989 * image.array[0] + 0.5870 * image.array[1] + 0.1140 * image.array[2]
     )
     nb_black_pixels = np.sum(gray_image < black_value_threshold)
 

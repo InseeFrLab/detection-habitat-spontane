@@ -4,10 +4,7 @@ import pytorch_lightning as pl
 import torch
 from torch import nn, optim
 
-from classes.optim.evaluation_model import (
-    calculate_pourcentage_loss,
-    proportion_ones
-)
+from classes.optim.evaluation_model import calculate_pourcentage_loss, proportion_ones
 
 
 class ClassificationModule(pl.LightningModule):

@@ -1,10 +1,10 @@
-import os
-import numpy as np
-import rasterio
 import csv
+import os
+
+import numpy as np
 import pandas as pd
+import rasterio
 from tqdm import tqdm
-import random
 
 from utils.filter import is_too_black, is_too_water
 
@@ -80,7 +80,7 @@ def filter_images_pleiades(list_images, list_array_cloud):
     if list_array_cloud:
         for splitted_image, array_cloud in zip(list_images, list_array_cloud):
             if not is_too_black(splitted_image):
-                prop_cloud = np.sum(array_cloud)/(array_cloud.shape[0])**2
+                prop_cloud = np.sum(array_cloud) / (array_cloud.shape[0]) ** 2
                 if not prop_cloud > 0:
                     list_filtered_splitted_images.append(splitted_image)
     else:
@@ -134,9 +134,13 @@ def label_images(list_images, labeler, task="segmentation"):
         mask = labeler.create_segmentation_label(satellite_image)
         if task == "segmentation":
             if np.sum(mask) != 0:
-                balancing_dict[satellite_image.filename.split('.')[0] + "_" + "{:04d}".format(i)] = 1
+                balancing_dict[
+                    satellite_image.filename.split(".")[0] + "_" + "{:04d}".format(i)
+                ] = 1
             else:
-                balancing_dict[satellite_image.filename.split('.')[0] + "_" + "{:04d}".format(i)] = 0
+                balancing_dict[
+                    satellite_image.filename.split(".")[0] + "_" + "{:04d}".format(i)
+                ] = 0
             labels.append(mask)
         elif task == "classification":
             if np.sum(mask) != 0:
@@ -220,7 +224,6 @@ def save_images_and_masks(
         i = i + 1
 
         try:
-
             if task == "segmentation":
                 image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
                 np.save(
@@ -230,18 +233,18 @@ def save_images_and_masks(
             if task == "classification":
                 # if i in selected_indices:
                 image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
-                csv_file_path = output_masks_path + "/" + 'fichierlabeler.csv'
+                csv_file_path = output_masks_path + "/" + "fichierlabeler.csv"
 
                 # Create the csv file if it does not exist
                 if not os.path.isfile(csv_file_path):
-                    with open(csv_file_path, 'w', newline='') as csvfile:
+                    with open(csv_file_path, "w", newline="") as csvfile:
                         writer = csv.writer(csvfile)
-                        writer.writerow(['Path_image', 'Classification'])
+                        writer.writerow(["Path_image", "Classification"])
                         writer.writerow([filename, mask])
 
                 # Open it if it exists
                 else:
-                    with open(csv_file_path, 'a', newline='') as csvfile:
+                    with open(csv_file_path, "a", newline="") as csvfile:
                         writer = csv.writer(csvfile)
                         writer.writerow([filename, mask])
 
@@ -254,13 +257,15 @@ def save_images_and_masks(
 
 
 def extract_proportional_subset(
-    input_file="train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler.csv",
-    output_file="train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv",
-    target_column="Classification"
+    input_file="train_data-classification-PLEIADES-RIL-972-2022/"
+    + "labels/fichierlabeler.csv",
+    output_file="train_data-classification-PLEIADES-RIL-972-2022/"
+    + "labels/fichierlabeler_echant.csv",
+    target_column="Classification",
 ):
     """
-    Extracts a proportional subset of samples from a CSV file based on the target column
-    without loss of information on class 1.
+    Extracts a proportional subset of samples from a CSV file based on the
+    target column without loss of information on class 1.
 
     Args:
         input_file (str): Path to the input CSV file.
@@ -290,9 +295,10 @@ def extract_proportional_subset(
 
 
 def filter_images_by_path(
-    csv_file="train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv",
+    csv_file="train_data-classification-PLEIADES-RIL-972-2022/"
+    + "labels/fichierlabeler_echant.csv",
     image_folder="train_data-classification-PLEIADES-RIL-972-2022/images",
-    path_column="Path_image"
+    path_column="Path_image",
 ):
     """
     Filters images in a folder based on their paths listed in a CSV file.
@@ -313,11 +319,10 @@ def filter_images_by_path(
     # Extract the "path_image" column as a list
     list_name = df[path_column].tolist()
 
-    list_name_jp2 = [name+".jp2" for name in list_name]
+    list_name_jp2 = [name + ".jp2" for name in list_name]
 
     # Iterate over the files in the image folder
     for filename in tqdm(os.listdir(image_folder)):
-
         # Check if the image path is not in the list of paths from the CSV file
         if filename not in list_name_jp2:
             image_path = os.path.join(image_folder, filename)
