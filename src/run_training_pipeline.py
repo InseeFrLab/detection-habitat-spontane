@@ -4,6 +4,7 @@ import sys
 from datetime import datetime
 import json
 import csv
+import pandas as pd
 
 import mlflow
 import numpy as np
@@ -251,7 +252,7 @@ def prepare_test_data(config, test_dir):
         list_name_image
     ):
         si = SatelliteImage.from_raster(
-            file_path=image_path, dep=None, date=None, n_bands=config["donnees"]["n bands"]
+            file_path=image_path, dep=None, date=None, n_bands=n_bands
         )
         mask = np.load(label_path)
 
@@ -347,6 +348,7 @@ def instantiate_dataloader(config, list_output_dir):
 
     print("Entre dans la fonction instantiate_dataloader")
     config_task = config["donnees"]["task"]
+    prop = config["donnees"]["prop"]
     if config["donnees"]["source train"] in [
         "PLEIADES",
         "SENTINEL2",
@@ -378,18 +380,11 @@ def instantiate_dataloader(config, list_output_dir):
 
             if config_task == "classification":
                 list_labels_dir = []
-                with open(directory + "/labels/" + labels[0], 'r') as csvfile:
-                    reader = csv.reader(csvfile)
 
-                    # Ignore CSV file header if there is one
-                    next(reader)
+                # Load the initial CSV file
+                df = pd.read_csv(directory + "/labels/" + labels[0])
 
-                    # Iterate through the lines of the CSV file
-                    # and extract the second column
-                    for row in reader:
-                        image_path = row[0]
-                        mask = row[1]  # Index 1 corresponds to the second column (index 0 for the first)
-                        list_labels_dir.append([image_path, mask])
+                list_labels_dir = df[["Path_image", "Classification"]].values.tolist()
 
                 list_labels_dir = sorted(list_labels_dir, key=lambda x: x[0])
                 list_labels_dir = np.array([sous_liste[1] for sous_liste in list_labels_dir])
@@ -410,7 +405,7 @@ def instantiate_dataloader(config, list_output_dir):
         indices_to_balance = select_indices_to_balance(
             list_images,
             full_balancing_dict,
-            prop=config["donnees"]["prop"]
+            prop=prop
         )
         list_images = unbalanced_images[indices_to_balance]
         list_labels = unbalanced_labels[indices_to_balance]
@@ -666,7 +661,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     torch.cuda.empty_cache()
     gc.collect()
 
-    remote_server_uri = "https://projet-slums-detection-874257.user.lab.sspcloud.fr"
+    # remote_server_uri = "https://projet-slums-detection-128833.user.lab.sspcloud.fr"
     # experiment_name = "segmentation"
     # run_name = "deeplabV42"
 
@@ -764,7 +759,7 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
-#nohup python run_training_pipeline.py https://projet-slums-detection-874257.user.lab.sspcloud.fr classification test_classifpleiade_branchsentinel2 > out.txt &
+#nohup python run_training_pipeline.py https://projet-slums-detection-128833.user.lab.sspcloud.fr classification test_classifpleiade_branchsentinel2 > out.txt &
 # https://www.howtogeek.com/804823/nohup-command-linux/ 
  #TO DO :
 # test routine sur S2Looking dataset
