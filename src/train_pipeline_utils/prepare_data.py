@@ -199,22 +199,22 @@ def save_images_and_masks(
                     mask,
                 )
             if task == "classification":
-                if i in selected_indices:
-                    image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
-                    csv_file_path = output_masks_path + "/" + 'fichierlabeler.csv'
+                #if i in selected_indices:
+                image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
+                csv_file_path = output_masks_path + "/" + 'fichierlabeler.csv'
 
-                    # Create the csv file if it does not exist
-                    if not os.path.isfile(csv_file_path):
-                        with open(csv_file_path, 'w', newline='') as csvfile:
-                            writer = csv.writer(csvfile)
-                            writer.writerow(['Path_image', 'Classification'])
-                            writer.writerow([filename, mask])
+                # Create the csv file if it does not exist
+                if not os.path.isfile(csv_file_path):
+                    with open(csv_file_path, 'w', newline='') as csvfile:
+                        writer = csv.writer(csvfile)
+                        writer.writerow(['Path_image', 'Classification'])
+                        writer.writerow([filename, mask])
 
-                    # Open it if it exists
-                    else:
-                        with open(csv_file_path, 'a', newline='') as csvfile:
-                            writer = csv.writer(csvfile)
-                            writer.writerow([filename, mask])
+                # Open it if it exists
+                else:
+                    with open(csv_file_path, 'a', newline='') as csvfile:
+                        writer = csv.writer(csvfile)
+                        writer.writerow([filename, mask])
 
         except rasterio._err.CPLE_AppDefinedError:
             # except:
