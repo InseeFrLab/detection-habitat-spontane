@@ -12,12 +12,8 @@ import utils.mappings
 from classes.data.satellite_image import SatelliteImage
 from utils.utils import get_environment, get_root_path, update_storage_access
 
-service_account = (
-    "slums-detection-sa@ee-insee-sentinel.iam.gserviceaccount.com"
-)
-credentials = ee.ServiceAccountCredentials(
-    service_account, "GCP_credentials.json"
-)
+service_account = "slums-detection-sa@ee-insee-sentinel.iam.gserviceaccount.com"
+credentials = ee.ServiceAccountCredentials(service_account, "GCP_credentials.json")
 
 # Initialize the library.
 ee.Initialize(credentials)
@@ -239,9 +235,7 @@ def upload_satelliteImages(
     ]
 
     splitted_list_images = [
-        im
-        for sublist in tqdm(list_satellite_images)
-        for im in sublist.split(dim)
+        im for sublist in tqdm(list_satellite_images) for im in sublist.split(dim)
     ]
 
     for i in range(len(splitted_list_images)):
