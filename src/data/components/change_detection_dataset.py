@@ -17,6 +17,88 @@ from classes.data.change_detection_triplet import ChangedetectionTripletS2Lookin
 from classes.data.satellite_image import SatelliteImage
 
 
+class ChangeDetectionDataset(Dataset):
+
+    def __init__(
+        self,
+        list_paths_images_1: List,
+        list_paths_images_2: List,
+        list_paths_labels,
+        n_bands=3,
+        transforms: Optional[Compose] = None,
+    ):
+        """
+        Constructor.
+
+        Args:
+            list_paths_images_1 (List): list of path of the images
+            list_paths_images_2 (List): list of path of the images
+            list_paths_labels (List): list of paths
+             containing the list_paths_labelss
+            transforms (Compose) : list of transforms
+        """
+        self.list_paths_images_1 = list_paths_images_1
+        self.list_paths_images_2 = list_paths_images_2
+        self.list_paths_labels = list_paths_labels
+        self.n_bands = n_bands
+        self.transforms = transforms
+
+    def __getitem__(self, idx):
+        """_summary_
+
+        Args:
+            idx (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        pathim1 = self.list_paths_images_1[idx]
+        pathim2 = self.list_paths_images_2[idx]
+        
+        pathlabel = self.list_paths_labels[idx]
+        
+        img1 = SatelliteImage.from_raster(
+            file_path=pathim1, dep=None, date=None, n_bands=self.n_bands
+        ).array
+
+        img2 = SatelliteImage.from_raster(
+            file_path=pathim2, dep=None, date=None, n_bands=self.n_bands
+        ).array
+
+        label = torch.tensor(np.load(pathlabel))   
+        
+        if self.transforms:
+            # transfo séparée ne marche que pour les transfos non aléatoires
+            img1 = np.transpose(img1.astype(float), [1, 2, 0]) 
+            img2 = np.transpose(img2.astype(float), [1, 2, 0])
+            sample1 = self.transforms(image=img1, label=label)
+            img1 = sample1["image"] 
+            sample2 = self.transforms(image=img2, label=label)
+            img2 = sample2["image"]
+            label = sample2["label"]
+
+        img1 = torch.tensor(img1, dtype = torch.float)
+        img2 = torch.tensor(img2, dtype = torch.float)
+
+        img_double = torch.concatenate((img1, img2))
+
+        label = label.type(torch.LongTensor)
+
+        meta_data = {
+            "pathimage1": pathim1,
+            "pathimage2": pathim2,
+            "pathlabel": pathlabel,
+        }
+
+        return img_double, label, meta_data
+
+    def __len__(self):
+        return len(self.list_paths_images_1)
+
+
 class ChangeIsEverywhereDataset(Dataset):
     """
     From the article Change is EveryWhere doi : 2108.07002v2
@@ -34,6 +116,7 @@ class ChangeIsEverywhereDataset(Dataset):
         self,
         list_paths_images: List,
         list_paths_labels: List,
+        n_bands=3,
         transforms: Optional[Compose] = None,
     ):
         """
@@ -47,6 +130,7 @@ class ChangeIsEverywhereDataset(Dataset):
         """
         self.list_paths_images = list_paths_images
         self.list_paths_labels = list_paths_labels
+        self.n_bands = n_bands
 
         random.seed(1234)
 
@@ -84,11 +168,11 @@ class ChangeIsEverywhereDataset(Dataset):
         pathlabel2 = self.list_paths_labels2[idx]
 
         img1 = SatelliteImage.from_raster(
-            file_path=pathim1, dep=None, date=None, n_bands=3
+            file_path=pathim1, dep=None, date=None, n_bands=self.n_bands
         ).array
 
         img2 = SatelliteImage.from_raster(
-            file_path=pathim2, dep=None, date=None, n_bands=3
+            file_path=pathim2, dep=None, date=None, n_bands=self.n_bands
         ).array
 
         img1 = np.transpose(img1.astype(float), [1, 2, 0])
