@@ -1,13 +1,12 @@
 import gc
+import json
 import os
 import sys
 from datetime import datetime
-import json
-import csv
-import pandas as pd
 
 import mlflow
 import numpy as np
+import pandas as pd
 import pytorch_lightning as pl
 import torch
 import yaml
@@ -27,18 +26,23 @@ from classes.data.labeled_satellite_image import (  # noqa: E501
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
 from classes.optim.optimizer import generate_optimization_elements
-
+from dico_config import (
+    dataset_dict,
+    loss_dict,
+    module_dict,
+    task_to_evaluation,
+    task_to_lightningmodule,
+)
 from train_pipeline_utils.download_data import (
     load_2satellites_data,
     load_donnees_test,
     load_satellite_data,
 )
-
 from train_pipeline_utils.handle_dataset import (
     generate_transform_pleiades,
     generate_transform_sentinel,
+    select_indices_to_balance,
     select_indices_to_split_dataset,
-    select_indices_to_balance
 )
 from train_pipeline_utils.prepare_data import (
     check_labelled_images,
@@ -48,17 +52,9 @@ from train_pipeline_utils.prepare_data import (
 )
 from utils.utils import remove_dot_file, split_array, update_storage_access
 
-from dico_config import (
-    dataset_dict,
-    module_dict,
-    loss_dict,
-    task_to_lightningmodule,
-    task_to_evaluation
-)
-
-
 # with open("../config.yml") as f:
 #     config = yaml.load(f, Loader=SafeLoader)
+
 
 def download_data(config):
     """
@@ -94,7 +90,9 @@ def download_data(config):
         list_output_dir.append(output_dir)
 
     print("chargement des données test")
-    test_dir = load_donnees_test(type=config["donnees"]["task"], src=config["donnees"]["source train"])
+    test_dir = load_donnees_test(
+        type=config["donnees"]["task"], src=config["donnees"]["source train"]
+    )
 
     return list_output_dir, list_masks_cloud_dir, test_dir
 
@@ -155,7 +153,10 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
             list_name_cloud = []
             if src == "PLEIADES":
                 cloud_dir = list_masks_cloud_dir[i]
-                list_name_cloud = [path.split("/")[-1].split(".")[0] for path in os.listdir(cloud_dir)]
+                list_name_cloud = [
+                    path.split("/")[-1].split(".")[0]
+                    for path in os.listdir(cloud_dir)
+                ]
 
             dir = list_data_dir[i]
             list_path = [dir + "/" + filename for filename in os.listdir(dir)]
@@ -177,9 +178,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                 list_splitted_mask_cloud = None
 
                 if filename in list_name_cloud:
-                    mask_full_cloud = np.load(
-                        cloud_dir + "/" + filename + ".npy"
-                    )
+                    mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
                     list_splitted_mask_cloud = split_array(
                         mask_full_cloud, config_data["tile size"]
                     )
@@ -193,19 +192,17 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                 )
 
                 labels, balancing_dict = label_images(
-                    list_filtered_splitted_images,
-                    labeler,
-                    task=config_task
+                    list_filtered_splitted_images, labeler, task=config_task
                 )
 
                 save_images_and_masks(
                     list_filtered_splitted_images,
                     labels,
                     output_dir,
-                    task=config_task
+                    task=config_task,
                 )
 
-                for (k, v) in balancing_dict.items():
+                for k, v in balancing_dict.items():
                     full_balancing_dict[k] = v
             with open(output_dir + "/balancing_dict.json", "w") as fp:
                 json.dump(full_balancing_dict, fp)
@@ -247,9 +244,7 @@ def prepare_test_data(config, test_dir):
         return None
 
     for image_path, label_path, name in zip(
-        list_images_path,
-        list_labels_path,
-        list_name_image
+        list_images_path, list_labels_path, list_name_image
     ):
         si = SatelliteImage.from_raster(
             file_path=image_path, dep=None, date=None, n_bands=n_bands
@@ -275,7 +270,7 @@ def prepare_test_data(config, test_dir):
 
                 lsi.satellite_image.to_raster(
                     output_images_path, file_name_i + ".jp2"
-                    )
+                )
                 np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
 
 
@@ -387,33 +382,30 @@ def instantiate_dataloader(config, list_output_dir):
                 list_labels_dir = df[["Path_image", "Classification"]].values.tolist()
 
                 list_labels_dir = sorted(list_labels_dir, key=lambda x: x[0])
-                list_labels_dir = np.array([sous_liste[1] for sous_liste in list_labels_dir])
+                list_labels_dir = np.array(
+                    [sous_liste[1] for sous_liste in list_labels_dir]
+                )
 
-                list_labels = np.concatenate((
-                        list_labels,
-                        list_labels_dir
-                    ))
+                list_labels = np.concatenate((list_labels, list_labels_dir))
 
-            list_images = np.concatenate((
-                list_images,
-                np.sort([directory + "/images/" + name for name in images])
-            ))
+            list_images = np.concatenate(
+                (
+                    list_images,
+                    np.sort([directory + "/images/" + name for name in images]),
+                )
+            )
 
     if config_task == "segmentation":
         unbalanced_images = list_images.copy()
         unbalanced_labels = list_labels.copy()
         indices_to_balance = select_indices_to_balance(
-            list_images,
-            full_balancing_dict,
-            prop=prop
+            list_images, full_balancing_dict, prop=prop
         )
         list_images = unbalanced_images[indices_to_balance]
         list_labels = unbalanced_labels[indices_to_balance]
 
     train_idx, val_idx = select_indices_to_split_dataset(
-        config_task,
-        config["optim"]["val prop"],
-        list_labels
+        config_task, config["optim"]["val prop"], list_labels
     )
 
     # Retrieving the desired Dataset class
@@ -606,9 +598,14 @@ def instantiate_trainer(config, lightning_module):
 
     if config["donnees"]["task"] == "segmentation":
         checkpoint_callback_IOU = ModelCheckpoint(
-                monitor="validation_IOU", save_top_k=1, save_last=True, mode="max"
-                )
-        list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback, checkpoint_callback_IOU]
+            monitor="validation_IOU", save_top_k=1, save_last=True, mode="max"
+        )
+        list_callbacks = [
+            lr_monitor,
+            checkpoint_callback,
+            early_stop_callback,
+            checkpoint_callback_IOU,
+        ]
 
     if config["donnees"]["task"] == "classification":
         list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback]
@@ -643,14 +640,10 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
 
-    list_output_dir = prepare_train_data(
-        config, list_data_dir, list_masks_cloud_dir
-    )
+    list_output_dir = prepare_train_data(config, list_data_dir, list_masks_cloud_dir)
     prepare_test_data(config, test_dir)
 
-    train_dl, valid_dl, test_dl = instantiate_dataloader(
-        config, list_output_dir
-    )
+    train_dl, valid_dl, test_dl = instantiate_dataloader(config, list_output_dir)
 
     model = instantiate_model(config)
 
@@ -665,7 +658,6 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     # experiment_name = "classification"
     # run_name = "essai35"
 
-
     if config["mlflow"]:
         update_storage_access()
         os.environ["MLFLOW_S3_ENDPOINT_URL"] = "https://minio.lab.sspcloud.fr"
@@ -676,10 +668,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         with mlflow.start_run(run_name=run_name):
             mlflow.autolog()
-            mlflow.log_artifact(
-                "../config.yml",
-                artifact_path="config.yml"
-            )
+            mlflow.log_artifact("../config.yml", artifact_path="config.yml")
             trainer.fit(light_module, train_dl, valid_dl)
             tile_size = config["donnees"]["tile size"]
             batch_size_test = config["optim"]["batch size test"]
@@ -689,14 +678,13 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
             light_module_checkpoint = light_module.load_from_checkpoint(
                 loss=instantiate_loss(config),
-                checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
+                checkpoint_path=trainer.checkpoint_callback.best_model_path,
                 model=light_module.model,
                 optimizer=light_module.optimizer,
                 optimizer_params=light_module.optimizer_params,
                 scheduler=light_module.scheduler,
                 scheduler_params=light_module.scheduler_params,
-                scheduler_interval=light_module.scheduler_interval
-
+                scheduler_interval=light_module.scheduler_interval,
             )
             model = light_module_checkpoint.model
 
@@ -706,13 +694,13 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
 
             evaluer_modele_sur_jeu_de_test(
-                    test_dl,
-                    model,
-                    tile_size,
-                    batch_size_test,
-                    config["donnees"]["n bands"],
-                    config["mlflow"]
-                )
+                test_dl,
+                model,
+                tile_size,
+                batch_size_test,
+                config["donnees"]["n bands"],
+                config["mlflow"],
+            )
 
     else:
         trainer.fit(light_module, train_dl, valid_dl)
@@ -724,14 +712,13 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         light_module_checkpoint = light_module.load_from_checkpoint(
             loss=instantiate_loss(config),
-            checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
+            checkpoint_path=trainer.checkpoint_callback.best_model_path,
             model=light_module.model,
             optimizer=light_module.optimizer,
             optimizer_params=light_module.optimizer_params,
             scheduler=light_module.scheduler,
             scheduler_params=light_module.scheduler_params,
-            scheduler_interval=light_module.scheduler_interval
-
+            scheduler_interval=light_module.scheduler_interval,
         )
         model = light_module_checkpoint.model
 
@@ -741,13 +728,13 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
 
         evaluer_modele_sur_jeu_de_test(
-                test_dl,
-                model,
-                tile_size,
-                batch_size_test,
-                config["donnees"]["n bands"],
-                config["mlflow"]
-            )
+            test_dl,
+            model,
+            tile_size,
+            batch_size_test,
+            config["donnees"]["n bands"],
+            config["mlflow"],
+        )
         # trainer.test(light_module, test_dl)
 
 
@@ -759,9 +746,11 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
-#nohup python run_training_pipeline.py https://projet-slums-detection-128833.user.lab.sspcloud.fr classification test_classifpleiade_branchsentinel2 > out.txt &
-# https://www.howtogeek.com/804823/nohup-command-linux/ 
- #TO DO :
+# nohup python run_training_pipeline.py
+# https://projet-slums-detection-128833.user.lab.sspcloud.fr
+# classification test_classifpleiade_branchsentinel2 > out.txt &
+# https://www.howtogeek.com/804823/nohup-command-linux/
+# TO DO :
 # test routine sur S2Looking dataset
 # import os
 
@@ -773,5 +762,5 @@ if __name__ == "__main__":
 #  for file in files:
 #        file_path = os.path.join(dir_path, file)
 #        if os.path.isfile(file_path):
-#            os.remove(file_path)  
+#            os.remove(file_path)
 # delete_files_in_dir(list_data_dir[0], 600)
