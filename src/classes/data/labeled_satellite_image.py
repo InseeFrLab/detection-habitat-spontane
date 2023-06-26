@@ -36,9 +36,7 @@ class SegmentationLabeledSatelliteImage:
         self.source = source
         self.labeling_date = labeling_date
 
-    def split(
-        self, tile_length: int
-    ) -> List[SegmentationLabeledSatelliteImage]:
+    def split(self, tile_length: int) -> List[SegmentationLabeledSatelliteImage]:
         """
         Split the SegmentationLabeledSatelliteImage into tiles of
         dimension (`tile_length` x `tile_length`).
@@ -61,8 +59,7 @@ class SegmentationLabeledSatelliteImage:
 
         indices = get_indices_from_tile_length(m, n, tile_length)
         splitted_labels = [
-            self.label[rows[0]: rows[1], cols[0]: cols[1]]
-            for rows, cols in indices
+            self.label[rows[0] : rows[1], cols[0] : cols[1]] for rows, cols in indices
         ]
 
         list_labelled_images = [
@@ -94,9 +91,7 @@ class SegmentationLabeledSatelliteImage:
 
         fig, ax = plt.subplots(figsize=(5, 5))
         ax.imshow(
-            np.transpose(self.satellite_image.array, (1, 2, 0))[
-                :, :, bands_indices
-            ]
+            np.transpose(self.satellite_image.array, (1, 2, 0))[:, :, bands_indices]
         )
         ax.imshow(self.label, alpha=alpha)
         plt.xticks([])
@@ -125,9 +120,7 @@ class SegmentationLabeledSatelliteImage:
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 10))
         ax1.imshow(
-            np.transpose(self.satellite_image.array, (1, 2, 0))[
-                :, :, bands_indices
-            ]
+            np.transpose(self.satellite_image.array, (1, 2, 0))[:, :, bands_indices]
         )
         ax1.axis("off")
         ax2.imshow(show_mask)

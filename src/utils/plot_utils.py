@@ -1,8 +1,9 @@
+import math
 import os
 import re
 from datetime import date
 from typing import List
-import math
+
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
@@ -103,7 +104,9 @@ def plot_list_sat_images_square(
     for i in range(size):
         for j in range(size):
             axs[i, j].imshow(
-                list_images[i*size + j].array.transpose(1, 2, 0)[:, :, bands_indices]
+                list_images[i * size + j].array.transpose(1, 2, 0)[
+                    :, :, bands_indices
+                ]
             )
 
     # Remove any unused axes
@@ -168,20 +171,16 @@ def plot_list_segmentation_labeled_satellite_image(
 
     for i in range(0, height - tile_size + 1, stride):
         for j in range(0, width - tile_size + 1, stride):
-            output_image[
-                i: i + tile_size, j: j + tile_size, :
-            ] = np.transpose(
+            output_image[i : i + tile_size, j : j + tile_size, :] = np.transpose(
                 mat_list_images[compteur_ligne, compteur_col].array,
                 (1, 2, 0),
-            )[
-                :, :, bands_indices
-            ]
+            )[:, :, bands_indices]
 
             label = mat_list_labels[compteur_ligne, compteur_col, :, :]
             show_mask = np.zeros((label.shape[0], label.shape[1], 3))
             show_mask[label == 1, :] = [255, 255, 255]
             show_mask = show_mask.astype(np.uint8)
-            output_mask[i: i + tile_size, j: j + tile_size, :] = show_mask
+            output_mask[i : i + tile_size, j : j + tile_size, :] = show_mask
             compteur_col += 1
 
         compteur_col = 0
@@ -209,24 +208,24 @@ def plot_list_labeled_sat_images(
     size = int(math.sqrt(len(list_images)))
 
     # Create a figure and axes
-    fig, axs = plt.subplots(nrows=size, ncols=2*size, figsize=(20, 10))
+    fig, axs = plt.subplots(nrows=size, ncols=2 * size, figsize=(20, 10))
 
     # Iterate over the grid of masks and plot them
     for i in range(size):
         for j in range(size):
             axs[i, j].imshow(
-                list_images[i*size + j].array.transpose(1, 2, 0)[:, :, bands_indices]
+                list_images[i * size + j].array.transpose(1, 2, 0)[
+                    :, :, bands_indices
+                ]
             )
 
     for i in range(size):
         for j in range(size):
-            axs[i, j+size].imshow(
-                list_labels[i*size + j], cmap="gray"
-            )
+            axs[i, j + size].imshow(list_labels[i * size + j], cmap="gray")
 
     # Remove any unused axes
     for i in range(size):
-        for j in range(2*size):
+        for j in range(2 * size):
             axs[i, j].set_axis_off()
 
     # Show the plot
@@ -451,7 +450,7 @@ def plot_list_images_square(folder_path, borne_inf, borne_sup):
         Plot of the images.
     """
 
-    list_filepaths = os.listdir(folder_path)[borne_inf:borne_sup+1]
+    list_filepaths = os.listdir(folder_path)[borne_inf : borne_sup + 1]
     size = int(math.sqrt(len(list_filepaths)))
 
     list_images = []
@@ -459,11 +458,8 @@ def plot_list_images_square(folder_path, borne_inf, borne_sup):
     for filepath in tqdm(list_filepaths):
         # Retrieve left-top coordinates of all images
         image = SatelliteImage.from_raster(
-                folder_path + "/" + filepath,
-                date=None,
-                n_bands=3,
-                dep=None
-            )
+            folder_path + "/" + filepath, date=None, n_bands=3, dep=None
+        )
         image.normalize()
         list_images.append(image)
 
@@ -475,9 +471,7 @@ def plot_list_images_square(folder_path, borne_inf, borne_sup):
     # Iterate over the grid of masks and plot them
     for i in range(size):
         for j in range(size):
-            axs[i, j].imshow(
-                mat_list_images[i, j].array.transpose(1, 2, 0)
-            )
+            axs[i, j].imshow(mat_list_images[i, j].array.transpose(1, 2, 0))
 
     # Remove any unused axes
     for i in range(size):
@@ -488,9 +482,7 @@ def plot_list_images_square(folder_path, borne_inf, borne_sup):
     plt.show()
 
 
-def creer_array_to_plot(
-    pth_image
-):
+def creer_array_to_plot(pth_image):
     """
     Gives the correctly formatted arrays corresponding to an image to plot.
 
@@ -506,11 +498,11 @@ def creer_array_to_plot(
     si.array.shape
     bands_indices = [3, 2, 1]
     array = si.array
-    normalized_array = (array.astype(np.float32)-np.min(array)) / (np.max(array)/3- np.min(array))
+    normalized_array = (array.astype(np.float32) - np.min(array)) / (
+        np.max(array) / 3 - np.min(array)
+    )
     # normalized_array = array
-    array_to_plot = np.transpose(
-        normalized_array,
-        (1, 2, 0))[:, :, bands_indices]
+    array_to_plot = np.transpose(normalized_array, (1, 2, 0))[:, :, bands_indices]
 
     return array_to_plot
 
@@ -531,18 +523,18 @@ def represent_image_label(
     """
     N = len(list_label)
     nrow = int(math.sqrt(N))
-    fig, axes = plt.subplots(nrow, 2*nrow, figsize=(20, 10))
+    fig, axes = plt.subplots(nrow, 2 * nrow, figsize=(20, 10))
 
     # Iterate over the RGB arrays and plot them in the left grid
     for i, ax in enumerate(axes[:, :nrow].flat):
         array_to_plot = creer_array_to_plot(list_array_to_plot[i])
         ax.imshow(array_to_plot)
-        ax.axis('off')
+        ax.axis("off")
 
     # Iterate over the 0-1 arrays and plot them in the right grid
     for i, ax in enumerate(axes[:, nrow:].flat):
-        ax.imshow(list_label[i], cmap='binary')
-        ax.axis('off')
+        ax.imshow(list_label[i], cmap="binary")
+        ax.axis("off")
 
     # Adjust spacing between subplots
     plt.subplots_adjust(wspace=0, hspace=0)

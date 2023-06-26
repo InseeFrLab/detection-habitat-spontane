@@ -51,7 +51,7 @@ def split_array(array, tile_length):
     indices = get_indices_from_tile_length(m, n, tile_length)
 
     list_array = [
-        array[rows[0]: rows[1], cols[0]: cols[1]] for rows, cols in indices
+        array[rows[0] : rows[1], cols[0] : cols[1]] for rows, cols in indices
     ]
 
     return list_array
@@ -72,17 +72,13 @@ def get_file_system() -> S3FileSystem:
     Return the s3 file system.
     """
     return S3FileSystem(
-        client_kwargs={
-            "endpoint_url": "https://" + os.environ["AWS_S3_ENDPOINT"]
-        },
+        client_kwargs={"endpoint_url": "https://" + os.environ["AWS_S3_ENDPOINT"]},
         key=os.environ["AWS_ACCESS_KEY_ID"],
         secret=os.environ["AWS_SECRET_ACCESS_KEY"],
     )
 
 
-def get_transform_for_tiles(
-    transform: Affine, row_off: int, col_off: int
-) -> Affine:
+def get_transform_for_tiles(transform: Affine, row_off: int, col_off: int) -> Affine:
     """
     Compute the transform matrix of a tile
 
@@ -128,9 +124,7 @@ def get_bounds_for_tiles(
     return rasterio.coords.BoundingBox(left, bottom, right, top)
 
 
-def get_bounds_for_tiles2(
-    transform: Affine, row, col, tile_length
-) -> Tuple:
+def get_bounds_for_tiles2(transform: Affine, row, col, tile_length) -> Tuple:
     """
     Given an Affine transformation, and indices for a tile's row and column,
     returns the bounding coordinates (left, bottom, right, top) of the tile.
@@ -330,9 +324,7 @@ def update_storage_access():
         path=secret_path, mount_point=mount_point
     )
 
-    os.environ["AWS_ACCESS_KEY_ID"] = secret_dict["data"]["data"][
-        "ACCESS_KEY_ID"
-    ]
+    os.environ["AWS_ACCESS_KEY_ID"] = secret_dict["data"]["data"]["ACCESS_KEY_ID"]
     os.environ["AWS_SECRET_ACCESS_KEY"] = secret_dict["data"]["data"][
         "SECRET_ACCESS_KEY"
     ]

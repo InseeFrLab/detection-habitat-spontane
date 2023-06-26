@@ -48,8 +48,9 @@ class PatchClassification(Dataset):
         """
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        #pathim = "../train_data-SENTINEL2-976-2022/506990_8564970_70_000.jp2"
-        #pathlabel = "../train_data-SENTINEL2-976-2022/506990_8564970_70_000.npy"
+        # pathim = "../train_data-SENTINEL2-976-2022/506990_8564970_70_000.jp2"
+        # pathlabel =
+        # "../train_data-SENTINEL2-976-2022/506990_8564970_70_000.npy"
 
         pathim = self.list_paths_images[idx]
         label = int(self.list_labels[idx])

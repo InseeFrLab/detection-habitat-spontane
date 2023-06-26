@@ -2,10 +2,10 @@ import os
 import re
 from typing import List
 
-from utils.mappings import dep_to_crs, name_dep_to_num_dep
 from pyproj import Transformer
-from classes.data.satellite_image import SatelliteImage
 
+from classes.data.satellite_image import SatelliteImage
+from utils.mappings import dep_to_crs, name_dep_to_num_dep
 from utils.utils import get_environment
 
 
@@ -58,9 +58,7 @@ def crs_to_gps_image(
     dep_num = name_dep_to_num_dep[split_filepath[4]]
     str_crs = dep_to_crs[dep_num]
 
-    transformer = Transformer.from_crs(
-        "EPSG:" + str_crs, "EPSG:4326", always_xy=True
-    )
+    transformer = Transformer.from_crs("EPSG:" + str_crs, "EPSG:4326", always_xy=True)
     lon, lat = transformer.transform(x, y)
 
     # Return GPS coordinates (latitude, longitude)
