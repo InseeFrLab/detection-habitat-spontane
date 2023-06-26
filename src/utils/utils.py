@@ -50,7 +50,9 @@ def split_array(array, tile_length):
 
     indices = get_indices_from_tile_length(m, n, tile_length)
 
-    list_array = [array[rows[0] : rows[1], cols[0] : cols[1]] for rows, cols in indices]
+    list_array = [
+        array[rows[0]: rows[1], cols[0]: cols[1]] for rows, cols in indices
+    ]
 
     return list_array
 
@@ -229,8 +231,9 @@ def load_ril(
 
 
 def load_bdtopo(
-    millesime: Literal["2016", "2017", "2018", "2019",
-                       "2020", "2021", "2022", "2023"],
+    millesime: Literal[
+        "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"
+    ],
     dep: Literal["971", "972", "973", "974", "976", "977", "978"],
 ) -> gpd.GeoDataFrame:
     """
@@ -246,6 +249,11 @@ def load_bdtopo(
     root_path = get_root_path()
     environment = get_environment()
 
+    if int(millesime) >= 2019:
+        couche = "BATIMENT.shp"
+    elif int(millesime) < 2019:
+        couche = "BATI_INDIFFERENCIE.shp"
+
     bucket = environment["bucket"]
     path_s3 = environment["sources"]["BDTOPO"][int(millesime)][dep]
     dir_path = os.path.join(
@@ -257,32 +265,32 @@ def load_bdtopo(
         print(
             "Le téléchargement de cette version de la \
             BDTOPO a déjà été effectué"
-            )
+        )
+
     else:
+        os.makedirs(dir_path)
+
         update_storage_access()
         fs = S3FileSystem(
             client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"}
         )
         print("download " + dep + " " + str(millesime) + " in " + dir_path)
-        fs.download(
-            rpath=f"{bucket}/{path_s3}", lpath=f"{dir_path}", recursive=True
-        )
+        extensions = ["cpg", "dbf", "prj", "shp", "shx"]
+        couche_split = couche.split(".")[0]
+        for ext in extensions:
+            fs.download(
+                rpath=f"{bucket}/{path_s3}/{couche_split}.{ext}",
+                lpath=f"{dir_path}",
+                recursive=True,
+            )
 
     file_path = None
 
-    if int(millesime) >= 2019:
-        for root, dirs, files in os.walk(dir_path):
-            if "BATIMENT.shp" in files:
-                file_path = os.path.join(root, "BATIMENT.shp")
-        if not file_path:
-            raise ValueError("No valid `BATIMENT.shp` file found.")
-
-    elif int(millesime) < 2019:
-        for root, dirs, files in os.walk(dir_path):
-            if "BATI_INDIFFERENCIE.SHP" in files:
-                file_path = os.path.join(root, "BATI_INDIFFERENCIE.SHP")
-        if not file_path:
-            raise ValueError("No valid `BATI_INDIFFERENCIE.SHP` file found.")
+    for root, dirs, files in os.walk(dir_path):
+        if couche in files:
+            file_path = os.path.join(root, couche)
+    if not file_path:
+        raise ValueError(f"No valid {couche} file found.")
 
     df = gpd.read_file(file_path)
 
@@ -332,5 +340,3 @@ def update_storage_access():
         del os.environ["AWS_SESSION_TOKEN"]
     except KeyError:
         pass
-
-

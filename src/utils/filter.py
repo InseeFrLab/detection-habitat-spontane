@@ -17,6 +17,45 @@ from classes.data.satellite_image import SatelliteImage
 from utils.utils import get_environment, get_file_system
 
 
+def is_too_water(image: SatelliteImage, water_value_threshold=0.95) -> bool:
+    """
+    Determine if a satellite image has too much water\
+        based on the NDWI.
+
+    This function calculates the number of pixels that are in the water\
+        and deletes the image if there are too many.
+    A pixel is considered as water if its NDWI > 0.
+    The image is considered as water if the proportion of water pixels\
+        is greater than or equal to the specified threshold.
+
+    Args:
+        image (SatelliteImage): The input satellite image.
+        water_value_threshold (int, optional): The threshold value
+            for considering that a picture is in the water. Default is 0.95.
+
+    Returns:
+        bool: True if the proportion of water pixels is greater than or equal
+            to the threshold, False otherwise.
+    """
+    if (water_value_threshold < 0) or (water_value_threshold > 1):
+        raise ValueError("Le seuil doit être compris entre 0 et 1.")
+
+    array = image.array
+    tile_size = array.shape[2]
+    NDWI = np.zeros((tile_size, tile_size))
+
+    for i in range(tile_size):
+        for j in range(tile_size):
+            if not np.isnan(array[2, i, j]) and not np.isnan(array[7, i, j]):
+                if (int(array[2, i, j]) - int(array[7, i, j])) / (
+                    int(array[2, i, j]) + int(array[7, i, j])
+                ) < 0:
+                    NDWI[i][j] = 1
+    if np.sum(NDWI) <= (1-water_value_threshold) * tile_size * tile_size:
+        return True
+    return False
+
+
 def is_too_black(
     image: SatelliteImage, black_value_threshold=100, black_area_threshold=0.5
 ) -> bool:
@@ -160,7 +199,7 @@ def has_cloud(
 
     image = copy_image.array
     image = image[[0, 1, 2], :, :]
-    image = (image*np.max(image)).astype(np.float64)
+    image = (image * np.max(image)).astype(np.float64)
     image = image.transpose(1, 2, 0)
 
     # Convert the RGB image to grayscale
@@ -230,7 +269,7 @@ def mask_cloud(
 
     image = copy_image.array
     image = image[[0, 1, 2], :, :]
-    image = (image*np.max(image)).astype(np.float64)
+    image = (image * np.max(image)).astype(np.float64)
     image = image.transpose(1, 2, 0)
 
     # Convert the RGB image to grayscale

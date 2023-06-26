@@ -18,8 +18,8 @@ optim:
   module: "resnet50"
   batch size: 225
   batch size test: 100
-  max epochs: 50
+  max epochs: 20
   val prop: 0.2
   accumulate batch : 3
 
-mlflow: False
+mlflow: True
