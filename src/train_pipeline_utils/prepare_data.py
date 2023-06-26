@@ -172,6 +172,15 @@ def save_images_and_masks(
     output_images_path = output_directory_name + "/images"
     output_masks_path = output_directory_name + "/labels"
 
+    if task == "classification":
+        count_ones = list_masks.count(1)
+        count_zeros_sampled = int(count_ones/1)
+        indices_1 = [i for i, lab in enumerate(list_masks) if lab == 1]
+        indices_0 = [i for i, lab in enumerate(list_masks) if lab == 0]
+        random.shuffle(indices_0)
+        selected_indices_0 = indices_0[:count_zeros_sampled]
+        selected_indices = indices_1 + selected_indices_0
+
     for i, (image, mask) in enumerate(zip(list_images, list_masks)):
         # image = list_images[0]
         # bb = image.bounds
@@ -180,29 +189,32 @@ def save_images_and_masks(
         #   + "{:03d}".format(i)
         filename = image.filename.split(".")[0] + "_" + "{:04d}".format(i)
         i = i + 1
+
         try:
-            image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
 
             if task == "segmentation":
+                image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
                 np.save(
                     output_masks_path + "/" + filename + ".npy",
                     mask,
                 )
             if task == "classification":
-                csv_file_path = output_masks_path + "/" + 'fichierlabeler.csv'
+                if i in selected_indices:
+                    image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
+                    csv_file_path = output_masks_path + "/" + 'fichierlabeler.csv'
 
-                # Create the csv file if it does not exist
-                if not os.path.isfile(csv_file_path):
-                    with open(csv_file_path, 'w', newline='') as csvfile:
-                        writer = csv.writer(csvfile)
-                        writer.writerow(['Path_image', 'Classification'])
-                        writer.writerow([filename, mask])
+                    # Create the csv file if it does not exist
+                    if not os.path.isfile(csv_file_path):
+                        with open(csv_file_path, 'w', newline='') as csvfile:
+                            writer = csv.writer(csvfile)
+                            writer.writerow(['Path_image', 'Classification'])
+                            writer.writerow([filename, mask])
 
-                # Open it if it exists
-                else:
-                    with open(csv_file_path, 'a', newline='') as csvfile:
-                        writer = csv.writer(csvfile)
-                        writer.writerow([filename, mask])
+                    # Open it if it exists
+                    else:
+                        with open(csv_file_path, 'a', newline='') as csvfile:
+                            writer = csv.writer(csvfile)
+                            writer.writerow([filename, mask])
 
         except rasterio._err.CPLE_AppDefinedError:
             # except:
