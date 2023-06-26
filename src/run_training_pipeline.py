@@ -1,9 +1,9 @@
 import gc
 import json
 import os
+import random
 import sys
 from datetime import datetime
-import random
 
 import mlflow
 import numpy as np
@@ -174,12 +174,11 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                 except RasterioIOError:
                     print("Erreur de lecture du fichier " + path)
                     continue
-                
+
                 mask = labeler.create_segmentation_label(si)
                 proba = random.randint(1, 10)
-                
-                if (np.sum(mask) == 0 and proba == 10) or np.sum(mask) != 0:
 
+                if (np.sum(mask) == 0 and proba == 10) or np.sum(mask) != 0:
                     filename = path.split("/")[-1].split(".")[0]
                     list_splitted_mask_cloud = None
 
