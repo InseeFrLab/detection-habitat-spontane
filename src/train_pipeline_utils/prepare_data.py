@@ -1,5 +1,6 @@
 import csv
 import os
+import random
 
 import numpy as np
 import pandas as pd
@@ -144,10 +145,14 @@ def label_images(list_images, labeler, task="segmentation"):
             labels.append(mask)
         elif task == "classification":
             if np.sum(mask) != 0:
-                balancing_dict[satellite_image.filename.split('.')[0] + "_" + "{:04d}".format(i)] = 1
+                balancing_dict[
+                    satellite_image.filename.split(".")[0] + "_" + "{:04d}".format(i)
+                ] = 1
                 labels.append(1)
             else:
-                balancing_dict[satellite_image.filename.split('.')[0] + "_" + "{:04d}".format(i)] = 0
+                balancing_dict[
+                    satellite_image.filename.split(".")[0] + "_" + "{:04d}".format(i)
+                ] = 0
                 labels.append(0)
 
     balancing_dict_copy = balancing_dict.copy()
@@ -155,26 +160,41 @@ def label_images(list_images, labeler, task="segmentation"):
     nb_zeros = sum(1 for value in balancing_dict_copy.values() if value == 0)
     length = len(list_images)
 
-    if nb_zeros > prop*nb_ones and nb_ones == 0:
-        sampled_nb_zeros = int((length*0.01)*prop)
+    if nb_zeros > prop * nb_ones and nb_ones == 0:
+        sampled_nb_zeros = int((length * 0.01) * prop)
         zeros = [key for key, value in balancing_dict_copy.items()]
         random.shuffle(zeros)
         selected_zeros = zeros[:sampled_nb_zeros]
-        balancing_dict_sampled = {key: value for key, value in balancing_dict_copy.items() if key in selected_zeros}
-        indices_sampled = [index for index, key in enumerate(balancing_dict_copy) if key in balancing_dict_sampled]
+        balancing_dict_sampled = {
+            key: value
+            for key, value in balancing_dict_copy.items()
+            if key in selected_zeros
+        }
+        indices_sampled = [
+            index
+            for index, key in enumerate(balancing_dict_copy)
+            if key in balancing_dict_sampled
+        ]
         labels = [labels[index] for index in indices_sampled]
         balancing_dict_copy = balancing_dict_sampled
 
-    elif nb_zeros > prop*nb_ones and nb_ones > 0:
-        sampled_nb_zeros = int(prop*nb_ones)
+    elif nb_zeros > prop * nb_ones and nb_ones > 0:
+        sampled_nb_zeros = int(prop * nb_ones)
         zeros = [key for key, value in balancing_dict_copy.items() if value == 0]
         random.shuffle(zeros)
         selected_zeros = zeros[:sampled_nb_zeros]
-        balancing_dict_sampled = {key: value for key, value in balancing_dict_copy.items() if value == 1 or key in selected_zeros}
-        indices_sampled = [index for index, key in enumerate(balancing_dict_copy) if key in balancing_dict_sampled]
+        balancing_dict_sampled = {
+            key: value
+            for key, value in balancing_dict_copy.items()
+            if value == 1 or key in selected_zeros
+        }
+        indices_sampled = [
+            index
+            for index, key in enumerate(balancing_dict_copy)
+            if key in balancing_dict_sampled
+        ]
         labels = [labels[index] for index in indices_sampled]
         balancing_dict_copy = balancing_dict_sampled
-
 
     # print(
     #     "Nombre d'images labelisées : ",

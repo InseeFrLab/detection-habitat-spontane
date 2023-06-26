@@ -34,9 +34,7 @@ def load_satellite_data(year: int, dep: str, src: str):
 
     bucket = environment["bucket"]
     path_s3 = environment["sources"][src][year][dep]
-    path_local = os.path.join(
-        root_path, environment["local-path"][src][year][dep]
-    )
+    path_local = os.path.join(root_path, environment["local-path"][src][year][dep])
 
     if os.path.exists(path_local):
         print("Le dossier existe déjà")
@@ -45,12 +43,8 @@ def load_satellite_data(year: int, dep: str, src: str):
     fs = s3fs.S3FileSystem(
         client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"}
     )
-    print(
-        "download " + src + " " + dep + " " + str(year) + " in " + path_local
-    )
-    fs.download(
-        rpath=f"{bucket}/{path_s3}", lpath=f"{path_local}", recursive=True
-    )
+    print("download " + src + " " + dep + " " + str(year) + " in " + path_local)
+    fs.download(rpath=f"{bucket}/{path_s3}", lpath=f"{path_local}", recursive=True)
 
     return path_local
 
@@ -77,9 +71,7 @@ def load_donnees_test(type="segmentation", src="PLEIADES"):
 
     bucket = environment["bucket"]
     path_s3 = environment["sources"]["TEST"][src][type]
-    path_local = os.path.join(
-        root_path, environment["local-path"]["TEST"][src][type]
-    )
+    path_local = os.path.join(root_path, environment["local-path"]["TEST"][src][type])
 
     if os.path.exists(path_local):
         print("le jeu de données test existe déjà")
@@ -88,9 +80,7 @@ def load_donnees_test(type="segmentation", src="PLEIADES"):
     fs = s3fs.S3FileSystem(
         client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"}
     )
-    fs.download(
-        rpath=f"{bucket}/{path_s3}", lpath=f"{path_local}", recursive=True
-    )
+    fs.download(rpath=f"{bucket}/{path_s3}", lpath=f"{path_local}", recursive=True)
 
     return path_local
 
@@ -118,9 +108,7 @@ def load_2satellites_data(year: int, dep: str, src: str):
     root_path = get_root_path()
     environment = get_environment()
 
-    path_local = os.path.join(
-        root_path, environment["local-path"][src][year][dep]
-    )
+    path_local = os.path.join(root_path, environment["local-path"][src][year][dep])
 
     if os.path.exists(path_local):
         print("Le dossier existe déjà")
