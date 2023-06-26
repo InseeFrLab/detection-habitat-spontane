@@ -15,6 +15,7 @@ from osgeo import gdal
 
 from utils.utils import (
     get_bounds_for_tiles,
+    get_bounds_for_tiles2,
     get_indices_from_tile_length,
     get_transform_for_tiles,
 )
@@ -67,8 +68,8 @@ class SatelliteImage:
         Returns:
             List[SatelliteImage]: _description_
         """
-        if tile_length % 2:
-            raise ValueError("Tile length has to be an even number.")
+        # if tile_length % 2:
+        #     raise ValueError("Tile length has to be an even number.")
 
         m = self.array.shape[1]
         n = self.array.shape[2]
@@ -80,9 +81,7 @@ class SatelliteImage:
                 array=self.array[:, rows[0] : rows[1], cols[0] : cols[1]],
                 crs=self.crs,
                 bounds=get_bounds_for_tiles(self.transform, rows, cols),
-                transform=get_transform_for_tiles(
-                    self.transform, rows[0], cols[0]
-                ),
+                transform=get_transform_for_tiles(self.transform, rows[0], cols[0]),
                 n_bands=self.n_bands,
                 filename=self.filename,  # a adapter avec bb
                 dep=self.dep,
@@ -94,9 +93,49 @@ class SatelliteImage:
 
         return splitted_images
 
-    def to_tensor(
-        self, bands_indices: Optional[List[int]] = None
-    ) -> torch.Tensor:
+    def split2(self, tile_length: int) -> List[SatelliteImage]:
+        """
+        Split the SatelliteImage into folds of size tile_length
+
+        Args:
+            tile_length (int): Dimension of tiles
+
+        Returns:
+            List[SatelliteImage]: _description_
+        """
+        original_array = self.array.copy()
+        __, m, n = original_array.shape
+        sub_arrays = []
+        rows = []
+        cols = []
+
+        for i in range(0, m, tile_length):
+            for j in range(0, n, tile_length):
+                sub_array = original_array[
+                    :, i : i + tile_length, j : j + tile_length
+                ]
+                sub_arrays.append(sub_array)
+                rows.append(i)
+                cols.append(j)
+
+        splitted_images = [
+            SatelliteImage(
+                array=sub_array,
+                crs=self.crs,
+                bounds=get_bounds_for_tiles2(self.transform, row, col, tile_length),
+                transform=get_transform_for_tiles(self.transform, row, col),
+                n_bands=self.n_bands,
+                filename=self.filename,  # a adapter avec bb
+                dep=self.dep,
+                date=self.date,
+                normalized=self.normalized,
+            )
+            for sub_array, row, col in zip(sub_arrays, rows, cols)
+        ]
+
+        return splitted_images
+
+    def to_tensor(self, bands_indices: Optional[List[int]] = None) -> torch.Tensor:
         """
         Return SatelliteImage array as a torch.Tensor.
 
@@ -142,6 +181,21 @@ class SatelliteImage:
         self.array = np.stack(normalized_bands)
         self.normalized = True
 
+    def copy(self):
+        copy_image = SatelliteImage(
+            array=self.array.copy(),
+            crs=self.crs,
+            bounds=self.bounds,
+            transform=self.transform,
+            n_bands=self.n_bands,
+            filename=self.filename,
+            dep=self.dep,
+            date=self.date,
+            normalized=self.normalized,
+        )
+
+        return copy_image
+
     def plot(self, bands_indices: List):
         """Plot a subset of bands from a 3D array as an image.
 
@@ -150,22 +204,26 @@ class SatelliteImage:
                 The indices should be integers between 0 and the
                 number of bands - 1.
         """
-        if not self.normalized:
-            self.normalize()
+        copy_image = self.copy()
+
+        if not copy_image.normalized:
+            copy_image.normalize()
 
         fig, ax = plt.subplots(figsize=(5, 5))
-        ax.imshow(np.transpose(self.array, (1, 2, 0))[:, :, bands_indices])
+        ax.imshow(np.transpose(copy_image.array, (1, 2, 0))[:, :, bands_indices])
         plt.xticks([])
         plt.yticks([])
-        plt.title(f"Dimension of image {self.array.shape[1:]}")
+        plt.title(f"Dimension of image {copy_image.array.shape[1:]}")
         plt.show()
+
+        return plt.gcf()
 
     @staticmethod
     def from_raster(
         file_path: str,
         dep: Literal["971", "972", "973", "974", "976", "977", "978"],
         date: Optional[date] = None,
-        n_bands: int = 4,
+        n_bands: int = 3,
     ) -> SatelliteImage:
         """
         Factory method to create a Satellite image from a raster file.

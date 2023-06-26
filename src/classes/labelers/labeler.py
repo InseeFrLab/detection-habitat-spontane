@@ -5,9 +5,9 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import List, Literal, Tuple
 
-import pandas as pd
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 from rasterio.features import rasterize, shapes
 from shapely import Polygon
 
@@ -36,9 +36,7 @@ class Labeler(ABC):
         self.dep = dep
 
     @abstractmethod
-    def create_segmentation_label(
-        self, satellite_image: SatelliteImage
-    ) -> np.array:
+    def create_segmentation_label(self, satellite_image: SatelliteImage) -> np.array:
         """
         Create a segmentation label (mask) for a SatelliteImage.
 
@@ -109,9 +107,7 @@ class RILLabeler(Labeler):
         self.buffer_size = buffer_size
         self.cap_style = cap_style
 
-    def create_segmentation_label(
-        self, satellite_image: SatelliteImage
-    ) -> np.array:
+    def create_segmentation_label(self, satellite_image: SatelliteImage) -> np.array:
         """
         Create a segmentation label (mask) from RIL data for a SatelliteImage.
 
@@ -171,9 +167,7 @@ class BDTOPOLabeler(Labeler):
             millesime=str(self.labeling_date.year), dep=self.dep
         )
 
-    def create_segmentation_label(
-        self, satellite_image: SatelliteImage
-    ) -> np.array:
+    def create_segmentation_label(self, satellite_image: SatelliteImage) -> np.array:
         """
         Create a segmentation label (mask) from BDTOPO data for a
         SatelliteImage.
@@ -194,9 +188,7 @@ class BDTOPOLabeler(Labeler):
         patch = self.labeling_data.cx[xmin:xmax, ymin:ymax].copy()
 
         if patch.empty:
-            rasterized = np.zeros(
-                satellite_image.array.shape[1:], dtype=np.uint8
-            )
+            rasterized = np.zeros(satellite_image.array.shape[1:], dtype=np.uint8)
         else:
             rasterized = rasterize(
                 patch.geometry,
@@ -216,7 +208,8 @@ class BDTOPOLabeler(Labeler):
     ) -> np.array:
         """
         Create a filtered segmentation label (mask) from BDTOPO
-        data for a SatelliteImage. It suppress tall buildings.
+        data for a SatelliteImage. It keeps the buildings labelled as
+        habitations or undefined.
 
         Args:
             satellite_image (SatelliteImage): Satellite image.
@@ -233,18 +226,16 @@ class BDTOPOLabeler(Labeler):
         xmin, ymin, xmax, ymax = satellite_image.bounds
         patch = self.labeling_data.cx[xmin:xmax, ymin:ymax].copy()
 
-        patch11 = patch[patch['USAGE1'] == 'Indifférencié']
-        patch12 = patch[patch['USAGE1'] == 'Résidentiel']
+        patch11 = patch[patch["USAGE1"] == "Indifférencié"]
+        patch12 = patch[patch["USAGE1"] == "Résidentiel"]
 
         patch2 = pd.concat([patch11, patch12], ignore_index=True)
 
         # threshold
-        patch_petite_hab = patch2[patch2['HAUTEUR'] <= 7.0]
+        patch_petite_hab = patch2[patch2["HAUTEUR"] <= 7.0]
 
         if patch_petite_hab.empty:
-            rasterized = np.zeros(
-                satellite_image.array.shape[1:], dtype=np.uint8
-            )
+            rasterized = np.zeros(satellite_image.array.shape[1:], dtype=np.uint8)
         else:
             rasterized = rasterize(
                 patch_petite_hab.geometry,
@@ -267,6 +258,8 @@ class RIL_BDTOPOLabeler(Labeler):
         self,
         labeling_date: datetime,
         dep: Literal["971", "972", "973", "974", "976", "977", "978"],
+        buffer_size: int = 6,
+        cap_style: int = 3,
     ):
         """
         Constructor.
@@ -276,13 +269,18 @@ class RIL_BDTOPOLabeler(Labeler):
             dep (Literal): Departement.
         """
         super(RIL_BDTOPOLabeler, self).__init__(labeling_date, dep)
+        self.buffer_size = buffer_size
+        self.cap_style = cap_style
+
         self.labeling_data_ril = load_ril(str(self.labeling_date.year), self.dep)
-        self.labeling_data_bdtopo = load_bdtopo(str(self.labeling_date.year), self.dep)
+        self.labeling_data_bdtopo = load_bdtopo(
+            str(self.labeling_date.year), self.dep
+        )
 
     def create_segmentation_label(self, satellite_image: SatelliteImage) -> np.array:
         """
-        Create a segmentation label (mask) from the intersection of BDTOPO and RIL data for a
-        SatelliteImage.
+        Create a segmentation label (mask) from BDTOPO data supplemented with
+        RIL data for a Satellite image.
 
         Args:
             satellite_image (SatelliteImage): Satellite image.
@@ -296,23 +294,36 @@ class RIL_BDTOPOLabeler(Labeler):
             )
 
         if self.labeling_data_bdtopo.crs != satellite_image.crs:
-            self.labeling_data_bdtopo.geometry = self.labeling_data_bdtopo.geometry.to_crs(
-                satellite_image.crs
+            self.labeling_data_bdtopo.geometry = (
+                self.labeling_data_bdtopo.geometry.to_crs(satellite_image.crs)
             )
 
-        # Filtering geometries from BDTOPO
+        # Geometries from BDTOPO and RIL
         xmin, ymin, xmax, ymax = satellite_image.bounds
         patch_ril = self.labeling_data_ril.cx[xmin:xmax, ymin:ymax].copy()
         patch_bdtopo = self.labeling_data_bdtopo.cx[xmin:xmax, ymin:ymax].copy()
 
-        patch = gpd.sjoin(patch_bdtopo, patch_ril, how="inner", predicate="intersects")
+        patch_ril.geometry = patch_ril.geometry.buffer(
+            self.buffer_size, self.cap_style
+        )
 
-        patch.drop_duplicates(subset='geometry')
+        # Extract polygons from patch_ril that do not intersect
+        # patch_bdtopo
+        non_intersecting_polygons = patch_ril[
+            ~patch_ril.intersects(patch_bdtopo.unary_union)
+        ]
+
+        # Merge patch_bdtopo polygons with non-intersecting polygons
+        merged_polygons = gpd.GeoDataFrame(
+            pd.concat([patch_bdtopo, non_intersecting_polygons], ignore_index=True)
+        )
+
+        patch = gpd.GeoDataFrame(merged_polygons, geometry="geometry")
+
+        patch.drop_duplicates(subset="geometry")
 
         if patch.empty:
-            rasterized = np.zeros(
-                satellite_image.array.shape[1:], dtype=np.uint8
-            )
+            rasterized = np.zeros(satellite_image.array.shape[1:], dtype=np.uint8)
         else:
             rasterized = rasterize(
                 patch.geometry,

@@ -114,14 +114,11 @@ class ChangeDetectionTriplet:
 
         indices = get_indices_from_tile_length(m, n, tile_length)
         splitted_labels = [
-            self.label[rows[0] : rows[1], cols[0] : cols[1]]
-            for rows, cols in indices
+            self.label[rows[0] : rows[1], cols[0] : cols[1]] for rows, cols in indices
         ]
 
         list_cd_triplet = [
-            ChangeDetectionTriplet(
-                im1, im2, label, self.source, self.labeling_date
-            )
+            ChangeDetectionTriplet(im1, im2, label, self.source, self.labeling_date)
             for im1, im2, label in zip(list_sat1, list_sat2, splitted_labels)
         ]
 
@@ -149,14 +146,10 @@ class ChangeDetectionTriplet:
 
         fig, (ax1, ax2, ax3) = plt.subplots(ncols=3, figsize=(10, 20))
         ax1.imshow(
-            np.transpose(self.satellite_image1.array, (1, 2, 0))[
-                :, :, bands_indices
-            ]
+            np.transpose(self.satellite_image1.array, (1, 2, 0))[:, :, bands_indices]
         )
         ax2.imshow(
-            np.transpose(self.satellite_image2.array, (1, 2, 0))[
-                :, :, bands_indices
-            ]
+            np.transpose(self.satellite_image2.array, (1, 2, 0))[:, :, bands_indices]
         )
         ax3.imshow(self.label, alpha=alpha)
         plt.xticks([])

@@ -1,6 +1,7 @@
 donnees:
   source train: "PLEIADES"
-  dataset: "changeIsEverywhere"
+  dataset: "CHANGEISEVERYWHERE" 
+  dataset-test: "CHANGEDETECTIONDATASET"
   year: [2022]
   dep: ["972"]
   type labeler: "BDTOPO"
@@ -8,15 +9,19 @@ donnees:
   n channels train: 6
   n bands: 3
   tile size: 250
-  augmentation: True
+  augmentation: False
+  task: "change-detection"
+  prop: 1
 
 optim:
   loss: "crossentropy"
   lr: 0.0001
   momentum: 0.9
-  module: "deeplabv3"
-  batch size: 5
-  max epochs: 100
+  module: "resnet50"
+  batch size: 9
+  batch size test: 100
+  max epochs: 20
   val prop: 0.2
+  accumulate batch : 8
 
-mlflow: False
+mlflow: True

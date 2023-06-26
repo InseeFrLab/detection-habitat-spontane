@@ -8,7 +8,6 @@ import numpy as np
 from rasterio.features import rasterize, shapes
 from scipy.ndimage import label
 from shapely.geometry import Polygon, box
-from tqdm import tqdm
 
 from classes.data.labeled_satellite_image import (
     DetectionLabeledSatelliteImage,
@@ -16,6 +15,45 @@ from classes.data.labeled_satellite_image import (
 )
 from classes.data.satellite_image import SatelliteImage
 from utils.utils import get_environment, get_file_system
+
+
+def is_too_water(image: SatelliteImage, water_value_threshold=0.95) -> bool:
+    """
+    Determine if a satellite image has too much water\
+        based on the NDWI.
+
+    This function calculates the number of pixels that are in the water\
+        and deletes the image if there are too many.
+    A pixel is considered as water if its NDWI > 0.
+    The image is considered as water if the proportion of water pixels\
+        is greater than or equal to the specified threshold.
+
+    Args:
+        image (SatelliteImage): The input satellite image.
+        water_value_threshold (int, optional): The threshold value
+            for considering that a picture is in the water. Default is 0.95.
+
+    Returns:
+        bool: True if the proportion of water pixels is greater than or equal
+            to the threshold, False otherwise.
+    """
+    if (water_value_threshold < 0) or (water_value_threshold > 1):
+        raise ValueError("Le seuil doit être compris entre 0 et 1.")
+
+    array = image.array
+    tile_size = array.shape[2]
+    NDWI = np.zeros((tile_size, tile_size))
+
+    for i in range(tile_size):
+        for j in range(tile_size):
+            if not np.isnan(array[2, i, j]) and not np.isnan(array[7, i, j]):
+                if (int(array[2, i, j]) - int(array[7, i, j])) / (
+                    int(array[2, i, j]) + int(array[7, i, j])
+                ) < 0:
+                    NDWI[i][j] = 1
+    if np.sum(NDWI) <= (1 - water_value_threshold) * tile_size * tile_size:
+        return True
+    return False
 
 
 def is_too_black(
@@ -45,9 +83,7 @@ def is_too_black(
             to the threshold, False otherwise.
     """
     gray_image = (
-        0.2989 * image.array[0]
-        + 0.5870 * image.array[1]
-        + 0.1140 * image.array[2]
+        0.2989 * image.array[0] + 0.5870 * image.array[1] + 0.1140 * image.array[2]
     )
     nb_black_pixels = np.sum(gray_image < black_value_threshold)
 
@@ -113,7 +149,7 @@ def is_too_black2(image: SatelliteImage, black_area=0.5) -> bool:
 
 def has_cloud(
     image: SatelliteImage,
-    threshold: int = 250,
+    threshold: float = 0.98,
     min_size: int = 50000,
 ) -> bool:
     """
@@ -128,7 +164,7 @@ def has_cloud(
         An integer representing the threshold for coverage of the center of
         clouds in the image. Pixels with a cloud coverage value higher than
         this threshold are classified as covered by clouds.
-        Defaults to 250 (white pixels).
+        Defaults to 0.98 (white pixels).
     min_size (int, optional):
         An integer representing the minimum size (in pixels) of a cloud
         region that will be retained in the output mask. Defaults to 50,000
@@ -154,10 +190,14 @@ def has_cloud(
         >>> has_cloud(image_1)
         True
     """
+    copy_image = image.copy()
 
-    image = image.array.copy()
+    if not copy_image.normalized:
+        copy_image.normalize()
+
+    image = copy_image.array
     image = image[[0, 1, 2], :, :]
-    image = image.astype(np.uint8)
+    image = (image * np.max(image)).astype(np.float64)
     image = image.transpose(1, 2, 0)
 
     # Convert the RGB image to grayscale
@@ -179,7 +219,7 @@ def has_cloud(
 
 
 def mask_cloud(
-    image: SatelliteImage, threshold: int = 250, min_size: int = 50000
+    image: SatelliteImage, threshold: float = 0.98, min_size: int = 50000
 ) -> np.ndarray:
     """
     Detects clouds in a SatelliteImage using a threshold-based approach
@@ -195,7 +235,7 @@ def mask_cloud(
             The threshold value to use for detecting clouds on the image
             transformed into grayscale. A pixel is considered part of a
             cloud if its value is greater than this threshold.
-            Default to 250.
+            Default to 0.98.
         min_size (int):
             The minimum size (in pixels) of a cloud region to be
             considered valid.
@@ -215,14 +255,19 @@ def mask_cloud(
                                     n_bands = 3,
                                     dep = "976"
                                 )
-        >>> mask = mask_cloud(image)
+        >>> mask = mask_cloud(image_1)
         >>> fig, ax = plt.subplots(figsize=(10, 10))
         >>> ax.imshow(np.transpose(image_1.array, (1, 2, 0))[:,:,:3])
         >>> ax.imshow(mask, alpha=0.3)
     """
-    image = image.array.copy()
+    copy_image = image.copy()
+
+    if not copy_image.normalized:
+        copy_image.normalize()
+
+    image = copy_image.array
     image = image[[0, 1, 2], :, :]
-    image = image.astype(np.uint8)
+    image = (image * np.max(image)).astype(np.float64)
     image = image.transpose(1, 2, 0)
 
     # Convert the RGB image to grayscale
@@ -233,14 +278,16 @@ def mask_cloud(
 
     region_sizes = np.bincount(labeled.flat)
 
-    # Trier les labels de région en fonction de leur taille décroissante
+    # Sort region labels by decreasing size
     sorted_labels = np.argsort(-region_sizes)
 
     # Minimum size of the cluster
     mask = np.zeros_like(labeled)
 
     if num_features >= 1:
-        for i in tqdm(range(1, num_features + 1)):  # Display the progress bar
+        # Display the progress bar
+        # for i in tqdm(range(1, num_features + 1)):
+        for i in range(1, num_features + 1):
             if region_sizes[sorted_labels[i]] >= min_size:
                 mask[labeled == sorted_labels[i]] = 1
             else:
@@ -252,8 +299,8 @@ def mask_cloud(
 
 def mask_full_cloud(
     image: SatelliteImage,
-    threshold_center: int = 250,
-    threshold_full: int = 130,
+    threshold_center: float = 0.98,
+    threshold_full: float = 0.7,
     min_size: int = 50000,
 ) -> np.ndarray:
     """
@@ -269,12 +316,12 @@ def mask_full_cloud(
         An integer representing the threshold for coverage of the center of
         clouds in the image. Pixels with a cloud coverage value higher than
         this threshold are classified as cloud-covered.
-        Defaults to 250 (white pixels).
+        Defaults to 0.98 (white pixels).
     threshold_full (int, optional):
         An integer representing the threshold for coverage of the full clouds
         in the image. Pixels with a cloud coverage value higher than this
         threshold are classified as covered by clouds.
-        Defaults to 130 (light grey pixels).
+        Defaults to 0.7 (light grey pixels).
     min_size (int, optional):
         An integer representing the minimum size (in pixels) of a cloud region
         that will be retained in the output mask.

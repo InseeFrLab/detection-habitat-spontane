@@ -1,3 +1,4 @@
+import math
 import os
 import re
 from datetime import date
@@ -5,6 +6,7 @@ from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import tqdm
 
 from classes.data.satellite_image import SatelliteImage
 from utils.mappings import name_dep_to_num_dep
@@ -89,6 +91,33 @@ def plot_list_satellite_images(
     return plt.gcf()
 
 
+def plot_list_sat_images_square(
+    list_images: List,
+    bands_indices: List,
+):
+    size = int(math.sqrt(len(list_images)))
+
+    # Create a figure and axes
+    fig, axs = plt.subplots(nrows=size, ncols=size, figsize=(10, 10))
+
+    # Iterate over the grid of masks and plot them
+    for i in range(size):
+        for j in range(size):
+            axs[i, j].imshow(
+                list_images[i * size + j].array.transpose(1, 2, 0)[
+                    :, :, bands_indices
+                ]
+            )
+
+    # Remove any unused axes
+    for i in range(size):
+        for j in range(size):
+            axs[i, j].set_axis_off()
+
+    # Show the plot
+    return plt.gcf()
+
+
 def plot_list_segmentation_labeled_satellite_image(
     list_labeled_image: List,
     bands_indices: List,
@@ -142,14 +171,10 @@ def plot_list_segmentation_labeled_satellite_image(
 
     for i in range(0, height - tile_size + 1, stride):
         for j in range(0, width - tile_size + 1, stride):
-            output_image[
-                i : i + tile_size, j : j + tile_size, :
-            ] = np.transpose(
+            output_image[i : i + tile_size, j : j + tile_size, :] = np.transpose(
                 mat_list_images[compteur_ligne, compteur_col].array,
                 (1, 2, 0),
-            )[
-                :, :, bands_indices
-            ]
+            )[:, :, bands_indices]
 
             label = mat_list_labels[compteur_ligne, compteur_col, :, :]
             show_mask = np.zeros((label.shape[0], label.shape[1], 3))
@@ -170,6 +195,40 @@ def plot_list_segmentation_labeled_satellite_image(
     ax[1].set_title("Output Image")
     ax[1].set_axis_off()
 
+    return plt.gcf()
+
+
+def plot_list_labeled_sat_images(
+    list_labeled_image: List,
+    bands_indices: List,
+):
+    list_images = [iml.satellite_image for iml in list_labeled_image]
+    list_labels = [iml.label for iml in list_labeled_image]
+
+    size = int(math.sqrt(len(list_images)))
+
+    # Create a figure and axes
+    fig, axs = plt.subplots(nrows=size, ncols=2 * size, figsize=(20, 10))
+
+    # Iterate over the grid of masks and plot them
+    for i in range(size):
+        for j in range(size):
+            axs[i, j].imshow(
+                list_images[i * size + j].array.transpose(1, 2, 0)[
+                    :, :, bands_indices
+                ]
+            )
+
+    for i in range(size):
+        for j in range(size):
+            axs[i, j + size].imshow(list_labels[i * size + j], cmap="gray")
+
+    # Remove any unused axes
+    for i in range(size):
+        for j in range(2 * size):
+            axs[i, j].set_axis_off()
+
+    # Show the plot
     return plt.gcf()
 
 
@@ -280,60 +339,6 @@ def plot_infrared_patch_mask(satellite_image: SatelliteImage):
         plt.show()
 
 
-def plot_infrared_complex_mask(satellite_image: SatelliteImage):
-    """Plot the infrared mask based on thresholding on infrared,
-     green and blue to recover certain shades of infrared.
-
-    Args:
-        satellite_image (SatelliteImage): A satellite image with 4 bands.
-
-    Returns:
-        The complex infrared mask of the image.
-    """
-
-    if satellite_image.n_bands < 4:
-        print("This image has no infrared band.")
-
-    else:
-        img = satellite_image.array.copy()
-
-        img = img.transpose(2, 1, 0)
-        shape = img.shape[0:2]
-
-        mask = np.empty(shape, dtype=float)
-
-        # We go through all the pixels and we modify \
-        # them according to the threshold
-        for row in range(img.shape[0]):
-            for col in range(img.shape[1]):
-                b = img[row, col, 1]
-                g = img[row, col, 2]
-                r = img[row, col, 3]
-                mini = min(b, g)
-                maxi = max(b, g)
-
-                if maxi - mini <= 20:  # step 1
-                    if (
-                        r > 200 / 255
-                        and mini >= 110 / 255
-                        and r >= (20 / 255 + mini)
-                    ):
-                        # step 2
-                        mask[row, col] = 1.0  # white
-                    elif r >= (20 / 255 + mini) and r >= 110 / 255:  # step 3
-                        mask[row, col] = 0.0  # black
-                    else:  # step 4
-                        mask[row, col] = 1.0  # white
-
-                else:  # step 4
-                    mask[row, col] = 1.0  # white
-
-        mask = mask.transpose(1, 0)
-
-        plt.imshow(mask, cmap="gray")
-        plt.show()
-
-
 def plot_square_images(
     bands_indices: list,
     distance: int = 1,
@@ -425,3 +430,219 @@ def plot_square_images(
                     list_images_path.append(image.filename)
 
         plot_list_satellite_images(list_images, bands_indices)
+
+
+def plot_list_images_square(folder_path, borne_inf, borne_sup):
+    """
+    Plot a square grid of images from a folder. You must specify a lower limit
+    and an upper limit,
+    to be able to display the images of the folder between these two limits.
+    The difference of the
+    two bounds must be a square number to obtain a list of images of square
+    length.
+
+    Args:
+        folder_path (str): Path to the folder containing the images.
+        borne_inf (int): Lower bound index for selecting images.
+        borne_sup (int): Upper bound index for selecting images.
+
+    Returns:
+        Plot of the images.
+    """
+
+    list_filepaths = os.listdir(folder_path)[borne_inf : borne_sup + 1]
+    size = int(math.sqrt(len(list_filepaths)))
+
+    list_images = []
+
+    for filepath in tqdm(list_filepaths):
+        # Retrieve left-top coordinates of all images
+        image = SatelliteImage.from_raster(
+            folder_path + "/" + filepath, date=None, n_bands=3, dep=None
+        )
+        image.normalize()
+        list_images.append(image)
+
+    mat_list_images = np.transpose(np.array(list_images).reshape(size, size))
+
+    # Create a figure and axes
+    fig, axs = plt.subplots(nrows=size, ncols=size, figsize=(20, 20))
+
+    # Iterate over the grid of masks and plot them
+    for i in range(size):
+        for j in range(size):
+            axs[i, j].imshow(mat_list_images[i, j].array.transpose(1, 2, 0))
+
+    # Remove any unused axes
+    for i in range(size):
+        for j in range(size):
+            axs[i, j].set_axis_off()
+
+    # Show the plot
+    plt.show()
+
+
+def creer_array_to_plot(pth_image):
+    """
+    Gives the correctly formatted arrays corresponding to an image to plot.
+
+    Args:
+        pth_image (list[str]): paths to the images to plot.
+
+    Returns:
+        the correctly formatted arrays corresponding to the entry image.
+    """
+
+    si = SatelliteImage.from_raster(pth_image, 974, 2000, 12)
+    # si.normalized()
+    si.array.shape
+    bands_indices = [3, 2, 1]
+    array = si.array
+    normalized_array = (array.astype(np.float32) - np.min(array)) / (
+        np.max(array) / 3 - np.min(array)
+    )
+    # normalized_array = array
+    array_to_plot = np.transpose(normalized_array, (1, 2, 0))[:, :, bands_indices]
+
+    return array_to_plot
+
+
+def represent_image_label(
+    list_array_to_plot,
+    list_label,
+):
+    """
+    Plot a square grid of images and their masks from their paths.
+
+    Args:
+        list_array_to_plot (list[str]): paths to the images to plot.
+        list_label (list[str]): paths to the masks to plot.
+
+    Returns:
+        Calls a function that plots the images and their masks.
+    """
+    N = len(list_label)
+    nrow = int(math.sqrt(N))
+    fig, axes = plt.subplots(nrow, 2 * nrow, figsize=(20, 10))
+
+    # Iterate over the RGB arrays and plot them in the left grid
+    for i, ax in enumerate(axes[:, :nrow].flat):
+        array_to_plot = creer_array_to_plot(list_array_to_plot[i])
+        ax.imshow(array_to_plot)
+        ax.axis("off")
+
+    # Iterate over the 0-1 arrays and plot them in the right grid
+    for i, ax in enumerate(axes[:, nrow:].flat):
+        ax.imshow(list_label[i], cmap="binary")
+        ax.axis("off")
+
+    # Adjust spacing between subplots
+    plt.subplots_adjust(wspace=0, hspace=0)
+
+    # Show the plot
+    plt.show()
+    plt.gcf()
+    plt.savefig("test.png")
+
+
+def plot_list_images_and_masks_square(
+    train_dataset,
+    size_of_grid,
+):
+    """
+    Calls a function that plot a square grid of images and their masks\
+        from their folder. You must specify the size of the grid.
+
+    Args:
+        train_dataset (dataloader): the dataloader from which\
+            the dataset should be extracted.
+        size_of_the_grid (int): the number of images you want on a line\
+            (the grid is a square so the number on a column will be the same).
+
+    Returns:
+        Calls a function that plots the images and their masks.
+    """
+    dataset_train = train_dataset.dataset
+
+    list_array_to_plot = []
+    for i in range(size_of_grid):
+        input, label, dic = dataset_train[i]
+        pth_image = dic["pathimage"]
+        list_array_to_plot.append(pth_image)
+
+    list_label = []
+    list_path = []
+
+    for i in range(size_of_grid):
+        list_label.append(np.array(dataset_train[i][1]))
+        list_path.append(dataset_train[i][2]["pathimage"])
+
+    return represent_image_label(list_array_to_plot, list_label)
+
+    
+def draw_change_is_everywhere_exemples(changeiseverywheredataset, n_exemples):
+
+    """
+    Draws and saves a grid of examples from the ChangeIsEverywhere dataset.
+
+    Args:
+        changeiseverywheredataset (list): The ChangeIsEverywhere dataset containing image paths and labels.
+        n_examples (int): The number of examples to draw.
+
+    Returns:
+        None
+    """
+
+    triplets = [
+        {
+            "pth1": changeiseverywheredataset[i][2]["pathimage1"],
+            "pth2": changeiseverywheredataset[i][2]["pathimage2"],
+            "label": changeiseverywheredataset[i][1]
+        }
+        for i in range(n_exemples)
+    ]
+
+    num_triplets = len(triplets)
+    num_cols = 3  # Number of columns in the subplot grid
+    # Iterate over each triplet and plot the images and labels
+
+    fig, axs = plt.subplots(
+        num_triplets,
+        num_cols,
+        figsize=(15, 15),
+        constrained_layout=True
+    )
+
+    for i, dic in enumerate(triplets):
+        # i = 0
+        pathimage1, pathimage2, label = dic["pth1"],  dic["pth2"], dic["label"]
+
+        # Load the jp2 files
+        image1 = SatelliteImage.from_raster(pathimage1, "972").array
+        image2 = SatelliteImage.from_raster(pathimage2, "972").array
+
+        # Plot the first image in the left subplot
+        axs[i, 0].imshow(np.transpose(image1, (1, 2, 0)))
+        
+        # Plot the second image in the right subplot
+        axs[i, 1].imshow(np.transpose(image2, (1, 2, 0)))
+    
+        # Add the label as the title of the bottom subplot
+        axs[i, 2].imshow(label, cmap='gray')
+        
+        # Remove the ticks and labels in the subplots
+        axs[i, 0].set_xticks([])
+        axs[i, 0].set_yticks([])
+        axs[i, 1].set_xticks([])
+        axs[i, 1].set_yticks([])
+        axs[i, 2].set_xticks([])
+        axs[i, 2].set_yticks([])
+
+    # set the spacing between subplots
+    plt.subplots_adjust(left=0.01)
+    
+    # Adjust the spacing between subplots
+    # Show the plot
+    plt.show()
+    res = plt.gcf()
+    res.savefig("triplet_train.png")

@@ -1,16 +1,16 @@
-"""
-"""
 from typing import Dict, Union
 
 import pytorch_lightning as pl
+import torch
 from torch import nn, optim
 
-from classes.optim.evaluation_model import calculate_IOU
+from classes.optim.evaluation_model import calculate_pourcentage_loss, proportion_ones
 
 
-class SegmentationModule(pl.LightningModule):
+class ClassificationModule(pl.LightningModule):
+
     """
-    Pytorch Lightning Module for DeepLabv3.
+    Pytorch Lightning Module for ResNet50.
     """
 
     def __init__(
@@ -64,11 +64,22 @@ class SegmentationModule(pl.LightningModule):
         Returns: Tensor
         """
         images, labels, dic = batch
-
         output = self.forward(images)
-        loss = self.loss(output, labels)
+
+        output = output.to("cpu")
+        labels = labels.to("cpu")
+
+        target = labels.long()
+
+        targets_one_hot = torch.zeros(target.shape[0], 2)
+        targets_one_hot = targets_one_hot.scatter_(1, target.unsqueeze(1), 1)
+
+        loss = self.loss(output, targets_one_hot)
+
+        prop_ones = proportion_ones(labels)
 
         self.log("train_loss", loss, on_epoch=True)
+        print(prop_ones)
 
         return loss
 
@@ -81,13 +92,24 @@ class SegmentationModule(pl.LightningModule):
         Returns: Tensor
         """
         images, labels, dic = batch
-
         output = self.forward(images)
-        loss = self.loss(output, labels)
-        IOU = calculate_IOU(output, labels)
 
-        self.log("validation_IOU", IOU, on_epoch=True)
+        output = output.to("cpu")
+        labels = labels.to("cpu")
+
+        target = labels.long()
+
+        targets_one_hot = torch.zeros(target.shape[0], 2)
+        targets_one_hot = targets_one_hot.scatter_(1, target.unsqueeze(1), 1)
+
+        loss = self.loss(output, targets_one_hot)
+
+        loss_pourcentage = calculate_pourcentage_loss(output, labels)
+        prop_ones = proportion_ones(labels)
+
         self.log("validation_loss", loss, on_epoch=True)
+        self.log("validation_missclassed", loss_pourcentage, on_epoch=True)
+        print(prop_ones)
 
         return loss
 
@@ -102,13 +124,18 @@ class SegmentationModule(pl.LightningModule):
         images, labels, dic = batch
         output = self.forward(images)
 
-        loss = self.loss(output, labels)
+        output = output.to("cpu")
+        labels = labels.to("cpu")
+
+        target = labels.long()
+
+        targets_one_hot = torch.zeros(target.shape[0], 2)
+        targets_one_hot = targets_one_hot.scatter_(1, target.unsqueeze(1), 1)
+
+        loss = self.loss(output, targets_one_hot)
         self.log("test_loss", loss, on_epoch=True)
 
-        IOU = calculate_IOU(output, labels)
-        self.log("test IOU", IOU, on_epoch=True)
-
-        return IOU
+        return loss
 
     def configure_optimizers(self):
         """

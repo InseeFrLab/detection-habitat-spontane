@@ -16,6 +16,47 @@ from s3fs import S3FileSystem
 from .mappings import dep_to_crs
 
 
+def remove_dot_file(list_name):
+    """
+    Removes filenames starting with a dot from the given list.
+
+    Args:
+        list_name (list): A list of filenames.
+
+    Returns:
+        list: The modified list with dot filenames removed.
+    """
+    for filename in list_name:
+        if filename[0] == ".":
+            list_name.remove(filename)
+
+    return list_name
+
+
+def split_array(array, tile_length):
+    """
+    Splits an array into smaller tiles of the specified length.
+
+    Args:
+        array (numpy.ndarray): The input array.
+        tile_length (int): The length of each tile.
+
+    Returns:
+        list: A list of smaller tiles obtained from the input array.
+    """
+
+    m = array.shape[0]
+    n = array.shape[1]
+
+    indices = get_indices_from_tile_length(m, n, tile_length)
+
+    list_array = [
+        array[rows[0] : rows[1], cols[0] : cols[1]] for rows, cols in indices
+    ]
+
+    return list_array
+
+
 def get_root_path() -> Path:
     """
     Return root path of project.
@@ -31,17 +72,13 @@ def get_file_system() -> S3FileSystem:
     Return the s3 file system.
     """
     return S3FileSystem(
-        client_kwargs={
-            "endpoint_url": "https://" + os.environ["AWS_S3_ENDPOINT"]
-        },
+        client_kwargs={"endpoint_url": "https://" + os.environ["AWS_S3_ENDPOINT"]},
         key=os.environ["AWS_ACCESS_KEY_ID"],
         secret=os.environ["AWS_SECRET_ACCESS_KEY"],
     )
 
 
-def get_transform_for_tiles(
-    transform: Affine, row_off: int, col_off: int
-) -> Affine:
+def get_transform_for_tiles(transform: Affine, row_off: int, col_off: int) -> Affine:
     """
     Compute the transform matrix of a tile
 
@@ -81,6 +118,32 @@ def get_bounds_for_tiles(
     row_max = row_indices[1]
     col_min = col_indices[0]
     col_max = col_indices[1]
+
+    left, bottom = transform * (col_min, row_max)
+    right, top = transform * (col_max, row_min)
+    return rasterio.coords.BoundingBox(left, bottom, right, top)
+
+
+def get_bounds_for_tiles2(transform: Affine, row, col, tile_length) -> Tuple:
+    """
+    Given an Affine transformation, and indices for a tile's row and column,
+    returns the bounding coordinates (left, bottom, right, top) of the tile.
+
+    Args:
+        transform: An Affine transformation
+        row (int): The minimum indice for the tile's row
+        col (int): The minimum indice for the tile's column
+        tile_length (int): The length of the tile.
+
+    Returns:
+        Tuple: A tuple containing the bounding coordinates
+            (left, bottom, right, top) of the tile
+    """
+
+    row_min = row
+    row_max = row + tile_length
+    col_min = col
+    col_max = col + tile_length
 
     left, bottom = transform * (col_min, row_max)
     right, top = transform * (col_max, row_min)
@@ -162,8 +225,9 @@ def load_ril(
 
 
 def load_bdtopo(
-    millesime: Literal["2016", "2017", "2018", "2019",
-                       "2020", "2021", "2022", "2023"],
+    millesime: Literal[
+        "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"
+    ],
     dep: Literal["971", "972", "973", "974", "976", "977", "978"],
 ) -> gpd.GeoDataFrame:
     """
@@ -179,6 +243,11 @@ def load_bdtopo(
     root_path = get_root_path()
     environment = get_environment()
 
+    if int(millesime) >= 2019:
+        couche = "BATIMENT.shp"
+    elif int(millesime) < 2019:
+        couche = "BATI_INDIFFERENCIE.shp"
+
     bucket = environment["bucket"]
     path_s3 = environment["sources"]["BDTOPO"][int(millesime)][dep]
     dir_path = os.path.join(
@@ -190,32 +259,32 @@ def load_bdtopo(
         print(
             "Le téléchargement de cette version de la \
             BDTOPO a déjà été effectué"
-            )
+        )
+
     else:
+        os.makedirs(dir_path)
+
         update_storage_access()
         fs = S3FileSystem(
             client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"}
         )
         print("download " + dep + " " + str(millesime) + " in " + dir_path)
-        fs.download(
-            rpath=f"{bucket}/{path_s3}", lpath=f"{dir_path}", recursive=True
-        )
+        extensions = ["cpg", "dbf", "prj", "shp", "shx"]
+        couche_split = couche.split(".")[0]
+        for ext in extensions:
+            fs.download(
+                rpath=f"{bucket}/{path_s3}/{couche_split}.{ext}",
+                lpath=f"{dir_path}",
+                recursive=True,
+            )
 
     file_path = None
 
-    if int(millesime) >= 2019:
-        for root, dirs, files in os.walk(dir_path):
-            if "BATIMENT.shp" in files:
-                file_path = os.path.join(root, "BATIMENT.shp")
-        if not file_path:
-            raise ValueError("No valid `BATIMENT.shp` file found.")
-
-    elif int(millesime) < 2019:
-        for root, dirs, files in os.walk(dir_path):
-            if "BATI_INDIFFERENCIE.SHP" in files:
-                file_path = os.path.join(root, "BATI_INDIFFERENCIE.SHP")
-        if not file_path:
-            raise ValueError("No valid `BATI_INDIFFERENCIE.SHP` file found.")
+    for root, dirs, files in os.walk(dir_path):
+        if couche in files:
+            file_path = os.path.join(root, couche)
+    if not file_path:
+        raise ValueError(f"No valid {couche} file found.")
 
     df = gpd.read_file(file_path)
 
@@ -255,9 +324,7 @@ def update_storage_access():
         path=secret_path, mount_point=mount_point
     )
 
-    os.environ["AWS_ACCESS_KEY_ID"] = secret_dict["data"]["data"][
-        "ACCESS_KEY_ID"
-    ]
+    os.environ["AWS_ACCESS_KEY_ID"] = secret_dict["data"]["data"]["ACCESS_KEY_ID"]
     os.environ["AWS_SECRET_ACCESS_KEY"] = secret_dict["data"]["data"][
         "SECRET_ACCESS_KEY"
     ]
