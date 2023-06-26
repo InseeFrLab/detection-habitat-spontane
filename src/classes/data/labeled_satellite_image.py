@@ -51,8 +51,6 @@ class SegmentationLabeledSatelliteImage:
         list_sat = self.satellite_image.split(tile_length=tile_length)
 
         # 2) on split le masque
-        if tile_length % 2:
-            raise ValueError("Tile length has to be an even number.")
 
         m = self.satellite_image.array.shape[1]
         n = self.satellite_image.array.shape[2]
