@@ -131,7 +131,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     for i, (year, dep) in enumerate(zip(years, deps)):
         # i, year , dep = 0,years[0],deps[0]
         output_dir = (
-            "../train_data2"
+            "../train_data3"
             + "-"
             + config_task
             + "-"
@@ -164,8 +164,16 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
             dir = list_data_dir[i]
             list_path = [dir + "/" + filename for filename in os.listdir(dir)]
 
+            random.shuffle(list_path)
+
             full_balancing_dict = {}
+            cpt_ones = 0
+            max_echant = 15000
+            
             for path in tqdm(list_path):
+                if cpt_ones >= max_echant:
+                    break
+
                 try:
                     si = SatelliteImage.from_raster(
                         file_path=path,
@@ -177,43 +185,39 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     print("Erreur de lecture du fichier " + path)
                     continue
 
-                mask = labeler.create_segmentation_label(si)
-                proba = random.randint(1, 10)
+                filename = path.split("/")[-1].split(".")[0]
+                list_splitted_mask_cloud = None
 
-                if (np.sum(mask) == 0 and proba == 10) or np.sum(mask) != 0:
-                    filename = path.split("/")[-1].split(".")[0]
-                    list_splitted_mask_cloud = None
-
-                    if filename in list_name_cloud:
-                        mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
-                        list_splitted_mask_cloud = split_array(
-                            mask_full_cloud, config_data["tile size"]
-                        )
-
-                    list_splitted_images = si.split(config_data["tile size"])
-
-                    list_filtered_splitted_images = filter_images(
-                        config_data["source train"],
-                        list_splitted_images,
-                        list_splitted_mask_cloud,
+                if filename in list_name_cloud:
+                    mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
+                    list_splitted_mask_cloud = split_array(
+                        mask_full_cloud, config_data["tile size"]
                     )
 
-                    labels, balancing_dict = label_images(
-                        list_filtered_splitted_images, labeler, task=config_task
-                    )
+                list_splitted_images = si.split(config_data["tile size"])
 
-                    save_images_and_masks(
-                        list_filtered_splitted_images,
-                        labels,
-                        output_dir,
-                        task=config_task,
-                    )
+                list_filtered_splitted_images = filter_images(
+                    config_data["source train"],
+                    list_splitted_images,
+                    list_splitted_mask_cloud,
+                )
 
-                    for k, v in balancing_dict.items():
-                        full_balancing_dict[k] = v
+                labels, balancing_dict = label_images(
+                    list_filtered_splitted_images, labeler, task=config_task
+                )
 
-                elif np.sum(mask) == 0 and proba != 10:
-                    continue
+                nb_ones = sum(1 for value in balancing_dict.values() if value == 1)
+                cpt_ones = cpt_ones + nb_ones
+
+                save_images_and_masks(
+                    list_filtered_splitted_images,
+                    labels,
+                    output_dir,
+                    task=config_task,
+                )
+
+                for k, v in balancing_dict.items():
+                    full_balancing_dict[k] = v
 
             with open(output_dir + "/balancing_dict.json", "w") as fp:
                 json.dump(full_balancing_dict, fp)
@@ -794,40 +798,41 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 config["mlflow"],
             )
 
-    else:
-        trainer.fit(light_module, train_dl, valid_dl)
-        tile_size = config["donnees"]["tile size"]
-        batch_size_test = config["optim"]["batch size test"]
-        task_type = config["donnees"]["task"]
-        source_data = config["donnees"]["source train"]
-        src_task = source_data + task_type
-
-        light_module_checkpoint = light_module.load_from_checkpoint(
-            loss=instantiate_loss(config),
-            checkpoint_path=trainer.checkpoint_callback.best_model_path,
-            model=light_module.model,
-            optimizer=light_module.optimizer,
-            optimizer_params=light_module.optimizer_params,
-            scheduler=light_module.scheduler,
-            scheduler_params=light_module.scheduler_params,
-            scheduler_interval=light_module.scheduler_interval,
-        )
-        model = light_module_checkpoint.model
-
-        if src_task not in task_to_evaluation:
-            raise ValueError("Invalid task type")
         else:
-            evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
+            trainer.fit(light_module, train_dl, valid_dl)
+            tile_size = config["donnees"]["tile size"]
+            batch_size_test = config["optim"]["batch size test"]
+            task_type = config["donnees"]["task"]
+            source_data = config["donnees"]["source train"]
+            src_task = source_data + task_type
 
-        evaluer_modele_sur_jeu_de_test(
-            test_dl,
-            model,
-            tile_size,
-            batch_size_test,
-            config["donnees"]["n bands"],
-            config["mlflow"],
-        )
-        # trainer.test(light_module, test_dl)
+            light_module_checkpoint = light_module.load_from_checkpoint(
+                loss=instantiate_loss(config),
+                checkpoint_path=trainer.checkpoint_callback.best_model_path,
+                model=light_module.model,
+                optimizer=light_module.optimizer,
+                optimizer_params=light_module.optimizer_params,
+                scheduler=light_module.scheduler,
+                scheduler_params=light_module.scheduler_params,
+                scheduler_interval=light_module.scheduler_interval,
+            )
+            model = light_module_checkpoint.model
+
+            if src_task not in task_to_evaluation:
+                raise ValueError("Invalid task type")
+            else:
+                evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
+
+            evaluer_modele_sur_jeu_de_test(
+                test_dl,
+                model,
+                tile_size,
+                batch_size_test,
+                config["donnees"]["n bands"],
+                config["mlflow"],
+            )
+            # trainer.test(light_module, test_dl)
+
 
 if __name__ == "__main__":
     # MLFlow params
