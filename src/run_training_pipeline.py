@@ -131,7 +131,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     for i, (year, dep) in enumerate(zip(years, deps)):
         # i, year , dep = 0,years[0],deps[0]
         output_dir = (
-            "../train_data3"
+            "../train_data"
             + "-"
             + config_task
             + "-"
@@ -724,7 +724,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     remote_server_uri = "https://projet-slums-detection-128833.user.lab.sspcloud.fr"
     # experiment_name = "classification"
-    # run_name = "essai35"
+    # run_name = "mergemain"
 
     if config["mlflow"]:
         update_storage_access()
@@ -738,100 +738,62 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             mlflow.autolog()
             mlflow.log_artifact("../config.yml", artifact_path="config.yml")
             trainer.fit(light_module, train_dl, valid_dl)
-            
-            if config["donnees"]["source train"] == "PLEIADES":
 
-                light_module_checkpoint = light_module.load_from_checkpoint(
-                    loss=instantiate_loss(config),
-                    checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
-                    model=light_module.model,
-                    optimizer=light_module.optimizer,
-                    optimizer_params=light_module.optimizer_params,
-                    scheduler=light_module.scheduler,
-                    scheduler_params=light_module.scheduler_params,
-                    scheduler_interval=light_module.scheduler_interval
+            light_module_checkpoint = light_module.load_from_checkpoint(
+                loss=instantiate_loss(config),
+                checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
+                model=light_module.model,
+                optimizer=light_module.optimizer,
+                optimizer_params=light_module.optimizer_params,
+                scheduler=light_module.scheduler,
+                scheduler_params=light_module.scheduler_params,
+                scheduler_interval=light_module.scheduler_interval
+            )
+
+            model = light_module_checkpoint.model
+
+            if task_type not in task_to_evaluation:
+                raise ValueError("Invalid task type")
+            else:
+                evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
+
+            evaluer_modele_sur_jeu_de_test(
+                    test_dl,
+                    model,
+                    tile_size,
+                    batch_size_test,
+                    config["donnees"]["n bands"],
+                    config["mlflow"]
                 )
-
-                model = light_module_checkpoint.model
-
-                if task_type not in task_to_evaluation:
-                    raise ValueError("Invalid task type")
-                else:
-                    evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
-
-                evaluer_modele_sur_jeu_de_test(
-                        test_dl,
-                        model,
-                        tile_size,
-                        batch_size_test,
-                        config["mlflow"]
-                    )
 
     else:
         trainer.fit(light_module, train_dl, valid_dl)
 
-        if config["donnees"]["source train"] == "PLEIADES":
+        light_module_checkpoint = light_module.load_from_checkpoint(
+            loss=instantiate_loss(config),
+            checkpoint_path=trainer.checkpoint_callback.best_model_path,
+            model=light_module.model,
+            optimizer=light_module.optimizer,
+            optimizer_params=light_module.optimizer_params,
+            scheduler=light_module.scheduler,
+            scheduler_params=light_module.scheduler_params,
+            scheduler_interval=light_module.scheduler_interval,
+        )
+        model = light_module_checkpoint.model
 
-            light_module_checkpoint = light_module.load_from_checkpoint(
-                loss=instantiate_loss(config),
-                checkpoint_path=trainer.checkpoint_callback.best_model_path,
-                model=light_module.model,
-                optimizer=light_module.optimizer,
-                optimizer_params=light_module.optimizer_params,
-                scheduler=light_module.scheduler,
-                scheduler_params=light_module.scheduler_params,
-                scheduler_interval=light_module.scheduler_interval,
-            )
-            model = light_module_checkpoint.model
-
-            if src_task not in task_to_evaluation:
-                raise ValueError("Invalid task type")
-            else:
-                evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
-
-            evaluer_modele_sur_jeu_de_test(
-                test_dl,
-                model,
-                tile_size,
-                batch_size_test,
-                config["donnees"]["n bands"],
-                config["mlflow"],
-            )
-
+        if src_task not in task_to_evaluation:
+            raise ValueError("Invalid task type")
         else:
-            trainer.fit(light_module, train_dl, valid_dl)
-            tile_size = config["donnees"]["tile size"]
-            batch_size_test = config["optim"]["batch size test"]
-            task_type = config["donnees"]["task"]
-            source_data = config["donnees"]["source train"]
-            src_task = source_data + task_type
+            evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
 
-            light_module_checkpoint = light_module.load_from_checkpoint(
-                loss=instantiate_loss(config),
-                checkpoint_path=trainer.checkpoint_callback.best_model_path,
-                model=light_module.model,
-                optimizer=light_module.optimizer,
-                optimizer_params=light_module.optimizer_params,
-                scheduler=light_module.scheduler,
-                scheduler_params=light_module.scheduler_params,
-                scheduler_interval=light_module.scheduler_interval,
-            )
-            model = light_module_checkpoint.model
-
-            if src_task not in task_to_evaluation:
-                raise ValueError("Invalid task type")
-            else:
-                evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
-
-            evaluer_modele_sur_jeu_de_test(
-                test_dl,
-                model,
-                tile_size,
-                batch_size_test,
-                config["donnees"]["n bands"],
-                config["mlflow"],
-            )
-            # trainer.test(light_module, test_dl)
+        evaluer_modele_sur_jeu_de_test(
+            test_dl,
+            model,
+            tile_size,
+            batch_size_test,
+            config["donnees"]["n bands"],
+            config["mlflow"],
+        )
 
 
 if __name__ == "__main__":
@@ -844,7 +806,7 @@ if __name__ == "__main__":
 
 # nohup python run_training_pipeline.py
 # https://projet-slums-detection-128833.user.lab.sspcloud.fr
-# classification test_classifpleiade_branchsentinel2 > out.txt &
+# classification good_test > out.txt &
 # https://www.howtogeek.com/804823/nohup-command-linux/
 # TO DO :
 # test routine sur S2Looking dataset

@@ -1,20 +1,20 @@
 donnees:
   source train: "PLEIADES"
-  dataset: "CHANGEISEVERYWHERE" 
+  dataset: "CLASSIFICATION" 
   dataset-test: "CHANGEDETECTIONDATASET"
   year: [2022]
   dep: ["972"]
   type labeler: "BDTOPO"
   buffer size: 10
-  n channels train: 6
+  n channels train: 3
   n bands: 3
-  tile size: 250
+  tile size: 125
   augmentation: False
-  task: "change-detection"
+  task: "classification"
   prop: 1
 
 optim:
-  loss: "crossentropy"
+  loss: "lossbinaire"
   lr: 0.0001
   momentum: 0.9
   module: "resnet50"
@@ -22,6 +22,6 @@ optim:
   batch size test: 100
   max epochs: 20
   val prop: 0.2
-  accumulate batch : 8
+  accumulate batch : 3
 
 mlflow: True

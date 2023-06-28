@@ -245,7 +245,8 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
             filename = pthimg.split("/")[-1]
             filename = filename.split(".")[0]
             filename = "_".join(filename.split("_")[0:6])
-            plot_file = "img/" + filename + ".png"
+            # plot_file = "img/" + filename + ".png"
+            plot_file = filename + ".png"
 
             fig1.savefig(plot_file)
             list_labeled_satellite_image = []
@@ -312,7 +313,7 @@ def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(
 
             list_labeled_satellite_image.append(
                 SegmentationLabeledSatelliteImage(
-                    satellite_image=s2,
+                    satellite_image=si2,
                     label=mask_pred[i],
                     source="",
                     labeling_date=""
