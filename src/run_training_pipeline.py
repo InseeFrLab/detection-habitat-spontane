@@ -784,7 +784,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         if src_task not in task_to_evaluation:
             raise ValueError("Invalid task type")
         else:
-            evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
+            evaluer_modele_sur_jeu_de_test = task_to_evaluation[src_task]
 
         evaluer_modele_sur_jeu_de_test(
             test_dl,
