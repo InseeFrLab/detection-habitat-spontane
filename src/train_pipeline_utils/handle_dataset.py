@@ -37,8 +37,8 @@ def select_indices_to_split_dataset(config_task, prop_val, list_labels):
 
     elif config_task == "classification":
         # Separating indices based on labels
-        zero_indices = [i for i, label in enumerate(list_labels) if label == "0"]
-        one_indices = [i for i, label in enumerate(list_labels) if label == "1"]
+        zero_indices = [i for i, label in enumerate(list_labels) if label == 0.]
+        one_indices = [i for i, label in enumerate(list_labels) if label == 1.]
 
         # Randomly shuffle the indices
         random.shuffle(zero_indices)
