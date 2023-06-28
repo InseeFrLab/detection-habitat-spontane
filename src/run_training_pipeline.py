@@ -126,8 +126,6 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
 
     list_output_dir = []
 
-    
-
     for i, (year, dep) in enumerate(zip(years, deps)):
         # i, year , dep = 0,years[0],deps[0]
         output_dir = (
