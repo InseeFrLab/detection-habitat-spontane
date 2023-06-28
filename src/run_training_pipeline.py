@@ -131,7 +131,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     for i, (year, dep) in enumerate(zip(years, deps)):
         # i, year , dep = 0,years[0],deps[0]
         output_dir = (
-            "../train_data"
+            "../train_data3"
             + "-"
             + config_task
             + "-"
@@ -324,7 +324,7 @@ def prepare_test_data(config, test_dir):
                     np.save(output_labels_path + "/" + file_name_i + ".npy", lsi1.label)
 
 
-def instantiate_dataset(config, list_images, list_labels, list_images_2=None, test=False):
+def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, test = False):
     """
     Instantiates the appropriate dataset object
     based on the configuration settings.
@@ -350,7 +350,7 @@ def instantiate_dataset(config, list_images, list_labels, list_images_2=None, te
     else:
         dataset_select = dataset_dict[dataset_type]
        
-        if list_images_2 is None:
+        if list_images_2 is None :
             full_dataset = dataset_select(
                 list_images, list_labels, config["donnees"]["n bands"]
             )
@@ -722,9 +722,9 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     torch.cuda.empty_cache()
     gc.collect()
 
-    # remote_server_uri = "https://projet-slums-detection-128833.user.lab.sspcloud.fr"
+    remote_server_uri = "https://projet-slums-detection-128833.user.lab.sspcloud.fr"
     # experiment_name = "classification"
-    # run_name = "essaimain"
+    # run_name = "essai35"
 
     if config["mlflow"]:
         update_storage_access()
@@ -844,7 +844,7 @@ if __name__ == "__main__":
 
 # nohup python run_training_pipeline.py
 # https://projet-slums-detection-128833.user.lab.sspcloud.fr
-# classification test_newmerge_main_echant > out.txt &
+# classification test_classifpleiade_branchsentinel2 > out.txt &
 # https://www.howtogeek.com/804823/nohup-command-linux/
 # TO DO :
 # test routine sur S2Looking dataset
