@@ -1,7 +1,8 @@
 donnees:
   source train: "PLEIADES"
-  dataset: "CHANGEISEVERYWHERE" 
+  dataset: "object_detection"
   dataset-test: "CHANGEDETECTIONDATASET"
+  task: "detection"
   year: [2022]
   dep: ["972"]
   type labeler: "BDTOPO"
@@ -9,19 +10,22 @@ donnees:
   n channels train: 6
   n bands: 3
   tile size: 250
-  augmentation: False
-  task: "change-detection"
+  augmentation: True
+  num_workers: 5
   prop: 1
 
 optim:
   loss: "crossentropy"
   lr: 0.0001
   momentum: 0.9
-  module: "resnet50"
-  batch size: 9
+  module: "fasterrcnn"
+  batch size: 5
   batch size test: 100
-  max epochs: 20
+  max epochs: 5
   val prop: 0.2
   accumulate batch : 8
+  monitor: "validation_accuracy"
+  mode: "min"
+  patience: 10
 
 mlflow: True

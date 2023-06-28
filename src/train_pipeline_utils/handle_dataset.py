@@ -3,9 +3,9 @@ import random
 from typing import Dict, List
 
 import albumentations as album
+import torch
 import yaml
 from albumentations.pytorch.transforms import ToTensorV2
-
 
 def select_indices_to_split_dataset(config_task, prop_val, list_labels):
     """
@@ -190,3 +190,98 @@ def generate_transform_sentinel(src, year, dep, tile_size, augmentation):
         transforms_augmentation = transforms_preprocessing
 
     return transforms_augmentation, transforms_preprocessing
+
+    def split_dataset(dataset, prop_val):
+    """
+    Splits a given dataset into training and
+    validation sets based on a given proportion.
+
+    Args:
+        dataset (torch.utils.data.Dataset): The dataset to split.
+        prop_val (float): The proportion of the dataset to use for validation,
+        should be between 0 and 1.
+
+    Returns:
+        (torch.utils.data.Dataset, torch.utils.data.Dataset):
+        A tuple containing the training and validation datasets.
+
+    """
+    dataset_list = random_split(dataset, [1 - prop_val, prop_val])
+
+    dataset_train = dataset_list[0]
+    dataset_val = dataset_list[1]
+
+    return dataset_train, dataset_val
+
+def generate_transform(tile_size, augmentation, task: str):
+    """
+    Generates PyTorch transforms for data augmentation and preprocessing.
+
+    Args:
+        tile_size (int): The size of the image tiles.
+        augmentation (bool): Whether or not to include data augmentation.
+        task (str): Task.
+
+    Returns:
+        (albumentations.core.composition.Compose,
+        albumentations.core.composition.Compose):
+        A tuple containing the augmentation and preprocessing transforms.
+
+    """
+    image_size = (tile_size, tile_size)
+
+    transforms_augmentation = None
+
+    if augmentation:
+        transforms_list = [
+            album.Resize(300, 300, always_apply=True),
+            album.RandomResizedCrop(
+                *image_size, scale=(0.7, 1.0), ratio=(0.7, 1)
+            ),
+            album.HorizontalFlip(),
+            album.VerticalFlip(),
+            album.Normalize(),
+            ToTensorV2(),
+        ]
+        if task == "detection":
+            transforms_augmentation = album.Compose(
+                transforms_list,
+                bbox_params=album.BboxParams(
+                    format="pascal_voc", label_fields=["class_labels"]
+                ),
+            )
+        else:
+            transforms_augmentation = album.Compose(transforms_list)
+
+    test_transforms_list = [
+        album.Resize(*image_size, always_apply=True),
+        album.Normalize(),
+        ToTensorV2(),
+    ]
+    if task == "detection":
+        transforms_preprocessing = album.Compose(
+            test_transforms_list,
+            bbox_params=album.BboxParams(
+                format="pascal_voc", label_fields=["class_labels"]
+            ),
+        )
+    else:
+        transforms_preprocessing = album.Compose(test_transforms_list)
+
+    return transforms_augmentation, transforms_preprocessing
+
+
+def collate_fn(batch):
+    """
+    Collate function for object detection Dataloader.
+    """
+    images = []
+    targets = []
+    metadatas = []
+
+    for i, t, m in batch:
+        images.append(i)
+        targets.append(t)
+        metadatas.append(m)
+    images = torch.stack(images, dim=0)
+    return images, targets, metadatas

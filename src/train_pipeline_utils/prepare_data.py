@@ -2,6 +2,7 @@ import csv
 import os
 import random
 
+from typing import List
 import numpy as np
 import pandas as pd
 import rasterio
@@ -113,15 +114,16 @@ def filter_images_sentinel(list_images):
     return list_filtered_splitted_images
 
 
-def label_images(list_images, labeler, task="segmentation"):
+def label_images(list_images, labeler, task: str):
     """
-    labels the images according to type of labeler desired.
+    labels the images according to type of labeler and task desired.
 
     Args:
         list_images : the list containing the splitted and filtered data \
             to be labeled.
         labeler : a Labeler object representing the labeler \
             used to create segmentation labels.
+        task (str): task considered.
 
     Returns:
         list[SatelliteImage] : the list containing the splitted and \
@@ -203,6 +205,89 @@ def label_images(list_images, labeler, task="segmentation"):
     #     len(list_masks),
     # )
     return labels, balancing_dict
+
+def filter_buildingless(images: List, labels: List, task: str):
+    """
+    Filter a list of images and associated labels to remove
+    buildingless images.
+
+    Args:
+        images : list containing images.
+        labels : list of corresponding labels.
+        task (str): task considered.
+    """
+    if task == "segmentation":
+        return filter_buildingless_segmentation(images, labels)
+    elif task == "detection":
+        return filter_buildingless_detection(images, labels)
+    else:
+        raise NotImplementedError("Task must be 'segmentation'"
+                                  "or 'detection'.")
+
+def filter_buildingless_segmentation(images: List, labels: List):
+    """
+    Filter a list of images and associated labels to remove
+    buildingless images for segmentation.
+
+    Args:
+        images : list containing images.
+        labels : list of corresponding labels.
+    """
+    filtered_images = []
+    filtered_labels = []
+
+    for image, label in zip(images, labels):
+        if np.sum(label) != 0:
+            filtered_images.append(image)
+            filtered_labels.append(label)
+
+    return filtered_images, filtered_labels
+
+
+def filter_buildingless_detection(images: List, labels: List):
+    """
+    Filter a list of images and associated labels to remove
+    buildingless images for detection.
+
+    Args:
+        images : list containing images.
+        labels : list of corresponding labels.
+    """
+    return images, labels
+
+
+def save_images_and_masks(
+    list_images, list_masks, output_directory_name, task="segmentation"
+):
+    """
+    Filter a list of images and associated labels to remove
+    buildingless images for segmentation.
+
+    Args:
+        images : list containing images.
+        labels : list of corresponding labels.
+    """
+    filtered_images = []
+    filtered_labels = []
+
+    for image, label in zip(images, labels):
+        if np.sum(label) != 0:
+            filtered_images.append(image)
+            filtered_labels.append(label)
+
+    return filtered_images, filtered_labels
+
+
+def filter_buildingless_detection(images: List, labels: List):
+    """
+    Filter a list of images and associated labels to remove
+    buildingless images for detection.
+
+    Args:
+        images : list containing images.
+        labels : list of corresponding labels.
+    """
+    return images, labels
 
 
 def save_images_and_masks(

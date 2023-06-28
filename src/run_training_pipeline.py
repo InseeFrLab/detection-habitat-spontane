@@ -45,6 +45,14 @@ from train_pipeline_utils.handle_dataset import (
     select_indices_to_balance,
     select_indices_to_split_dataset,
 )
+from data.components.change_detection_dataset import ChangeIsEverywhereDataset
+from data.components.dataset import PleiadeDataset
+from data.components.object_detection_dataset import ObjectDetectionDataset
+from models.components.detection_models import FasterRCNNModule
+from models.components.segmentation_models import DeepLabv3Module
+from models.detection_module import DetectionModule
+from models.segmentation_module import SegmentationModule
+from train_pipeline_utils.download_data import load_satellite_data
 from train_pipeline_utils.prepare_data import (
     check_labelled_images,
     filter_images,
@@ -121,8 +129,8 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     years = config_data["year"]
     deps = config_data["dep"]
     src = config_data["source train"]
+    task = config_data["task"]
     type_labeler = config_data["type labeler"]
-    config_task = config_data["task"]
 
     list_output_dir = []
 
@@ -133,7 +141,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
         output_dir = (
             "../train_data2"
             + "-"
-            + config_task
+            + task
             + "-"
             + src
             + "-"
@@ -199,14 +207,14 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     )
 
                     labels, balancing_dict = label_images(
-                        list_filtered_splitted_images, labeler, task=config_task
+                        list_filtered_splitted_images, labeler, task=task
                     )
 
                     save_images_and_masks(
                         list_filtered_splitted_images,
                         labels,
                         output_dir,
-                        task=config_task,
+                        task=task,
                     )
 
                     for k, v in balancing_dict.items():
@@ -340,7 +348,7 @@ def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, 
     else:
         dataset_type = config["donnees"]["dataset-test"]
 
-    # inqtanciation du dataset complet
+    # instanciation du dataset complet
     if dataset_type not in dataset_dict:
         raise ValueError("Invalid dataset type")
     else:
@@ -473,9 +481,10 @@ def instantiate_dataloader(config, list_output_dir):
     # Applying the respective transforms
     augmentation = config["donnees"]["augmentation"]
     tile_size = config["donnees"]["tile size"]
+    task = config["donnees"]["task"]
 
     if config["donnees"]["source train"] == "PLEIADES":
-        t_aug, t_preproc = generate_transform_pleiades(tile_size, augmentation)
+        t_aug, t_preproc = generate_transform_pleiades(tile_size, augmentation,task,)
     else:
         t_aug, t_preproc = generate_transform_sentinel(
             config["donnees"]["source train"],
@@ -483,6 +492,7 @@ def instantiate_dataloader(config, list_output_dir):
             config["donnees"]["dep"][0],
             tile_size,
             augmentation,
+            task,
         )
 
     train_dataset.transforms = t_aug
@@ -607,12 +617,12 @@ def instantiate_lightning_module(config):
     """
     print("Entre dans la fonction instantiate_lighting_module")
     list_params = generate_optimization_elements(config)
-    task_type = config["donnees"]["task"]
+    task = config["donnees"]["task"]
 
     if task_type not in task_to_lightningmodule:
         raise ValueError("Invalid task type")
     else:
-        LightningModule = task_to_lightningmodule[task_type]
+        LightningModule = task_to_lightningmodule[task]
 
     lightning_module = LightningModule(
         model=instantiate_model(config),
