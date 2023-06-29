@@ -7,6 +7,7 @@ import torch
 import yaml
 from albumentations.pytorch.transforms import ToTensorV2
 
+
 def select_indices_to_split_dataset(config_task, prop_val, list_labels):
     """
     Selects indices to split a dataset into training and validation sets based
@@ -37,8 +38,8 @@ def select_indices_to_split_dataset(config_task, prop_val, list_labels):
 
     elif config_task == "classification":
         # Separating indices based on labels
-        zero_indices = [i for i, label in enumerate(list_labels) if label == "0"]
-        one_indices = [i for i, label in enumerate(list_labels) if label == "1"]
+        zero_indices = [i for i, label in enumerate(list_labels) if label == 0.0]
+        one_indices = [i for i, label in enumerate(list_labels) if label == 1.0]
 
         # Randomly shuffle the indices
         random.shuffle(zero_indices)
@@ -99,7 +100,7 @@ def select_indices_to_balance(
     return idx_balanced
 
 
-def generate_transform_pleiades(tile_size, augmentation):
+def generate_transform_pleiades(tile_size, augmentation, task):
     """
     Generates PyTorch transforms for data augmentation and preprocessing\
         for PLEIADES images.
@@ -107,6 +108,7 @@ def generate_transform_pleiades(tile_size, augmentation):
     Args:
         tile_size (int): The size of the image tiles.
         augmentation (bool): Whether or not to include data augmentation.
+        task (str): Task.
 
     Returns:
         (albumentations.core.composition.Compose,
@@ -143,7 +145,7 @@ def generate_transform_pleiades(tile_size, augmentation):
     return transforms_augmentation, transforms_preprocessing
 
 
-def generate_transform_sentinel(src, year, dep, tile_size, augmentation):
+def generate_transform_sentinel(src, year, dep, tile_size, augmentation, task):
     """
     Generates PyTorch transforms for data augmentation and preprocessing\
         for SENTINEL2 images.
@@ -191,27 +193,6 @@ def generate_transform_sentinel(src, year, dep, tile_size, augmentation):
 
     return transforms_augmentation, transforms_preprocessing
 
-    def split_dataset(dataset, prop_val):
-    """
-    Splits a given dataset into training and
-    validation sets based on a given proportion.
-
-    Args:
-        dataset (torch.utils.data.Dataset): The dataset to split.
-        prop_val (float): The proportion of the dataset to use for validation,
-        should be between 0 and 1.
-
-    Returns:
-        (torch.utils.data.Dataset, torch.utils.data.Dataset):
-        A tuple containing the training and validation datasets.
-
-    """
-    dataset_list = random_split(dataset, [1 - prop_val, prop_val])
-
-    dataset_train = dataset_list[0]
-    dataset_val = dataset_list[1]
-
-    return dataset_train, dataset_val
 
 def generate_transform(tile_size, augmentation, task: str):
     """
@@ -235,9 +216,7 @@ def generate_transform(tile_size, augmentation, task: str):
     if augmentation:
         transforms_list = [
             album.Resize(300, 300, always_apply=True),
-            album.RandomResizedCrop(
-                *image_size, scale=(0.7, 1.0), ratio=(0.7, 1)
-            ),
+            album.RandomResizedCrop(*image_size, scale=(0.7, 1.0), ratio=(0.7, 1)),
             album.HorizontalFlip(),
             album.VerticalFlip(),
             album.Normalize(),
