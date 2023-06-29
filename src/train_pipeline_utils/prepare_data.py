@@ -237,8 +237,7 @@ def save_images_and_masks(
 def extract_proportional_subset(
     input_file="train_data-classification-PLEIADES-RIL-972-2022/"
     + "labels/fichierlabeler.csv",
-    output_file="train_data-classification-PLEIADES-RIL-972-2022/"
-    + "labels/fichierlabeler_echant.csv",
+    prop=1,
     target_column="Classification",
 ):
     """
@@ -262,19 +261,28 @@ def extract_proportional_subset(
     df_0 = df[df[target_column] == 0]
     df_1 = df[df[target_column] == 1]
 
-    # Randomly sample the same number of samples from each class
-    df_sample_0 = df_0.sample(len(df_1))
+    nb_zeros = len(df_0)
+    nb_ones = len(df_1)
 
-    # Concatenate the sample dataframes
-    df_sample = pd.concat([df_sample_0, df_1])
+    difference = abs(nb_ones - nb_zeros)
+    tolerance = 0.1*prop*nb_ones
 
-    # Save the sample dataframe to a new CSV file
-    df_sample.to_csv(output_file, index=False)
+    if difference > tolerance:
+
+        # Randomly sample the same number of samples from each class
+        df_sample_0 = df_0.sample(prop*len(df_1))
+
+        # Concatenate the sample dataframes
+        df_sample = pd.concat([df_sample_0, df_1])
+
+        # Save the sample dataframe to a new CSV file
+        os.remove(input_file)
+        df_sample.to_csv(input_file, index=False)
 
 
 def filter_images_by_path(
     csv_file="train_data-classification-PLEIADES-RIL-972-2022/"
-    + "labels/fichierlabeler_echant.csv",
+    + "labels/fichierlabeler.csv",
     image_folder="train_data-classification-PLEIADES-RIL-972-2022/images",
     path_column="Path_image",
 ):

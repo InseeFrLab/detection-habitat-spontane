@@ -378,3 +378,113 @@ fig1 = plt.gcf()
 
 plot_file = "img2/" + "g" + ".png"
 fig1.savefig(plot_file)
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve, roc_auc_score
+
+# Prédictions de probabilité du modèle (exemple)
+y_pred_prob = model.predict_proba(X_eval)[:, 1]  # Remplacez X_eval par vos données d'évaluation
+
+# Étiquettes de classe réelles (exemple)
+y_true = y_eval  # Remplacez y_eval par vos étiquettes de classe réelles
+
+# Calculez les taux de faux positifs et les taux de vrais positifs
+fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
+
+# Calculez l'AUC-ROC
+auc = roc_auc_score(y_true, y_pred_prob)
+
+# Tracez la courbe ROC
+plt.plot(fpr, tpr, label='ROC Curve (AUC = {:.2f})'.format(auc))
+plt.plot([0, 1], [0, 1], 'r--', label='Random Classifier')  # Ligne diagonale pour le classificateur aléatoire
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic')
+plt.legend()
+fig1 = plt.gcf()
+
+plot_file = "img2/" + "ROC" + ".png"
+fig1.savefig(plot_file)
+
+def evaluer_modele_sur_jeu_de_test_classification_pleiade(
+    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+):
+    """
+    Evaluates the model on the Pleiade test dataset for image classification.
+
+    Args:
+        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        dataset.
+        model (torchvision.models): The classification model to evaluate.
+        tile_size (int): The size of each tile in pixels.
+        batch_size (int): The batch size.
+        use_mlflow (bool, optional): Whether to use MLflow for logging
+        artifacts. Defaults to False.
+
+    Returns:
+        None
+    """
+    model.eval()
+    npatch = int((2000 / tile_size) ** 2)
+    count_patch = 0
+
+    list_labeled_satellite_image = []
+
+    for idx, batch in enumerate(test_dl):
+
+        images, __, dic = batch
+
+        model = model.to("cpu")
+        images = images.to("cpu")
+
+        output_model = model(images)
+        mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
+
+        if batch_size > len(images):
+            batch_size_current = len(images)
+
+        elif batch_size <= len(images):
+            batch_size_current = batch_size
+
+        for i in range(batch_size_current):
+            pthimg = dic["pathimage"][i]
+            si = SatelliteImage.from_raster(
+                file_path=pthimg, dep=None, date=None, n_bands=n_bands
+            )
+            si.normalize()
+
+
+            list_labeled_satellite_image.append(
+                SegmentationLabeledSatelliteImage(
+                    satellite_image=si,
+                    label=mask_pred[i],
+                    source="",
+                    labeling_date="",
+                )
+            )
+            count_patch += 1
+
+            if ((count_patch) % npatch) == 0:
+                print("ecriture image")
+                if not os.path.exists("img/"):
+                    os.makedirs("img/")
+
+                fig1 = plot_list_segmentation_labeled_satellite_image(
+                    list_labeled_satellite_image, [0, 1, 2]
+                )
+
+                filename = pthimg.split("/")[-1]
+                filename = filename.split(".")[0]
+                filename = "_".join(filename.split("_")[0:6])
+                # plot_file = "img/" + filename + ".png"
+                plot_file = filename + ".png"
+
+                fig1.savefig(plot_file)
+                list_labeled_satellite_image = []
+
+                if use_mlflow:
+                    mlflow.log_artifact(plot_file, artifact_path="plots")
+
+        del images, __, dic

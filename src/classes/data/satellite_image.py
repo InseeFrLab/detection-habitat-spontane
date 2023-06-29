@@ -15,7 +15,6 @@ from osgeo import gdal
 
 from utils.utils import (
     get_bounds_for_tiles,
-    get_bounds_for_tiles2,
     get_indices_from_tile_length,
     get_transform_for_tiles,
 )
@@ -93,47 +92,6 @@ class SatelliteImage:
 
         return splitted_images
 
-    def split2(self, tile_length: int) -> List[SatelliteImage]:
-        """
-        Split the SatelliteImage into folds of size tile_length
-
-        Args:
-            tile_length (int): Dimension of tiles
-
-        Returns:
-            List[SatelliteImage]: _description_
-        """
-        original_array = self.array.copy()
-        __, m, n = original_array.shape
-        sub_arrays = []
-        rows = []
-        cols = []
-
-        for i in range(0, m, tile_length):
-            for j in range(0, n, tile_length):
-                sub_array = original_array[
-                    :, i : i + tile_length, j : j + tile_length
-                ]
-                sub_arrays.append(sub_array)
-                rows.append(i)
-                cols.append(j)
-
-        splitted_images = [
-            SatelliteImage(
-                array=sub_array,
-                crs=self.crs,
-                bounds=get_bounds_for_tiles2(self.transform, row, col, tile_length),
-                transform=get_transform_for_tiles(self.transform, row, col),
-                n_bands=self.n_bands,
-                filename=self.filename,  # a adapter avec bb
-                dep=self.dep,
-                date=self.date,
-                normalized=self.normalized,
-            )
-            for sub_array, row, col in zip(sub_arrays, rows, cols)
-        ]
-
-        return splitted_images
 
     def to_tensor(self, bands_indices: Optional[List[int]] = None) -> torch.Tensor:
         """

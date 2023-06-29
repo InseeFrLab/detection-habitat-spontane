@@ -50,6 +50,8 @@ from train_pipeline_utils.prepare_data import (
     filter_images,
     label_images,
     save_images_and_masks,
+    extract_proportional_subset,
+    filter_images_by_path,
 )
 from utils.utils import remove_dot_file, split_array, update_storage_access
 
@@ -232,97 +234,96 @@ def prepare_test_data(config, test_dir):
 
     n_bands = config["donnees"]["n bands"]
     tile_size = config["donnees"]["tile size"]
-    
+
     output_test = "../test-data"
     output_labels_path = output_test + "/labels"
-    
+
     if not os.path.exists(output_labels_path):
         os.makedirs(output_labels_path)
     else:
         return None
-    
+
     labels_path = test_dir + "/masks"
     list_name_label = os.listdir(labels_path)
     list_name_label = np.sort(remove_dot_file(list_name_label))
     list_labels_path = [labels_path + "/" + name for name in list_name_label]
 
-    if config["donnees"]["source train"] == "PLEIADES":
-        if config["donnees"]["task"] != "change-detection":
-        
-            images_path = test_dir + "/images"
-            list_name_image = os.listdir(images_path)
-            list_name_image = np.sort(remove_dot_file(list_name_image))
-            list_images_path = [images_path + "/" + name for name in list_name_image]
-            output_images_path = output_test + "/images"
-        
-            for image_path, label_path, name in zip(
-                list_images_path,
-                list_labels_path,
-                list_name_image
-            ):
+    if config["donnees"]["task"] != "change-detection":
 
-                si = SatelliteImage.from_raster(
-                    file_path=image_path, dep=None, date=None, n_bands=n_bands
-                )
-                mask = np.load(label_path)
+        images_path = test_dir + "/images"
+        list_name_image = os.listdir(images_path)
+        list_name_image = np.sort(remove_dot_file(list_name_image))
+        list_images_path = [images_path + "/" + name for name in list_name_image]
+        output_images_path = output_test + "/images"
 
-                lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
-                list_lsi = lsi.split(tile_size)
+        for image_path, label_path, name in zip(
+            list_images_path,
+            list_labels_path,
+            list_name_image
+        ):
 
-                for i, lsi in enumerate(list_lsi):
-                    file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+            si = SatelliteImage.from_raster(
+                file_path=image_path, dep=None, date=None, n_bands=n_bands
+            )
+            mask = np.load(label_path)
 
-                    lsi.satellite_image.to_raster(
-                        output_images_path, file_name_i + ".jp2"
-                        )
-                    np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
-        else:
-            images_path_1 = test_dir + "/images_1"
-            list_name_image_1 = os.listdir(images_path_1)
-            list_name_image_1 = np.sort(remove_dot_file(list_name_image_1))
-            list_images_path_1 = [images_path_1 + "/" + name for name in list_name_image_1]
-            output_images_path_1 = output_test + "/images_1"
+            lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
+            list_lsi = lsi.split(tile_size)
 
-            images_path_2 = test_dir + "/images_2"
-            list_name_image_2 = os.listdir(images_path_2)
-            list_name_image_2 = np.sort(remove_dot_file(list_name_image_2))
-            list_images_path_2 = [images_path_2 + "/" + name for name in list_name_image_2]
-            output_images_path_2 = output_test + "/images_2"
+            for i, lsi in enumerate(list_lsi):
+                file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
 
-            for image_path_1, image_path_2, label_path, name in zip(
-                list_images_path_1,
-                list_images_path_2,
-                list_labels_path,
-                list_name_image_1
-            ):
+                lsi.satellite_image.to_raster(
+                    output_images_path, file_name_i + ".jp2"
+                    )
+                np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
+    else:
+        images_path_1 = test_dir + "/images_1"
+        list_name_image_1 = os.listdir(images_path_1)
+        list_name_image_1 = np.sort(remove_dot_file(list_name_image_1))
+        list_images_path_1 = [images_path_1 + "/" + name for name in list_name_image_1]
+        output_images_path_1 = output_test + "/images_1"
 
-                si1 = SatelliteImage.from_raster(
-                    file_path=image_path_1, dep=None, date=None, n_bands=n_bands
-                )
-                si2 = SatelliteImage.from_raster(
-                    file_path=image_path_2, dep=None, date=None, n_bands=n_bands
-                )
-                mask = np.load(label_path)
+        images_path_2 = test_dir + "/images_2"
+        list_name_image_2 = os.listdir(images_path_2)
+        list_name_image_2 = np.sort(remove_dot_file(list_name_image_2))
+        list_images_path_2 = [images_path_2 + "/" + name for name in list_name_image_2]
+        output_images_path_2 = output_test + "/images_2"
 
-                lsi1 = SegmentationLabeledSatelliteImage(si1, mask, "", "")
-                lsi2 = SegmentationLabeledSatelliteImage(si2, mask, "", "")
-                
-                list_lsi1 = lsi1.split(tile_size)
-                list_lsi2 = lsi2.split(tile_size)
+        for image_path_1, image_path_2, label_path, name in zip(
+            list_images_path_1,
+            list_images_path_2,
+            list_labels_path,
+            list_name_image_1
+        ):
 
-                for i, (lsi1, lsi2) in enumerate(zip(list_lsi1, list_lsi2)):
-                    file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+            si1 = SatelliteImage.from_raster(
+                file_path=image_path_1, dep=None, date=None, n_bands=n_bands
+            )
+            si2 = SatelliteImage.from_raster(
+                file_path=image_path_2, dep=None, date=None, n_bands=n_bands
+            )
+            mask = np.load(label_path)
 
-                    lsi1.satellite_image.to_raster(
-                        output_images_path_1, file_name_i + ".jp2"
-                        )
-                    lsi2.satellite_image.to_raster(
-                        output_images_path_2, file_name_i + ".jp2"
-                        )
-                    np.save(output_labels_path + "/" + file_name_i + ".npy", lsi1.label)
+            lsi1 = SegmentationLabeledSatelliteImage(si1, mask, "", "")
+            lsi2 = SegmentationLabeledSatelliteImage(si2, mask, "", "")
+            
+            list_lsi1 = lsi1.split(tile_size)
+            list_lsi2 = lsi2.split(tile_size)
+
+            for i, (lsi1, lsi2) in enumerate(zip(list_lsi1, list_lsi2)):
+                file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
+
+                lsi1.satellite_image.to_raster(
+                    output_images_path_1, file_name_i + ".jp2"
+                    )
+                lsi2.satellite_image.to_raster(
+                    output_images_path_2, file_name_i + ".jp2"
+                    )
+                np.save(output_labels_path + "/" + file_name_i + ".npy", lsi1.label)
 
 
-def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, test = False):
+def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, test=False):
     """
     Instantiates the appropriate dataset object
     based on the configuration settings.
@@ -430,9 +431,21 @@ def instantiate_dataloader(config, list_output_dir):
 
             if config_task == "classification":
                 list_labels_dir = []
+                csv_labeler = directory + "/labels/" + labels[0]
+
+                # Balancing data
+                extract_proportional_subset(
+                    input_file=csv_labeler,
+                    prop=prop,
+                )
+
+                filter_images_by_path(
+                    csv_file=csv_labeler,
+                    image_folder=directory + "/images",
+                )
 
                 # Load the initial CSV file
-                df = pd.read_csv(directory + "/labels/" + labels[0])
+                df = pd.read_csv(csv_labeler)
 
                 list_labels_dir = df[["Path_image", "Classification"]].values.tolist()
 
@@ -458,6 +471,7 @@ def instantiate_dataloader(config, list_output_dir):
         )
         list_images = unbalanced_images[indices_to_balance]
         list_labels = unbalanced_labels[indices_to_balance]
+            
 
     train_idx, val_idx = select_indices_to_split_dataset(
         config_task, config["optim"]["val prop"], list_labels
