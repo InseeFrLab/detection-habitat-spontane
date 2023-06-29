@@ -1,15 +1,15 @@
-donnees:
-  source_train: "PLEIADES"
-  dataset: "object_detection"
-  dataset_test: "CHANGEDETECTIONDATASET"
-  task: "detection"
+data:
+  source_train: "SENTINEL1-2"
+  dataset: "SENTINEL"
+  dataset_test: "SENTINEL"
+  task: "segmentation"
   year: [2022]
-  dep: ["972"]
+  dep: ["976"]
   type_labeler: "BDTOPO"
   buffer_size: 10
-  n_channels_train: 6
-  n_bands: 3
-  tile_size: 250
+  n_channels_train: 13
+  n_bands: 13
+  tile_size: 125
   augmentation: True
   num_workers: 5
   prop: 1
@@ -18,9 +18,9 @@ optim:
   loss: "crossentropy"
   lr: 0.0001
   momentum: 0.9
-  module: "fasterrcnn"
+  module: "deeplabv3"
   batch_size: 5
-  batch_size_test: 100
+  batch_size_test: 4
   max_epochs: 5
   val_prop: 0.2
   accumulate_batch : 8

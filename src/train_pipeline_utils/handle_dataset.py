@@ -160,6 +160,8 @@ def generate_transform_sentinel(src, year, dep, tile_size, augmentation, task):
         A tuple containing the augmentation and preprocessing transforms.
 
     """
+    # TODO: normalization functions only when 13 bands are used,
+    # change to make it work for less
     with open("utils/normalize_sentinel.yml", "r") as stream:
         normalize_sentinel = yaml.safe_load(stream)
     mean = eval(normalize_sentinel[src]["mean"][year][dep])

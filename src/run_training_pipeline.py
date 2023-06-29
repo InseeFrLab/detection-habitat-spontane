@@ -51,10 +51,12 @@ from train_pipeline_utils.prepare_data import (
     label_images,
     save_images_and_masks,
 )
-from utils.utils import remove_dot_file, split_array, update_storage_access
-
-# with open("../config.yml") as f:
-#     config = yaml.load(f, Loader=SafeLoader)
+from utils.utils import (
+    get_root_path,
+    remove_dot_file,
+    split_array,
+    update_storage_access,
+)
 
 
 def download_data(config):
@@ -242,83 +244,78 @@ def prepare_test_data(config, test_dir):
     list_name_label = np.sort(remove_dot_file(list_name_label))
     list_labels_path = [labels_path + "/" + name for name in list_name_label]
 
-    if config["data"]["source_train"] == "PLEIADES":
-        if config["data"]["task"] != "change-detection":
-            images_path = test_dir + "/images"
-            list_name_image = os.listdir(images_path)
-            list_name_image = np.sort(remove_dot_file(list_name_image))
-            list_images_path = [images_path + "/" + name for name in list_name_image]
-            output_images_path = output_test + "/images"
+    if config["data"]["task"] != "change-detection":
+        images_path = test_dir + "/images"
+        list_name_image = os.listdir(images_path)
+        list_name_image = np.sort(remove_dot_file(list_name_image))
+        list_images_path = [images_path + "/" + name for name in list_name_image]
+        output_images_path = output_test + "/images"
 
-            for image_path, label_path, name in zip(
-                list_images_path, list_labels_path, list_name_image
-            ):
-                si = SatelliteImage.from_raster(
-                    file_path=image_path, dep=None, date=None, n_bands=n_bands
+        for image_path, label_path, name in zip(
+            list_images_path, list_labels_path, list_name_image
+        ):
+            si = SatelliteImage.from_raster(
+                file_path=image_path, dep=None, date=None, n_bands=n_bands
+            )
+            mask = np.load(label_path)
+
+            lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
+            list_lsi = lsi.split(tile_size)
+
+            for i, lsi in enumerate(list_lsi):
+                file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+
+                lsi.satellite_image.to_raster(
+                    output_images_path, file_name_i + ".jp2"
                 )
-                mask = np.load(label_path)
+                np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
+    else:
+        images_path_1 = test_dir + "/images_1"
+        list_name_image_1 = os.listdir(images_path_1)
+        list_name_image_1 = np.sort(remove_dot_file(list_name_image_1))
+        list_images_path_1 = [
+            images_path_1 + "/" + name for name in list_name_image_1
+        ]
+        output_images_path_1 = output_test + "/images_1"
 
-                lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
-                list_lsi = lsi.split(tile_size)
+        images_path_2 = test_dir + "/images_2"
+        list_name_image_2 = os.listdir(images_path_2)
+        list_name_image_2 = np.sort(remove_dot_file(list_name_image_2))
+        list_images_path_2 = [
+            images_path_2 + "/" + name for name in list_name_image_2
+        ]
+        output_images_path_2 = output_test + "/images_2"
 
-                for i, lsi in enumerate(list_lsi):
-                    file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+        for image_path_1, image_path_2, label_path, name in zip(
+            list_images_path_1,
+            list_images_path_2,
+            list_labels_path,
+            list_name_image_1,
+        ):
+            si1 = SatelliteImage.from_raster(
+                file_path=image_path_1, dep=None, date=None, n_bands=n_bands
+            )
+            si2 = SatelliteImage.from_raster(
+                file_path=image_path_2, dep=None, date=None, n_bands=n_bands
+            )
+            mask = np.load(label_path)
 
-                    lsi.satellite_image.to_raster(
-                        output_images_path, file_name_i + ".jp2"
-                    )
-                    np.save(
-                        output_labels_path + "/" + file_name_i + ".npy", lsi.label
-                    )
-        else:
-            images_path_1 = test_dir + "/images_1"
-            list_name_image_1 = os.listdir(images_path_1)
-            list_name_image_1 = np.sort(remove_dot_file(list_name_image_1))
-            list_images_path_1 = [
-                images_path_1 + "/" + name for name in list_name_image_1
-            ]
-            output_images_path_1 = output_test + "/images_1"
+            lsi1 = SegmentationLabeledSatelliteImage(si1, mask, "", "")
+            lsi2 = SegmentationLabeledSatelliteImage(si2, mask, "", "")
 
-            images_path_2 = test_dir + "/images_2"
-            list_name_image_2 = os.listdir(images_path_2)
-            list_name_image_2 = np.sort(remove_dot_file(list_name_image_2))
-            list_images_path_2 = [
-                images_path_2 + "/" + name for name in list_name_image_2
-            ]
-            output_images_path_2 = output_test + "/images_2"
+            list_lsi1 = lsi1.split(tile_size)
+            list_lsi2 = lsi2.split(tile_size)
 
-            for image_path_1, image_path_2, label_path, name in zip(
-                list_images_path_1,
-                list_images_path_2,
-                list_labels_path,
-                list_name_image_1,
-            ):
-                si1 = SatelliteImage.from_raster(
-                    file_path=image_path_1, dep=None, date=None, n_bands=n_bands
+            for i, (lsi1, lsi2) in enumerate(zip(list_lsi1, list_lsi2)):
+                file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+
+                lsi1.satellite_image.to_raster(
+                    output_images_path_1, file_name_i + ".jp2"
                 )
-                si2 = SatelliteImage.from_raster(
-                    file_path=image_path_2, dep=None, date=None, n_bands=n_bands
+                lsi2.satellite_image.to_raster(
+                    output_images_path_2, file_name_i + ".jp2"
                 )
-                mask = np.load(label_path)
-
-                lsi1 = SegmentationLabeledSatelliteImage(si1, mask, "", "")
-                lsi2 = SegmentationLabeledSatelliteImage(si2, mask, "", "")
-
-                list_lsi1 = lsi1.split(tile_size)
-                list_lsi2 = lsi2.split(tile_size)
-
-                for i, (lsi1, lsi2) in enumerate(zip(list_lsi1, list_lsi2)):
-                    file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
-
-                    lsi1.satellite_image.to_raster(
-                        output_images_path_1, file_name_i + ".jp2"
-                    )
-                    lsi2.satellite_image.to_raster(
-                        output_images_path_2, file_name_i + ".jp2"
-                    )
-                    np.save(
-                        output_labels_path + "/" + file_name_i + ".npy", lsi1.label
-                    )
+                np.save(output_labels_path + "/" + file_name_i + ".npy", lsi1.label)
 
 
 def instantiate_dataset(
@@ -502,10 +499,7 @@ def instantiate_dataloader(config, list_output_dir):
 
     train_dataloader, valid_dataloader = [
         DataLoader(
-            ds,
-            batch_size=batch_size,
-            shuffle=boolean,
-            num_workers=0,
+            ds, batch_size=batch_size, shuffle=boolean, num_workers=0, drop_last=True
         )
         for ds, boolean in zip([train_dataset, valid_dataset], [True, False])
     ]
@@ -719,14 +713,20 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     Returns:
         None
     """
+    if torch.cuda.is_available():
+        device = "cuda:0"
+    else:
+        device = "cpu"
+
     # Open the file and load the file
-    with open("../config.yml") as f:
+    with open(get_root_path() / "config.yml") as f:
         config = yaml.load(f, Loader=SafeLoader)
 
     tile_size = config["data"]["tile_size"]
     batch_size_test = config["optim"]["batch_size_test"]
     task_type = config["data"]["task"]
     source_data = config["data"]["source_train"]
+    n_bands = config["data"]["n_bands"]
     src_task = source_data + task_type
 
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
@@ -757,7 +757,9 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         with mlflow.start_run(run_name=run_name):
             mlflow.autolog()
-            mlflow.log_artifact("../config.yml", artifact_path="config.yml")
+            mlflow.log_artifact(
+                get_root_path() / "config.yml", artifact_path="config.yml"
+            )
             trainer.fit(light_module, train_dl, valid_dl)
 
             if config["data"]["source_train"] == "PLEIADES":
@@ -773,14 +775,24 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 )
 
                 model = light_module_checkpoint.model
+                try:
+                    print(model.device)
+                except Exception:
+                    pass
 
-                if task_type not in task_to_evaluation:
+                if src_task not in task_to_evaluation:
                     raise ValueError("Invalid task type")
                 else:
-                    evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
+                    evaluer_modele_sur_jeu_de_test = task_to_evaluation[src_task]
 
                 evaluer_modele_sur_jeu_de_test(
-                    test_dl, model, tile_size, batch_size_test, config["mlflow"]
+                    test_dl,
+                    model,
+                    tile_size,
+                    batch_size_test,
+                    n_bands,
+                    config["mlflow"],
+                    device,
                 )
 
     else:
@@ -801,7 +813,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         if src_task not in task_to_evaluation:
             raise ValueError("Invalid task type")
         else:
-            evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
+            evaluer_modele_sur_jeu_de_test = task_to_evaluation[src_task]
 
         evaluer_modele_sur_jeu_de_test(
             test_dl,
