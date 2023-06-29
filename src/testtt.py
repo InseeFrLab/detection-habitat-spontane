@@ -336,3 +336,45 @@ def plot_list_path_images_labels(list_filepaths_images, list_filepaths_labels, t
     plt.show()
     plt.gcf()
     plt.savefig("test.png")
+
+
+import random
+image = SatelliteImage.from_raster("../donnees-test/classification/images/mayotte-ORT_2017_0522_8592_U38S_8Bits.jp2", None)
+list_images1 = image.split(125)
+
+random.shuffle(list_images1)
+
+list_bounding_box = [[im.bounds[3], im.bounds[0]] for im in list_images1]
+
+# Utiliser zip pour combiner les trois listes
+combined = zip(list_bounding_box, list_images1)
+
+# Trier les éléments combinés en fonction de la troisième liste
+sorted_combined = sorted(combined, key=lambda x: (-x[0][0], x[0][1]))
+
+# Diviser les listes triées en fonction de l'ordre des éléments
+__, list_images = zip(*sorted_combined)
+
+size = int(math.sqrt(len(list_images)))
+
+# Create a figure and axes
+fig, axs = plt.subplots(nrows=size, ncols=size, figsize=(10, 10))
+
+# Iterate over the grid of masks and plot them
+for i in range(size):
+    for j in range(size):
+        axs[i, j].imshow(
+            np.transpose(list_images[i * size + j].array, (1, 2, 0))[:, :, [0,1,2]]
+        )
+        
+
+# Remove any unused axes
+for i in range(size):
+    for j in range(size):
+        axs[i, j].set_axis_off()
+
+# Show the plot
+fig1 = plt.gcf()
+
+plot_file = "img2/" + "g" + ".png"
+fig1.savefig(plot_file)

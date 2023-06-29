@@ -10,16 +10,16 @@ from classes.optim.evaluation_model import (
 from classes.optim.losses import CrossEntropySelfmade, SoftIoULoss
 from data.components.change_detection_dataset import ChangeIsEverywhereDataset, ChangeDetectionDataset
 from data.components.classification_patch import PatchClassification
-from data.components.dataset import PleiadeDataset, SentinelDataset
+from data.components.dataset import SegmentationDataset
 from models.classification_module import ClassificationModule
 from models.components.classification_models import ResNet50Module
 from models.components.segmentation_models import DeepLabv3Module
 from models.segmentation_module import SegmentationModule
 
 dataset_dict = {
-    "PLEIADE": PleiadeDataset,
+    "PLEIADE": SegmentationDataset,
     "CLASSIFICATION": PatchClassification,
-    "SENTINEL": SentinelDataset,
+    "SENTINEL": SegmentationDataset,
     "CHANGEISEVERYWHERE": ChangeIsEverywhereDataset,
     "CHANGEDETECTIONDATASET": ChangeDetectionDataset,
 }

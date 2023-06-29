@@ -180,6 +180,8 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
     npatch = int((2000 / tile_size) ** 2)
     nbatchforfullimage = int(npatch / batch_size)
 
+    count_patch = 0
+
     if not npatch % nbatchforfullimage == 0:
         print(
             "Le nombre de patchs \
@@ -190,7 +192,7 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
     list_labeled_satellite_image = []
 
     for idx, batch in enumerate(test_dl):
-        print(idx)
+
         images, __, dic = batch
 
         model = model.to("cuda:0")
@@ -210,8 +212,13 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
             torch.tensor([0]),
         )
         predicted_classes = predictions.type(torch.float)
+        if batch_size > len(images):
+            batch_size_current = len(images)
 
-        for i in range(batch_size):
+        elif batch_size <= len(images):
+            batch_size_current = batch_size
+
+        for i in range(batch_size_current):
             pthimg = dic["pathimage"][i]
             si = SatelliteImage.from_raster(
                 file_path=pthimg, dep=None, date=None, n_bands=n_bands
@@ -232,27 +239,30 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
                     labeling_date="",
                 )
             )
+            count_patch += 1
 
-        if ((idx + 1) % nbatchforfullimage) == 0:
-            print("ecriture image")
-            if not os.path.exists("img/"):
-                os.makedirs("img/")
+            if ((count_patch) % npatch) == 0:
+                print("ecriture image")
+                if not os.path.exists("img/"):
+                    os.makedirs("img/")
 
-            fig1 = plot_list_labeled_sat_images(
-                list_labeled_satellite_image, [0, 1, 2]
-            )
+                fig1 = plot_list_labeled_sat_images(
+                    list_labeled_satellite_image, [0, 1, 2]
+                )
 
-            filename = pthimg.split("/")[-1]
-            filename = filename.split(".")[0]
-            filename = "_".join(filename.split("_")[0:6])
-            plot_file = "img2/" + filename + ".png"
-            #plot_file = filename + ".png"
+                filename = pthimg.split("/")[-1]
+                filename = filename.split(".")[0]
+                filename = "_".join(filename.split("_")[0:6])
+                plot_file = "img/" + filename + ".png"
+                # plot_file = filename + ".png"
 
-            fig1.savefig(plot_file)
-            list_labeled_satellite_image = []
+                fig1.savefig(plot_file)
+                list_labeled_satellite_image = []
 
-            if use_mlflow:
-                mlflow.log_artifact(plot_file, artifact_path="plots")
+                if use_mlflow:
+                    mlflow.log_artifact(plot_file, artifact_path="plots")
+
+        del images, dic
 
 
 def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(
