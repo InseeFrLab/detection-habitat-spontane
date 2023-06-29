@@ -6,7 +6,18 @@
 
 ## Setup
 
-Les dépendances à installer se trouvent dans le fichier `requirements.txt`. Pour contribuer,
+Il faut une installation de `GDAL` :
+
+```
+sudo add-apt-repository ppa:ubuntugis/ppa && sudo apt-get update
+sudo apt-get update
+sudo apt-get install gdal-bin
+sudo apt-get install libgdal-dev
+export CPLUS_INCLUDE_PATH=/usr/include/gdal
+export C_INCLUDE_PATH=/usr/include/gdal
+```
+
+Les dépendances Python à installer se trouvent dans le fichier `requirements.txt`. Pour contribuer,
 
 ```
 pre-commit install
