@@ -15,7 +15,7 @@ def generate_optimization_elements(config):
 
     """
     task_liste = ["segmentation", "classification", "change-detection", "detection"]
-    task = config["donnees"]["task"]
+    task = config["data"]["task"]
 
     if task in task_liste:
         if task == "segmentation":
@@ -37,7 +37,7 @@ def generate_optimization_elements(config):
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
             scheduler_params = {}
             scheduler_interval = "epoch"
-        
+
         elif task == "change-detection":
             optimizer = torch.optim.SGD
             optimizer_params = {

@@ -1,15 +1,15 @@
 donnees:
-  source train: "PLEIADES"
+  source_train: "PLEIADES"
   dataset: "object_detection"
-  dataset-test: "CHANGEDETECTIONDATASET"
+  dataset_test: "CHANGEDETECTIONDATASET"
   task: "detection"
   year: [2022]
   dep: ["972"]
-  type labeler: "BDTOPO"
-  buffer size: 10
-  n channels train: 6
-  n bands: 3
-  tile size: 250
+  type_labeler: "BDTOPO"
+  buffer_size: 10
+  n_channels_train: 6
+  n_bands: 3
+  tile_size: 250
   augmentation: True
   num_workers: 5
   prop: 1
@@ -19,11 +19,11 @@ optim:
   lr: 0.0001
   momentum: 0.9
   module: "fasterrcnn"
-  batch size: 5
-  batch size test: 100
-  max epochs: 5
-  val prop: 0.2
-  accumulate batch : 8
+  batch_size: 5
+  batch_size_test: 100
+  max_epochs: 5
+  val_prop: 0.2
+  accumulate_batch : 8
   monitor: "validation_accuracy"
   mode: "min"
   patience: 10
