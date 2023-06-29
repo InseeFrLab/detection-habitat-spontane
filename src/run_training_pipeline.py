@@ -769,7 +769,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         light_module_checkpoint = light_module.load_from_checkpoint(
             loss=instantiate_loss(config),
-            checkpoint_path=trainer.checkpoint_callback.best_model_path,
+            checkpoint_path="epoch=13-step=11242.ckpt",
             model=light_module.model,
             optimizer=light_module.optimizer,
             optimizer_params=light_module.optimizer_params,
@@ -790,7 +790,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             tile_size,
             batch_size_test,
             config["donnees"]["n bands"],
-            config["mlflow"],
+            False,
         )
 
 

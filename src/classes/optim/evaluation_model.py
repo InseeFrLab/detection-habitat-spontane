@@ -191,7 +191,7 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
 
     for idx, batch in enumerate(test_dl):
         print(idx)
-        images, label, dic = batch
+        images, __, dic = batch
 
         model = model.to("cuda:0")
         images = images.to("cuda:0")
@@ -214,7 +214,7 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
         for i in range(batch_size):
             pthimg = dic["pathimage"][i]
             si = SatelliteImage.from_raster(
-                file_path=pthimg, dep=None, date=None, n_bands=3
+                file_path=pthimg, dep=None, date=None, n_bands=n_bands
             )
             si.normalize()
 
@@ -245,8 +245,8 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
             filename = pthimg.split("/")[-1]
             filename = filename.split(".")[0]
             filename = "_".join(filename.split("_")[0:6])
-            # plot_file = "img/" + filename + ".png"
-            plot_file = filename + ".png"
+            plot_file = "img2/" + filename + ".png"
+            #plot_file = filename + ".png"
 
             fig1.savefig(plot_file)
             list_labeled_satellite_image = []

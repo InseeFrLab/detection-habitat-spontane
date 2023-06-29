@@ -202,8 +202,20 @@ def plot_list_labeled_sat_images(
     list_labeled_image: List,
     bands_indices: List,
 ):
+
     list_images = [iml.satellite_image for iml in list_labeled_image]
     list_labels = [iml.label for iml in list_labeled_image]
+
+    list_bounding_box = [str(im.bounds[3]) + '_' + str(im.bounds[0]) for im in list_images]
+
+    # Utiliser zip pour combiner les trois listes
+    combined = zip(list_bounding_box, list_images, list_labels)
+
+    # Trier les éléments combinés en fonction de la troisième liste
+    sorted_combined = sorted(combined, key=lambda x: tuple(map(float, x[0].split('_'))))
+
+    # Diviser les listes triées en fonction de l'ordre des éléments
+    __, list_images, list_labels = zip(*sorted_combined)
 
     size = int(math.sqrt(len(list_images)))
 
