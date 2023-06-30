@@ -531,7 +531,7 @@ https://github.com/fitzpchao/BANDON
 	note = {Conference Name: IEEE Geoscience and Remote Sensing Letters},
 	keywords = {Satellites, change detection, Principal component analysis, remote sensing, \$k\$-means clustering, Change detection algorithms, Data mining, Euclidean distance, Image analysis, multitemporal satellite images, Optical devices, optical images, Parameter estimation, Pixel, principal component analysis (PCA), Radar detection},
 	pages = {772--776},
-	annote = {Clement : très intéressant aussi bien que daté (2012). 
+	annote = {Clement : très intéressant aussi bien que daté (2012).
 Idée génrale :
 On prend 2 images couvrant la même zone géographique en t et t+1
 On calcule l’image “différence” Xd = {\textbar}Xt+1-Xt{\textbar}
@@ -542,7 +542,7 @@ Ceci étant fait on fait un clustering k means à 2 classes. la classe 1 sera la
 Pour reconnaitre quelle classe est changed ou unchanged -{\textgreater} on regarde la valeur des patchs de l’image différence appartenant à telle ou telle classe) la classe qui a les plus grosses différences est la classe des patchs qui ont changés très naturellement.
 Ce qui est intéressant : technique non supervisée  ={\textgreater} pas de labels.
 Peut se pratiquer usur une seule image.
-={\textgreater} facile à mettre en place pour benchmarker ! 
+={\textgreater} facile à mettre en place pour benchmarker !
 },
 }
 
@@ -567,7 +567,7 @@ Publisher: Multidisciplinary Digital Publishing Institute},
 	pages = {1382},
 	annote = {Clément : Super article !
 Stratégie de change detection avec modèles de segmentation de type Unet
-Stratégie d’entrainement : on s’entraîne sur des triplets (images t image t+1 change\_detection\_segmentation\_map) et on a un algo en sortie qui prédit le masque de différence. 
+Stratégie d’entrainement : on s’entraîne sur des triplets (images t image t+1 change\_detection\_segmentation\_map) et on a un algo en sortie qui prédit le masque de différence.
 renvoi sur l’article Change Detection in Remote Sensing Images using conditionnal Adversarial Networks dont les chercheur mettent publiquement disponible un jeu de données Im1+Im2 -{\textgreater} change segmentation map {\textless}3 https://drive.google.com/file/d/1GX656JqqOyBi\_Ef0w65kDGVto-nHrNs9
 Fort impact de la data augmentation
 Unet à multiples output, on calcule une loss sur tous les output et on somme + chaque sous loss est une combinaison linéaire e la cross entropy, du F1 score etc..
@@ -590,7 +590,7 @@ Unet à multiples output, on calcule une loss sur tous les output et on somme + 
 	keywords = {slum detection},
 	pages = {1106},
 	annote = {Article intéressant dans le sens où il s’agit de la même problématique que nous, avec des données très similaires (VHR, 0.6m).
-Publié en 2017 et utilise des données de 2007 (et masques de 2004). 
+Publié en 2017 et utilise des données de 2007 (et masques de 2004).
 CNN les plus performants
 },
 }
@@ -610,7 +610,7 @@ CNN les plus performants
 	year = {2017},
 	keywords = {slum detection},
 	pages = {895},
-	annote = {Même problématique que nous. 
+	annote = {Même problématique que nous.
 Utilise données de Google Earth et considère ca comme VHR (Pléaides devrait être bien mieux)
 Intéressant car ils s’intéresse à la détection de changement même si ca marche pas chez eux (mais ils utilisent SVM et données Google Earth)
 },

@@ -26,7 +26,7 @@ book:
     - 2-Image-input.qmd
     - text: "---"
     - references.qmd
-  appendices: 
+  appendices:
     - A-Appendix1.qmd
 
   downloads: [pdf]

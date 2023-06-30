@@ -4,7 +4,7 @@
 Plusieurs caractéristiques possibles pour une image satellite :
 
 - **La résolution :** équivalence entre un pixel et le nombre de mètre couvert par ce dernier
-- **La fréquence d'acquisition :** fréquence des prises de vue pour un même endroit 
+- **La fréquence d'acquisition :** fréquence des prises de vue pour un même endroit
 - **source de l'émission :** optique, radar, laser
 - **une fauchée :** Largeur de la zone enregistrée sur un passage
 - **Une couverture géographique donnée**
@@ -16,7 +16,7 @@ Plusieurs caractéristiques possibles pour une image satellite :
 
 ![Exemple masques Sentinel 2](figures/Exemple_1.png){#fig-ex-sentinel2}
 
-- On ne peut espérer obtenir plus précis de ces images que ne peut permettre la résolution 
+- On ne peut espérer obtenir plus précis de ces images que ne peut permettre la résolution
 
 ## Images haute résolution : les données pleiades
 ![Image Pléiades](figures/pleiade.png){#fig-im-pleiade}
@@ -38,7 +38,7 @@ Caractéristiques de la prise de vue pouvant nuire à la qualité de l'image ré
 ![Catalogue Dinamis](figures/ElCatalogue.png){#fig-catalogue}
 
 
-| **Territoire** | **Superficie ($km^2$)**  | **Prix (en euros)** | 
+| **Territoire** | **Superficie ($km^2$)**  | **Prix (en euros)** |
 |:-------:|:----:|:-----:|
 |Martinique |1128| 1692
 |Guadeloupe |1628 |2442
@@ -50,6 +50,3 @@ Caractéristiques de la prise de vue pouvant nuire à la qualité de l'image ré
 
 - Nécessite une approche en deux temps où on sélectionnerait au préalable grossièrement les zones que l'on veut vérifier (notamment en Guyane)
 - Quotas de gratuité pour les acteurs publics 4000 $km^2$ monoscopiques.
-
-
-

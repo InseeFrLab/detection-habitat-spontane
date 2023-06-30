@@ -77,6 +77,7 @@ class CrossEntropySelfmade(nn.Module):
             torch.Tensor: The calculated cross-entropy loss.
 
         """
+        # TODO HANDLE DEVICE
         target = target.to("cpu")
         output = output.to("cpu")
 
@@ -124,6 +125,7 @@ class CustomLoss(nn.Module):
 
 def to_one_hot(tensor, nClasses):
     n, h, w = tensor.size()
+    # TODO HANDLE DEVICE
     one_hot = torch.zeros(n, nClasses, h, w, device="cuda:0").scatter_(
         1, tensor.view(n, 1, h, w), 1
     )

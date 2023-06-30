@@ -3,6 +3,7 @@ import random
 from typing import Dict, List
 
 import albumentations as album
+import torch
 import yaml
 from albumentations.pytorch.transforms import ToTensorV2
 
@@ -37,8 +38,8 @@ def select_indices_to_split_dataset(config_task, prop_val, list_labels):
 
     elif config_task == "classification":
         # Separating indices based on labels
-        zero_indices = [i for i, label in enumerate(list_labels) if label == "0"]
-        one_indices = [i for i, label in enumerate(list_labels) if label == "1"]
+        zero_indices = [i for i, label in enumerate(list_labels) if label == 0.0]
+        one_indices = [i for i, label in enumerate(list_labels) if label == 1.0]
 
         # Randomly shuffle the indices
         random.shuffle(zero_indices)
@@ -99,7 +100,7 @@ def select_indices_to_balance(
     return idx_balanced
 
 
-def generate_transform_pleiades(tile_size, augmentation):
+def generate_transform_pleiades(tile_size, augmentation, task):
     """
     Generates PyTorch transforms for data augmentation and preprocessing\
         for PLEIADES images.
@@ -107,6 +108,7 @@ def generate_transform_pleiades(tile_size, augmentation):
     Args:
         tile_size (int): The size of the image tiles.
         augmentation (bool): Whether or not to include data augmentation.
+        task (str): Task.
 
     Returns:
         (albumentations.core.composition.Compose,
@@ -143,7 +145,7 @@ def generate_transform_pleiades(tile_size, augmentation):
     return transforms_augmentation, transforms_preprocessing
 
 
-def generate_transform_sentinel(src, year, dep, tile_size, augmentation):
+def generate_transform_sentinel(src, year, dep, tile_size, augmentation, task):
     """
     Generates PyTorch transforms for data augmentation and preprocessing\
         for SENTINEL2 images.
@@ -158,6 +160,8 @@ def generate_transform_sentinel(src, year, dep, tile_size, augmentation):
         A tuple containing the augmentation and preprocessing transforms.
 
     """
+    # TODO: normalization functions only when 13 bands are used,
+    # change to make it work for less
     with open("utils/normalize_sentinel.yml", "r") as stream:
         normalize_sentinel = yaml.safe_load(stream)
     mean = eval(normalize_sentinel[src]["mean"][year][dep])
@@ -190,3 +194,75 @@ def generate_transform_sentinel(src, year, dep, tile_size, augmentation):
         transforms_augmentation = transforms_preprocessing
 
     return transforms_augmentation, transforms_preprocessing
+
+
+def generate_transform(tile_size, augmentation, task: str):
+    """
+    Generates PyTorch transforms for data augmentation and preprocessing.
+
+    Args:
+        tile_size (int): The size of the image tiles.
+        augmentation (bool): Whether or not to include data augmentation.
+        task (str): Task.
+
+    Returns:
+        (albumentations.core.composition.Compose,
+        albumentations.core.composition.Compose):
+        A tuple containing the augmentation and preprocessing transforms.
+
+    """
+    image_size = (tile_size, tile_size)
+
+    transforms_augmentation = None
+
+    if augmentation:
+        transforms_list = [
+            album.Resize(300, 300, always_apply=True),
+            album.RandomResizedCrop(*image_size, scale=(0.7, 1.0), ratio=(0.7, 1)),
+            album.HorizontalFlip(),
+            album.VerticalFlip(),
+            album.Normalize(),
+            ToTensorV2(),
+        ]
+        if task == "detection":
+            transforms_augmentation = album.Compose(
+                transforms_list,
+                bbox_params=album.BboxParams(
+                    format="pascal_voc", label_fields=["class_labels"]
+                ),
+            )
+        else:
+            transforms_augmentation = album.Compose(transforms_list)
+
+    test_transforms_list = [
+        album.Resize(*image_size, always_apply=True),
+        album.Normalize(),
+        ToTensorV2(),
+    ]
+    if task == "detection":
+        transforms_preprocessing = album.Compose(
+            test_transforms_list,
+            bbox_params=album.BboxParams(
+                format="pascal_voc", label_fields=["class_labels"]
+            ),
+        )
+    else:
+        transforms_preprocessing = album.Compose(test_transforms_list)
+
+    return transforms_augmentation, transforms_preprocessing
+
+
+def collate_fn(batch):
+    """
+    Collate function for object detection Dataloader.
+    """
+    images = []
+    targets = []
+    metadatas = []
+
+    for i, t, m in batch:
+        images.append(i)
+        targets.append(t)
+        metadatas.append(m)
+    images = torch.stack(images, dim=0)
+    return images, targets, metadatas

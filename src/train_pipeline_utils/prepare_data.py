@@ -1,6 +1,7 @@
 import csv
 import os
 import random
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -27,14 +28,10 @@ def check_labelled_images(output_directory_name):
     print("Entre dans la fonction check_labelled_images")
     output_images_path = output_directory_name + "/images"
     output_masks_path = output_directory_name + "/labels"
-    if (os.path.exists(output_masks_path)) and (
-        len(os.listdir(output_masks_path)) != 0
-    ):
+    if (os.path.exists(output_masks_path)) and (len(os.listdir(output_masks_path)) != 0):
         print("The directory already exists and is not empty.")
         return True
-    elif (os.path.exists(output_masks_path)) and (
-        len(os.listdir(output_masks_path)) == 0
-    ):
+    elif (os.path.exists(output_masks_path)) and (len(os.listdir(output_masks_path)) == 0):
         print("The directory exists but is empty.")
         return False
     else:
@@ -113,15 +110,16 @@ def filter_images_sentinel(list_images):
     return list_filtered_splitted_images
 
 
-def label_images(list_images, labeler, task="segmentation"):
+def label_images(list_images, labeler, task: str):
     """
-    labels the images according to type of labeler desired.
+    labels the images according to type of labeler and task desired.
 
     Args:
         list_images : the list containing the splitted and filtered data \
             to be labeled.
         labeler : a Labeler object representing the labeler \
             used to create segmentation labels.
+        task (str): task considered.
 
     Returns:
         list[SatelliteImage] : the list containing the splitted and \
@@ -166,14 +164,10 @@ def label_images(list_images, labeler, task="segmentation"):
         random.shuffle(zeros)
         selected_zeros = zeros[:sampled_nb_zeros]
         balancing_dict_sampled = {
-            key: value
-            for key, value in balancing_dict_copy.items()
-            if key in selected_zeros
+            key: value for key, value in balancing_dict_copy.items() if key in selected_zeros
         }
         indices_sampled = [
-            index
-            for index, key in enumerate(balancing_dict_copy)
-            if key in balancing_dict_sampled
+            index for index, key in enumerate(balancing_dict_copy) if key in balancing_dict_sampled
         ]
         labels = [labels[index] for index in indices_sampled]
         balancing_dict_copy = balancing_dict_sampled
@@ -189,9 +183,7 @@ def label_images(list_images, labeler, task="segmentation"):
             if value == 1 or key in selected_zeros
         }
         indices_sampled = [
-            index
-            for index, key in enumerate(balancing_dict_copy)
-            if key in balancing_dict_sampled
+            index for index, key in enumerate(balancing_dict_copy) if key in balancing_dict_sampled
         ]
         labels = [labels[index] for index in indices_sampled]
         balancing_dict_copy = balancing_dict_sampled
@@ -205,9 +197,65 @@ def label_images(list_images, labeler, task="segmentation"):
     return labels, balancing_dict
 
 
-def save_images_and_masks(
-    list_images, list_masks, output_directory_name, task="segmentation"
-):
+def filter_buildingless(images: List, labels: List, task: str):
+    """
+    Filter a list of images and associated labels to remove
+    buildingless images.
+
+    Args:
+        images : list containing images.
+        labels : list of corresponding labels.
+        task (str): task considered.
+    """
+    if task == "segmentation":
+        return filter_buildingless_segmentation(images, labels)
+    elif task == "detection":
+        return filter_buildingless_detection(images, labels)
+    else:
+        raise NotImplementedError("Task must be 'segmentation'" "or 'detection'.")
+
+
+def filter_buildingless_segmentation(images: List, labels: List):
+    """
+    Filter a list of images and associated labels to remove
+    buildingless images for segmentation.
+
+    Args:
+        images : list containing images.
+        labels : list of corresponding labels.
+    """
+    filtered_images = []
+    filtered_labels = []
+
+    for image, label in zip(images, labels):
+        if np.sum(label) != 0:
+            filtered_images.append(image)
+            filtered_labels.append(label)
+
+    return filtered_images, filtered_labels
+
+
+def filter_buildingless_detection(images: List, labels: List):
+    """
+    Filter a list of images and associated labels to remove
+    buildingless images for segmentation.
+
+    Args:
+        images : list containing images.
+        labels : list of corresponding labels.
+    """
+    filtered_images = []
+    filtered_labels = []
+
+    for image, label in zip(images, labels):
+        if np.sum(label) != 0:
+            filtered_images.append(image)
+            filtered_labels.append(label)
+
+    return filtered_images, filtered_labels
+
+
+def save_images_and_masks(list_images, list_masks, output_directory_name, task="segmentation"):
     """
     write the couple images/masks into a specific folder.
 
@@ -277,8 +325,7 @@ def save_images_and_masks(
 
 
 def extract_proportional_subset(
-    input_file="train_data-classification-PLEIADES-RIL-972-2022/"
-    + "labels/fichierlabeler.csv",
+    input_file="train_data-classification-PLEIADES-RIL-972-2022/" + "labels/fichierlabeler.csv",
     output_file="train_data-classification-PLEIADES-RIL-972-2022/"
     + "labels/fichierlabeler_echant.csv",
     target_column="Classification",

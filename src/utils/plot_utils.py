@@ -79,9 +79,7 @@ def plot_list_satellite_images(
     # Iterate over the grid of images and plot them
     for i in range(n_row):
         for j in range(n_col):
-            axs[i, j].imshow(
-                np.transpose(images[i, j], (1, 2, 0))[:, :, bands_indices]
-            )
+            axs[i, j].imshow(np.transpose(images[i, j], (1, 2, 0))[:, :, bands_indices])
 
     # Remove any unused axes
     for i in range(n_row):
@@ -104,9 +102,7 @@ def plot_list_sat_images_square(
     for i in range(size):
         for j in range(size):
             axs[i, j].imshow(
-                list_images[i * size + j].array.transpose(1, 2, 0)[
-                    :, :, bands_indices
-                ]
+                list_images[i * size + j].array.transpose(1, 2, 0)[:, :, bands_indices]
             )
 
     # Remove any unused axes
@@ -137,9 +133,7 @@ def plot_list_segmentation_labeled_satellite_image(
     tile_size = list_labeled_image[0].satellite_image.array.shape[1]
     stride = tile_size
 
-    list_bounding_box = np.array(
-        [iml.satellite_image.bounds for iml in list_labeled_image]
-    )
+    list_bounding_box = np.array([iml.satellite_image.bounds for iml in list_labeled_image])
     list_images = [iml.satellite_image for iml in list_labeled_image]
     list_labels = [iml.label for iml in list_labeled_image]
 
@@ -214,9 +208,7 @@ def plot_list_labeled_sat_images(
     for i in range(size):
         for j in range(size):
             axs[i, j].imshow(
-                list_images[i * size + j].array.transpose(1, 2, 0)[
-                    :, :, bands_indices
-                ]
+                list_images[i * size + j].array.transpose(1, 2, 0)[:, :, bands_indices]
             )
 
     for i in range(size):
@@ -579,14 +571,14 @@ def plot_list_images_and_masks_square(
 
     return represent_image_label(list_array_to_plot, list_label)
 
-    
-def draw_change_is_everywhere_exemples(changeiseverywheredataset, n_exemples):
 
+def draw_change_is_everywhere_exemples(changeiseverywheredataset, n_exemples):
     """
     Draws and saves a grid of examples from the ChangeIsEverywhere dataset.
 
     Args:
-        changeiseverywheredataset (list): The ChangeIsEverywhere dataset containing image paths and labels.
+        changeiseverywheredataset (list): The ChangeIsEverywhere dataset
+        containing image paths and labels.
         n_examples (int): The number of examples to draw.
 
     Returns:
@@ -597,7 +589,7 @@ def draw_change_is_everywhere_exemples(changeiseverywheredataset, n_exemples):
         {
             "pth1": changeiseverywheredataset[i][2]["pathimage1"],
             "pth2": changeiseverywheredataset[i][2]["pathimage2"],
-            "label": changeiseverywheredataset[i][1]
+            "label": changeiseverywheredataset[i][1],
         }
         for i in range(n_exemples)
     ]
@@ -606,16 +598,11 @@ def draw_change_is_everywhere_exemples(changeiseverywheredataset, n_exemples):
     num_cols = 3  # Number of columns in the subplot grid
     # Iterate over each triplet and plot the images and labels
 
-    fig, axs = plt.subplots(
-        num_triplets,
-        num_cols,
-        figsize=(15, 15),
-        constrained_layout=True
-    )
+    fig, axs = plt.subplots(num_triplets, num_cols, figsize=(15, 15), constrained_layout=True)
 
     for i, dic in enumerate(triplets):
         # i = 0
-        pathimage1, pathimage2, label = dic["pth1"],  dic["pth2"], dic["label"]
+        pathimage1, pathimage2, label = dic["pth1"], dic["pth2"], dic["label"]
 
         # Load the jp2 files
         image1 = SatelliteImage.from_raster(pathimage1, "972").array
@@ -623,13 +610,13 @@ def draw_change_is_everywhere_exemples(changeiseverywheredataset, n_exemples):
 
         # Plot the first image in the left subplot
         axs[i, 0].imshow(np.transpose(image1, (1, 2, 0)))
-        
+
         # Plot the second image in the right subplot
         axs[i, 1].imshow(np.transpose(image2, (1, 2, 0)))
-    
+
         # Add the label as the title of the bottom subplot
-        axs[i, 2].imshow(label, cmap='gray')
-        
+        axs[i, 2].imshow(label, cmap="gray")
+
         # Remove the ticks and labels in the subplots
         axs[i, 0].set_xticks([])
         axs[i, 0].set_yticks([])
@@ -640,7 +627,7 @@ def draw_change_is_everywhere_exemples(changeiseverywheredataset, n_exemples):
 
     # set the spacing between subplots
     plt.subplots_adjust(left=0.01)
-    
+
     # Adjust the spacing between subplots
     # Show the plot
     plt.show()

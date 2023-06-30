@@ -14,9 +14,9 @@ Je peux citer comme cela quelques articles que j'ai lu : @mboga_detection_2017, 
 
 ![Détection du Mont Baduel](figures/Detection_mont_baduel.png){#fig-detec-mont-baduel}
 
-- On peut détecter la présence de bidonvilles ! 
+- On peut détecter la présence de bidonvilles !
 
 ## Les attendus techniques du projet sont-il bien définis ?
 
-- On voudrait ici être en mesure pour une zone donnée de détecter des apparitions ou disparitions de logement 
+- On voudrait ici être en mesure pour une zone donnée de détecter des apparitions ou disparitions de logement
 - A-t'on des données annotées qui nous permettent réellement de le faire ?

@@ -24,7 +24,13 @@ from utils.plot_utils import (
 
 
 def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
-    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+    test_dl,
+    model,
+    tile_size,
+    batch_size,
+    n_bands=3,
+    use_mlflow=False,
+    device: str = "cpu",
 ):
     """
     Evaluates the model on the Pleiade test dataset for image segmentation.
@@ -37,6 +43,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
         batch_size (int): The batch size.
         use_mlflow (bool, optional): Whether to use MLflow for logging
         artifacts. Defaults to False.
+        device (str): Device.
 
     Returns:
         None
@@ -60,14 +67,14 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
         # idx, batch = 0, next(iter(test_dl))
         print(idx)
         images, label, dic = batch
-        
-        model = model.to("cuda:0")
-        images = images.to("cuda:0")
+
+        model = model.to(device)
+        images = images.to(device)
 
         output_model = model(images)
         mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
 
-        for i in range(batch_size):
+        for i in range(len(batch)):
             pthimg = dic["pathimage"][i]
             si = SatelliteImage.from_raster(
                 file_path=pthimg, dep=None, date=None, n_bands=n_bands
@@ -113,14 +120,15 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
     batch_size,
     n_bands,
     use_mlflow=False,
+    device: str = "cpu",
 ):
     for idx, batch in enumerate(test_dl):
         # idx, batch = 0, next(iter(test_dl))
         images, label, dic = batch
 
         if torch.cuda.is_available():
-            model = model.to("cuda:0")
-            images = images.to("cuda:0")
+            model = model.to(device)
+            images = images.to(device)
 
         output_model = model(images)
         mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
@@ -159,7 +167,13 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
 
 
 def evaluer_modele_sur_jeu_de_test_classification_pleiade(
-    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+    test_dl,
+    model,
+    tile_size,
+    batch_size,
+    n_bands=3,
+    use_mlflow=False,
+    device: str = "cpu",
 ):
     """
     Evaluates the model on the Pleiade test dataset for image classification.
@@ -172,6 +186,7 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
         batch_size (int): The batch size.
         use_mlflow (bool, optional): Whether to use MLflow for logging
         artifacts. Defaults to False.
+        device (str): Device.
 
     Returns:
         None
@@ -193,8 +208,8 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
         print(idx)
         images, label, dic = batch
 
-        model = model.to("cuda:0")
-        images = images.to("cuda:0")
+        model = model.to(device)
+        images = images.to(device)
 
         output_model = model(images)
         output_model = output_model.to("cpu")
@@ -255,11 +270,7 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
 
 
 def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(
-    test_dl,
-    model,
-    tile_size,
-    batch_size,
-    use_mlflow=False
+    test_dl, model, tile_size, batch_size, use_mlflow=False, device: str = "cpu"
 ):
     """
     Evaluates the model on the Pleiade test dataset for image segmentation.
@@ -272,6 +283,7 @@ def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(
         batch_size (int): The batch size.
         use_mlflow (bool, optional): Whether to use MLflow for logging
         artifacts. Defaults to False.
+        device (str): Device.
 
     Returns:
         None
@@ -279,12 +291,14 @@ def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(
     # tile_size = 250
     # batch_size  = 4
     model.eval()
-    npatch = int((2000/tile_size)**2)
-    nbatchforfullimage = int(npatch/batch_size)
+    npatch = int((2000 / tile_size) ** 2)
+    nbatchforfullimage = int(npatch / batch_size)
 
     if not npatch % nbatchforfullimage == 0:
-        print("Le nombre de patchs \
-            n'est pas divisible par la taille d'un batch")
+        print(
+            "Le nombre de patchs \
+            n'est pas divisible par la taille d'un batch"
+        )
         return None
 
     list_labeled_satellite_image = []
@@ -293,7 +307,6 @@ def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(
         # idx, batch = 0, next(iter(test_dl))
         print(idx)
         images, label, dic = batch
-        device = "cpu"
         model = model.to(device)
         images = images.to(device)
 
@@ -303,34 +316,31 @@ def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(
         for i in range(batch_size):
             pthimg2 = dic["pathimage2"][i]
             si2 = SatelliteImage.from_raster(
-                file_path=pthimg2,
-                dep=None,
-                date=None,
-                n_bands=3
+                file_path=pthimg2, dep=None, date=None, n_bands=3
             )
             si2.normalize()
 
             list_labeled_satellite_image.append(
                 SegmentationLabeledSatelliteImage(
-                    satellite_image=s2,
+                    satellite_image=si2,
                     label=mask_pred[i],
                     source="",
-                    labeling_date=""
+                    labeling_date="",
                 )
             )
 
-        if ((idx+1) % nbatchforfullimage) == 0:
+        if ((idx + 1) % nbatchforfullimage) == 0:
             print("ecriture image")
             if not os.path.exists("img/"):
                 os.makedirs("img/")
 
             fig1 = plot_list_segmentation_labeled_satellite_image(
                 list_labeled_satellite_image, [0, 1, 2]
-                )
+            )
 
-            filename = pthimg2.split('/')[-1]
-            filename = filename.split('.')[0]
-            filename = '_'.join(filename.split('_')[0:6])
+            filename = pthimg2.split("/")[-1]
+            filename = filename.split(".")[0]
+            filename = "_".join(filename.split("_")[0:6])
             plot_file = filename + ".png"
 
             fig1.savefig(plot_file)
@@ -341,7 +351,6 @@ def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(
 
         del images, label, dic
 
- 
 
 def calculate_IOU(output, labels):
     """
