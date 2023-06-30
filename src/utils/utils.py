@@ -220,7 +220,7 @@ def load_bdtopo(
     if int(millesime) >= 2019:
         couche = "BATIMENT.shp"
     elif int(millesime) < 2019:
-        couche = "BATI_INDIFFERENCIE.shp"
+        couche = "BATI_INDIFFERENCIE.SHP"
 
     bucket = environment["bucket"]
     path_s3 = environment["sources"]["BDTOPO"][int(millesime)][dep]
@@ -243,7 +243,7 @@ def load_bdtopo(
             client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"}
         )
         print("download " + dep + " " + str(millesime) + " in " + dir_path)
-        extensions = ["cpg", "dbf", "prj", "shp", "shx"]
+        extensions = ["cpg", "dbf", "prj", "shp", "shx", 'CPG', 'DBF', 'PRJ', 'SHP', 'SHX']
         couche_split = couche.split(".")[0]
         for ext in extensions:
             fs.download(
