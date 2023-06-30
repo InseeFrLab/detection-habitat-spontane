@@ -1,7 +1,7 @@
 donnees:
   source train: "PLEIADES"
   dataset: "CLASSIFICATION" 
-  dataset-test: "PLEIADE"
+  dataset-test: "CLASSIFICATION"
   year: [2022]
   dep: ["972"]
   type labeler: "BDTOPO"

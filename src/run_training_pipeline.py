@@ -4,6 +4,7 @@ import os
 import random
 import sys
 from datetime import datetime
+import csv
 
 import mlflow
 import numpy as np
@@ -248,7 +249,7 @@ def prepare_test_data(config, test_dir):
     list_name_label = np.sort(remove_dot_file(list_name_label))
     list_labels_path = [labels_path + "/" + name for name in list_name_label]
 
-    if config["donnees"]["task"] != "change-detection":
+    if config["donnees"]["task"] == "segmentation":
 
         images_path = test_dir + "/images"
         list_name_image = os.listdir(images_path)
@@ -277,6 +278,54 @@ def prepare_test_data(config, test_dir):
                     output_images_path, file_name_i + ".jp2"
                     )
                 np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
+
+    elif config["donnees"]["task"] == "classification":
+
+        images_path = test_dir + "/images"
+        list_name_image = os.listdir(images_path)
+        list_name_image = np.sort(remove_dot_file(list_name_image))
+        list_images_path = [images_path + "/" + name for name in list_name_image]
+        output_images_path = output_test + "/images"
+
+        for image_path, label_path, name in zip(
+            list_images_path,
+            list_labels_path,
+            list_name_image
+        ):
+
+            si = SatelliteImage.from_raster(
+                file_path=image_path, dep=None, date=None, n_bands=n_bands
+            )
+            mask = np.load(label_path)
+
+            lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
+            list_lsi = lsi.split(tile_size)
+            csv_file_path = output_labels_path + "/" + "fichierlabeler.csv"
+
+            for i, lsi in enumerate(list_lsi):
+                file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
+
+                lsi.satellite_image.to_raster(
+                    output_images_path, file_name_i + ".jp2"
+                    )
+
+                if np.sum(lsi.label) != 0:
+                    mask = 1
+                else:
+                    mask = 0
+
+                # Create the csv file if it does not exist
+                if not os.path.isfile(csv_file_path):
+                    with open(csv_file_path, "w", newline="") as csvfile:
+                        writer = csv.writer(csvfile)
+                        writer.writerow(["Path_image", "Classification"])
+                        writer.writerow([file_name_i, mask])
+
+                # Open it if it exists
+                else:
+                    with open(csv_file_path, "a", newline="") as csvfile:
+                        writer = csv.writer(csvfile)
+                        writer.writerow([file_name_i, mask])
     else:
         images_path_1 = test_dir + "/images_1"
         list_name_image_1 = os.listdir(images_path_1)
@@ -349,7 +398,7 @@ def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, 
     else:
         dataset_select = dataset_dict[dataset_type]
        
-        if list_images_2 is None :
+        if list_images_2 is None:
             full_dataset = dataset_select(
                 list_images, list_labels, config["donnees"]["n bands"]
             )
