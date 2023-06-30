@@ -265,15 +265,21 @@ def extract_proportional_subset(
     nb_ones = len(df_1)
 
     difference = abs(nb_ones - nb_zeros)
-    tolerance = 0.1*prop*nb_ones
+    tolerance = 0.2*prop*nb_ones
 
     if difference > tolerance:
 
-        # Randomly sample the same number of samples from each class
-        df_sample_0 = df_0.sample(prop*len(df_1))
+        if nb_zeros > nb_ones:
+            # Randomly sample the same number of samples from each class
+            df_sample_max = df_0.sample(prop*nb_ones)
+            df_not_sample = df_1
+        else:
+            # Randomly sample the same number of samples from each class
+            df_sample_max = df_1.sample(prop*nb_zeros)
+            df_not_sample = df_0
 
         # Concatenate the sample dataframes
-        df_sample = pd.concat([df_sample_0, df_1])
+        df_sample = pd.concat([df_sample_max, df_not_sample])
 
         # Save the sample dataframe to a new CSV file
         os.remove(input_file)
