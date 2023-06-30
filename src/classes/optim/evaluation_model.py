@@ -290,9 +290,9 @@ def ROC_classification_pleiade(
 
         output_model = model(images)
         output_model = output_model.to("cpu")
-        y_pred_prob.append(int(output_model[:, 1]))
+        y_pred_prob.append(output_model[:, 1])
 
-        y_true.append(int(labels))
+        y_true.append(labels)
 
         del images, labels
 

@@ -55,6 +55,7 @@ from train_pipeline_utils.prepare_data import (
     filter_images_by_path,
 )
 from utils.utils import remove_dot_file, split_array, update_storage_access
+from classes.optim.evaluation_model import ROC_classification_pleiade
 
 # with open("../config.yml") as f:
 #     config = yaml.load(f, Loader=SafeLoader)
@@ -848,6 +849,14 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             evaluer_modele_sur_jeu_de_test = task_to_evaluation[src_task]
 
         evaluer_modele_sur_jeu_de_test(
+            test_dl,
+            model,
+            tile_size,
+            batch_size_test,
+            config["donnees"]["n bands"],
+            False,
+        )
+        ROC_classification_pleiade(
             test_dl,
             model,
             tile_size,
