@@ -743,7 +743,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     torch.cuda.empty_cache()
     gc.collect()
 
-    remote_server_uri = "https://projet-slums-detection-128833.user.lab.sspcloud.fr"
+    # remote_server_uri = "https://projet-slums-detection-128833.user.lab.sspcloud.fr"
     # experiment_name = "classification"
     # run_name = "essai35"
 
