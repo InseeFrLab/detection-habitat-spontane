@@ -60,7 +60,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
         # idx, batch = 0, next(iter(test_dl))
         print(idx)
         images, label, dic = batch
-        
+
         model = model.to("cuda:0")
         images = images.to("cuda:0")
 
@@ -114,6 +114,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
     n_bands,
     use_mlflow=False,
 ):
+    model.eval()
     for idx, batch in enumerate(test_dl):
         # idx, batch = 0, next(iter(test_dl))
         images, label, dic = batch

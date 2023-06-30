@@ -1,27 +1,27 @@
 donnees:
-  source train: "PLEIADES"
-  dataset: "CHANGEISEVERYWHERE" 
-  dataset-test: "CHANGEDETECTIONDATASET"
-  year: [2022]
-  dep: ["972"]
+  source train: "SENTINEL1-2"
+  dataset: "SENTINEL"
+  dataset-test: "SENTINEL"
+  year: [2022,2022,2022,2022]
+  dep: ["971","972","974","976"]
   type labeler: "BDTOPO"
   buffer size: 10
-  n channels train: 6
-  n bands: 3
-  tile size: 250
-  augmentation: False
-  task: "change-detection"
+  n channels train: 13
+  n bands: 13
+  tile size: 125
+  augmentation: True
+  task: "segmentation"
   prop: 1
 
 optim:
-  loss: "crossentropy"
+  loss: "softiou"
   lr: 0.0001
   momentum: 0.9
-  module: "resnet50"
-  batch size: 9
-  batch size test: 100
-  max epochs: 20
+  module: "deeplabv3"
+  batch size: 16
+  batch size test: 16
+  max epochs: 30
   val prop: 0.2
-  accumulate batch : 8
+  accumulate batch : 4
 
 mlflow: True

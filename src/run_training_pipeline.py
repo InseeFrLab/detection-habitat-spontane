@@ -126,12 +126,10 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
 
     list_output_dir = []
 
-    
-
     for i, (year, dep) in enumerate(zip(years, deps)):
         # i, year , dep = 0,years[0],deps[0]
         output_dir = (
-            "../train_data2"
+            "../train_data"
             + "-"
             + config_task
             + "-"
@@ -145,14 +143,14 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
             + "/"
         )
 
-        date = datetime.strptime(str(year) + "0101", "%Y%m%d")
-        if type_labeler == "RIL":
-            buffer_size = config_data["buffer size"]
-            labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
-        elif type_labeler == "BDTOPO":
-            labeler = BDTOPOLabeler(date, dep=dep)
-
         if not check_labelled_images(output_dir):
+            date = datetime.strptime(str(year) + "0101", "%Y%m%d")
+            if type_labeler == "RIL":
+                buffer_size = config_data["buffer size"]
+                labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
+            elif type_labeler == "BDTOPO":
+                labeler = BDTOPOLabeler(date, dep=dep)
+
             list_name_cloud = []
             if src == "PLEIADES":
                 cloud_dir = list_masks_cloud_dir[i]
@@ -227,97 +225,93 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
 
 def prepare_test_data(config, test_dir):
     print("Entre dans la fonction prepare_test_data")
-
     n_bands = config["donnees"]["n bands"]
     tile_size = config["donnees"]["tile size"]
-    
+
     output_test = "../test-data"
     output_labels_path = output_test + "/labels"
-    
+
     if not os.path.exists(output_labels_path):
         os.makedirs(output_labels_path)
     else:
         return None
-    
+
     labels_path = test_dir + "/masks"
     list_name_label = os.listdir(labels_path)
     list_name_label = np.sort(remove_dot_file(list_name_label))
     list_labels_path = [labels_path + "/" + name for name in list_name_label]
 
-    if config["donnees"]["source train"] == "PLEIADES":
-        if config["donnees"]["task"] != "change-detection":
-        
-            images_path = test_dir + "/images"
-            list_name_image = os.listdir(images_path)
-            list_name_image = np.sort(remove_dot_file(list_name_image))
-            list_images_path = [images_path + "/" + name for name in list_name_image]
-            output_images_path = output_test + "/images"
-        
-            for image_path, label_path, name in zip(
-                list_images_path,
-                list_labels_path,
-                list_name_image
-            ):
+    if config["donnees"]["task"] != "change-detection":
+        images_path = test_dir + "/images"
+        list_name_image = os.listdir(images_path)
+        list_name_image = np.sort(remove_dot_file(list_name_image))
+        list_images_path = [images_path + "/" + name for name in list_name_image]
+        output_images_path = output_test + "/images"
 
-                si = SatelliteImage.from_raster(
-                    file_path=image_path, dep=None, date=None, n_bands=n_bands
-                )
-                mask = np.load(label_path)
+        for image_path, label_path, name in zip(
+            list_images_path,
+            list_labels_path,
+            list_name_image
+        ):
+            si = SatelliteImage.from_raster(
+                file_path=image_path, dep=None, date=None, n_bands=n_bands
+            )
+            mask = np.load(label_path)
 
-                lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
-                list_lsi = lsi.split(tile_size)
+            lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
+            list_lsi = lsi.split(tile_size)
 
-                for i, lsi in enumerate(list_lsi):
-                    file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+            for i, lsi in enumerate(list_lsi):
+                file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
 
-                    lsi.satellite_image.to_raster(
-                        output_images_path, file_name_i + ".jp2"
-                        )
-                    np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
-        else:
-            images_path_1 = test_dir + "/images_1"
-            list_name_image_1 = os.listdir(images_path_1)
-            list_name_image_1 = np.sort(remove_dot_file(list_name_image_1))
-            list_images_path_1 = [images_path_1 + "/" + name for name in list_name_image_1]
-            output_images_path_1 = output_test + "/images_1"
+                lsi.satellite_image.to_raster(
+                    output_images_path, file_name_i + ".jp2"
+                    )
+                np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
+    else:
+        images_path_1 = test_dir + "/images_1"
+        list_name_image_1 = os.listdir(images_path_1)
+        list_name_image_1 = np.sort(remove_dot_file(list_name_image_1))
+        list_images_path_1 = [images_path_1 + "/" + name for name in list_name_image_1]
+        output_images_path_1 = output_test + "/images_1"
 
-            images_path_2 = test_dir + "/images_2"
-            list_name_image_2 = os.listdir(images_path_2)
-            list_name_image_2 = np.sort(remove_dot_file(list_name_image_2))
-            list_images_path_2 = [images_path_2 + "/" + name for name in list_name_image_2]
-            output_images_path_2 = output_test + "/images_2"
+        images_path_2 = test_dir + "/images_2"
+        list_name_image_2 = os.listdir(images_path_2)
+        list_name_image_2 = np.sort(remove_dot_file(list_name_image_2))
+        list_images_path_2 = [images_path_2 + "/" + name for name in list_name_image_2]
+        output_images_path_2 = output_test + "/images_2"
 
-            for image_path_1, image_path_2, label_path, name in zip(
-                list_images_path_1,
-                list_images_path_2,
-                list_labels_path,
-                list_name_image_1
-            ):
+        for image_path_1, image_path_2, label_path, name in zip(
+            list_images_path_1,
+            list_images_path_2,
+            list_labels_path,
+            list_name_image_1
+        ):
 
-                si1 = SatelliteImage.from_raster(
-                    file_path=image_path_1, dep=None, date=None, n_bands=n_bands
-                )
-                si2 = SatelliteImage.from_raster(
-                    file_path=image_path_2, dep=None, date=None, n_bands=n_bands
-                )
-                mask = np.load(label_path)
+            si1 = SatelliteImage.from_raster(
+                file_path=image_path_1, dep=None, date=None, n_bands=n_bands
+            )
+            si2 = SatelliteImage.from_raster(
+                file_path=image_path_2, dep=None, date=None, n_bands=n_bands
+            )
+            mask = np.load(label_path)
 
-                lsi1 = SegmentationLabeledSatelliteImage(si1, mask, "", "")
-                lsi2 = SegmentationLabeledSatelliteImage(si2, mask, "", "")
-                
-                list_lsi1 = lsi1.split(tile_size)
-                list_lsi2 = lsi2.split(tile_size)
+            lsi1 = SegmentationLabeledSatelliteImage(si1, mask, "", "")
+            lsi2 = SegmentationLabeledSatelliteImage(si2, mask, "", "")
 
-                for i, (lsi1, lsi2) in enumerate(zip(list_lsi1, list_lsi2)):
-                    file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+            list_lsi1 = lsi1.split(tile_size)
+            list_lsi2 = lsi2.split(tile_size)
 
-                    lsi1.satellite_image.to_raster(
-                        output_images_path_1, file_name_i + ".jp2"
-                        )
-                    lsi2.satellite_image.to_raster(
-                        output_images_path_2, file_name_i + ".jp2"
-                        )
-                    np.save(output_labels_path + "/" + file_name_i + ".npy", lsi1.label)
+            for i, (lsi1, lsi2) in enumerate(zip(list_lsi1, list_lsi2)):
+                file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
+
+                lsi1.satellite_image.to_raster(
+                    output_images_path_1, file_name_i + ".jp2"
+                    )
+                lsi2.satellite_image.to_raster(
+                    output_images_path_2, file_name_i + ".jp2"
+                    )
+                np.save(output_labels_path + "/" + file_name_i + ".npy", lsi1.label)
 
 
 def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, test = False):
@@ -345,7 +339,7 @@ def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, 
         raise ValueError("Invalid dataset type")
     else:
         dataset_select = dataset_dict[dataset_type]
-       
+
         if list_images_2 is None :
             full_dataset = dataset_select(
                 list_images, list_labels, config["donnees"]["n bands"]
@@ -458,7 +452,10 @@ def instantiate_dataloader(config, list_output_dir):
         list_labels = unbalanced_labels[indices_to_balance]
 
     train_idx, val_idx = select_indices_to_split_dataset(
-        config_task, config["optim"]["val prop"], list_labels
+        config_task,
+        config["optim"]["val prop"],
+        list_labels,
+        full_balancing_dict
     )
 
     # Retrieving the desired Dataset class
@@ -516,7 +513,7 @@ def instantiate_dataloader(config, list_output_dir):
         output_images_path = output_test + "/images/"
         list_name_image_test = os.listdir(output_images_path)
         list_path_images_test = np.sort([output_images_path + name_image for name_image in list_name_image_test])
-        
+
         dataset_test = instantiate_dataset(
             config, list_path_images_test, list_path_labels_test, test = True
         )
@@ -526,7 +523,7 @@ def instantiate_dataloader(config, list_output_dir):
         output_images_path_1 = output_test + "/images_1/"
         list_name_image_1 = os.listdir(output_images_path_1)
         list_path_images_1 = np.sort([output_images_path_1 + name_image for name_image in list_name_image_1])
-        
+
         output_images_path_2 = output_test + "/images_2/"
         list_name_image_2 = os.listdir(output_images_path_2)
         list_path_images_2 = np.sort([output_images_path_2 + name_image for name_image in list_name_image_2])
@@ -732,67 +729,43 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         with mlflow.start_run(run_name=run_name):
             mlflow.autolog()
-            mlflow.log_artifact("../config.yml", artifact_path="config.yml")
+            mlflow.log_artifact(
+                "../config.yml",
+                artifact_path="config.yml"
+            )
             trainer.fit(light_module, train_dl, valid_dl)
-            
-            if config["donnees"]["source train"] == "PLEIADES":
-
-                light_module_checkpoint = light_module.load_from_checkpoint(
-                    loss=instantiate_loss(config),
-                    checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
-                    model=light_module.model,
-                    optimizer=light_module.optimizer,
-                    optimizer_params=light_module.optimizer_params,
-                    scheduler=light_module.scheduler,
-                    scheduler_params=light_module.scheduler_params,
-                    scheduler_interval=light_module.scheduler_interval
-                )
-
-                model = light_module_checkpoint.model
-
-                if task_type not in task_to_evaluation:
-                    raise ValueError("Invalid task type")
-                else:
-                    evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
-
-                evaluer_modele_sur_jeu_de_test(
-                        test_dl,
-                        model,
-                        tile_size,
-                        batch_size_test,
-                        config["mlflow"]
-                    )
-
-    else:
-        trainer.fit(light_module, train_dl, valid_dl)
-
-        if config["donnees"]["source train"] == "PLEIADES":
+            tile_size = config["donnees"]["tile size"]
+            batch_size_test = config["optim"]["batch size test"]
+            task_type = config["donnees"]["task"]
+            source_data = config["donnees"]["source train"]
+            src_task = source_data + task_type
 
             light_module_checkpoint = light_module.load_from_checkpoint(
                 loss=instantiate_loss(config),
-                checkpoint_path=trainer.checkpoint_callback.best_model_path,
+                checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
                 model=light_module.model,
                 optimizer=light_module.optimizer,
                 optimizer_params=light_module.optimizer_params,
                 scheduler=light_module.scheduler,
                 scheduler_params=light_module.scheduler_params,
-                scheduler_interval=light_module.scheduler_interval,
+                scheduler_interval=light_module.scheduler_interval
+
             )
             model = light_module_checkpoint.model
 
             if src_task not in task_to_evaluation:
                 raise ValueError("Invalid task type")
             else:
-                evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
+                evaluer_modele_sur_jeu_de_test = task_to_evaluation[src_task]
 
             evaluer_modele_sur_jeu_de_test(
-                test_dl,
-                model,
-                tile_size,
-                batch_size_test,
-                config["donnees"]["n bands"],
-                config["mlflow"],
-            )
+                    test_dl,
+                    model,
+                    tile_size,
+                    batch_size_test,
+                    config["donnees"]["n bands"],
+                    config["mlflow"]
+                )
 
     else:
         trainer.fit(light_module, train_dl, valid_dl)
@@ -804,30 +777,33 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         light_module_checkpoint = light_module.load_from_checkpoint(
             loss=instantiate_loss(config),
-            checkpoint_path=trainer.checkpoint_callback.best_model_path,
+            checkpoint_path=trainer.checkpoint_callback.best_model_path,  # je créé un module qui charge
+            # checkpoint_path='',
             model=light_module.model,
             optimizer=light_module.optimizer,
             optimizer_params=light_module.optimizer_params,
             scheduler=light_module.scheduler,
             scheduler_params=light_module.scheduler_params,
-            scheduler_interval=light_module.scheduler_interval,
+            scheduler_interval=light_module.scheduler_interval
         )
         model = light_module_checkpoint.model
 
         if src_task not in task_to_evaluation:
             raise ValueError("Invalid task type")
         else:
-            evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
+            evaluer_modele_sur_jeu_de_test = task_to_evaluation[src_task]
 
         evaluer_modele_sur_jeu_de_test(
-            test_dl,
-            model,
-            tile_size,
-            batch_size_test,
-            config["donnees"]["n bands"],
-            config["mlflow"],
-        )
+                test_dl,
+                model,
+                tile_size,
+                batch_size_test,
+                config["donnees"]["n bands"],
+                # config["mlflow"]
+                False
+            )
         # trainer.test(light_module, test_dl)
+
 
 if __name__ == "__main__":
     # MLFlow params
