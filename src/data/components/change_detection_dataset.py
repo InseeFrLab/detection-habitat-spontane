@@ -18,7 +18,6 @@ from classes.data.satellite_image import SatelliteImage
 
 
 class ChangeDetectionDataset(Dataset):
-
     def __init__(
         self,
         list_paths_images_1: List,
@@ -57,9 +56,9 @@ class ChangeDetectionDataset(Dataset):
 
         pathim1 = self.list_paths_images_1[idx]
         pathim2 = self.list_paths_images_2[idx]
-        
+
         pathlabel = self.list_paths_labels[idx]
-        
+
         img1 = SatelliteImage.from_raster(
             file_path=pathim1, dep=None, date=None, n_bands=self.n_bands
         ).array
@@ -68,20 +67,20 @@ class ChangeDetectionDataset(Dataset):
             file_path=pathim2, dep=None, date=None, n_bands=self.n_bands
         ).array
 
-        label = torch.tensor(np.load(pathlabel))   
-        
+        label = torch.tensor(np.load(pathlabel))
+
         if self.transforms:
             # transfo séparée ne marche que pour les transfos non aléatoires
-            img1 = np.transpose(img1.astype(float), [1, 2, 0]) 
+            img1 = np.transpose(img1.astype(float), [1, 2, 0])
             img2 = np.transpose(img2.astype(float), [1, 2, 0])
             sample1 = self.transforms(image=img1, label=label)
-            img1 = sample1["image"] 
+            img1 = sample1["image"]
             sample2 = self.transforms(image=img2, label=label)
             img2 = sample2["image"]
             label = sample2["label"]
 
-        img1 = torch.tensor(img1, dtype = torch.float)
-        img2 = torch.tensor(img2, dtype = torch.float)
+        img1 = torch.tensor(img1, dtype=torch.float)
+        img2 = torch.tensor(img2, dtype=torch.float)
 
         img_double = torch.concatenate((img1, img2))
 
@@ -134,9 +133,7 @@ class ChangeIsEverywhereDataset(Dataset):
 
         random.seed(1234)
 
-        random_order = random.sample(
-            range(len(list_paths_images)), len(list_paths_images)
-        )
+        random_order = random.sample(range(len(list_paths_images)), len(list_paths_images))
 
         self.list_paths_images1 = np.array(list_paths_images)[random_order]
         self.list_paths_labels1 = np.array(list_paths_labels)[random_order]
@@ -204,9 +201,7 @@ class ChangeIsEverywhereDataset(Dataset):
             label1 = torch.tensor(label1)
             label2 = torch.tensor(label2)
 
-        label = torch.where(
-            torch.logical_xor(label1, label2), torch.tensor(1), torch.tensor(0)
-        )
+        label = torch.where(torch.logical_xor(label1, label2), torch.tensor(1), torch.tensor(0))
 
         img1 = img1.type(torch.float)
         img2 = img2.type(torch.float)
