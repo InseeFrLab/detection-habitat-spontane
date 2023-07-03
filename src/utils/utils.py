@@ -28,7 +28,8 @@ def remove_dot_file(list_name):
     """
     for filename in list_name:
         if filename[0] == ".":
-            list_name.remove(filename)
+            if filename[:3] != "../":
+                list_name.remove(filename)
 
     return list_name
 

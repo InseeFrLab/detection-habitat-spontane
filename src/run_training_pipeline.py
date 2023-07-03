@@ -311,22 +311,22 @@ def prepare_test_data(config, test_dir):
                     )
 
                 if np.sum(lsi.label) != 0:
-                    mask = 1
+                    label = 1
                 else:
-                    mask = 0
+                    label = 0
 
                 # Create the csv file if it does not exist
                 if not os.path.isfile(csv_file_path):
                     with open(csv_file_path, "w", newline="") as csvfile:
                         writer = csv.writer(csvfile)
                         writer.writerow(["Path_image", "Classification"])
-                        writer.writerow([file_name_i, mask])
+                        writer.writerow([file_name_i, label])
 
                 # Open it if it exists
                 else:
                     with open(csv_file_path, "a", newline="") as csvfile:
                         writer = csv.writer(csvfile)
-                        writer.writerow([file_name_i, mask])
+                        writer.writerow([file_name_i, label])
     else:
         images_path_1 = test_dir + "/images_1"
         list_name_image_1 = os.listdir(images_path_1)
@@ -459,11 +459,10 @@ def instantiate_dataloader(config, list_output_dir):
         list_images = []
         full_balancing_dict = {}
         for directory in list_output_dir:
-            # dir = list_output_dir[0]
+            # directory = list_output_dir[0]
             labels = os.listdir(directory + "/labels")
             images = os.listdir(directory + "/images")
-            if labels[0][0] == ".":
-                del labels[0]
+            labels = remove_dot_file(labels)
 
             if config_task != "classification":
                 with open(directory + "/balancing_dict.json") as json_file:
@@ -521,7 +520,6 @@ def instantiate_dataloader(config, list_output_dir):
         )
         list_images = unbalanced_images[indices_to_balance]
         list_labels = unbalanced_labels[indices_to_balance]
-            
 
     train_idx, val_idx = select_indices_to_split_dataset(
         config_task, config["optim"]["val prop"], list_labels
@@ -576,17 +574,32 @@ def instantiate_dataloader(config, list_output_dir):
     output_test = "../test-data"
     output_labels_path = output_test + "/labels/"
     list_name_label_test = os.listdir(output_labels_path)
+    list_name_label_test = remove_dot_file(list_name_label_test)
     list_path_labels_test = np.sort([output_labels_path + name_label for name_label in list_name_label_test])
 
     if config_task != "change-detection":
         output_images_path = output_test + "/images/"
         list_name_image_test = os.listdir(output_images_path)
         list_path_images_test = np.sort([output_images_path + name_image for name_image in list_name_image_test])
-        
+
+        if config_task == "classification":
+            csv_labeler = list_path_labels_test[0]
+
+            # Load the initial CSV file
+            df = pd.read_csv(csv_labeler)
+
+            list_labels_dir = df[["Path_image", "Classification"]].values.tolist()
+
+            list_labels_dir = sorted(list_labels_dir, key=lambda x: x[0])
+            list_path_labels_test = list(np.array(
+                [sous_liste[1] for sous_liste in list_labels_dir]
+            ))
+
         dataset_test = instantiate_dataset(
-            config, list_path_images_test, list_path_labels_test, test = True
+            config, list_path_images_test, list_path_labels_test, test=True
         )
         dataset_test.transforms = t_preproc
+
     else:
 
         output_images_path_1 = output_test + "/images_1/"
