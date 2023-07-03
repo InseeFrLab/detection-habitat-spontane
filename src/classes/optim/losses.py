@@ -27,7 +27,7 @@ class SoftIoULoss(nn.Module):
     def __init__(self, weight=None, size_average=True, n_classes=2):
         super(SoftIoULoss, self).__init__()
 
-    def forward(self, output, target):
+    def forward(self, output, target, device="cuda:0"):
         """
         Performs the forward pass of the SoftIoULoss.
 
@@ -39,7 +39,7 @@ class SoftIoULoss(nn.Module):
             torch.Tensor: The computed loss value.
         """
         output = output
-        target_one_hot = to_one_hot(target, 2)
+        target_one_hot = to_one_hot(target, 2, device)
         N = output.size()[0]
         inputs = torch.softmax(output, dim=1)
         inter = inputs * target_one_hot
@@ -64,7 +64,7 @@ class CrossEntropySelfmade(nn.Module):
         """
         super(CrossEntropySelfmade, self).__init__()
 
-    def forward(self, output, target):
+    def forward(self, output, target, device="cpu"):
         """
         Calculates the cross-entropy loss between the predicted
         output and the target output.
@@ -77,9 +77,8 @@ class CrossEntropySelfmade(nn.Module):
             torch.Tensor: The calculated cross-entropy loss.
 
         """
-        # TODO HANDLE DEVICE
-        target = target.to("cpu")
-        output = output.to("cpu")
+        target = target.to(device)
+        output = output.to(device)
 
         target = torch.LongTensor(target)
         criterion = nn.CrossEntropyLoss()
@@ -104,7 +103,7 @@ class CustomLoss(nn.Module):
     def __init__(self):
         super(CustomLoss, self).__init__()
 
-    def forward(self, output, target):
+    def forward(self, output, target, device="cpu"):
         """
         Performs the forward pass of the CustomLoss.
 
@@ -115,7 +114,7 @@ class CustomLoss(nn.Module):
         Returns:
             torch.Tensor: The computed loss value.
         """
-        target = torch.LongTensor(target)
+        target = torch.LongTensor(target, device=device)
         criterion = nn.CrossEntropyLoss()
         loss = criterion(output, target)
         mask = target == 9  # Penalize target values of 9
@@ -123,10 +122,7 @@ class CustomLoss(nn.Module):
         return loss + high_cost
 
 
-def to_one_hot(tensor, nClasses):
+def to_one_hot(tensor, nClasses, device):
     n, h, w = tensor.size()
-    # TODO HANDLE DEVICE
-    one_hot = torch.zeros(n, nClasses, h, w, device="cuda:0").scatter_(
-        1, tensor.view(n, 1, h, w), 1
-    )
+    one_hot = torch.zeros(n, nClasses, h, w, device=device).scatter_(1, tensor.view(n, 1, h, w), 1)
     return one_hot
