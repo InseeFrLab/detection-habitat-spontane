@@ -5,7 +5,8 @@ import numpy as np
 import torch
 
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import (roc_curve, auc, RocCurveDisplay)
+
 
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
 from classes.data.satellite_image import SatelliteImage
@@ -197,7 +198,7 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
         probability_class_1 = output_model[:, 1]
 
         # Set a threshold for class prediction
-        threshold = 0.51
+        threshold = 0.85
 
         # Make predictions based on the threshold
         predictions = torch.where(
@@ -247,13 +248,13 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
                 filename = pthimg.split("/")[-1]
                 filename = filename.split(".")[0]
                 filename = "_".join(filename.split("_")[0:6])
-                # plot_file = "img/" + filename + ".png"
-                plot_file = filename + ".png"
+                plot_file = "img/" + filename + ".png"
 
                 fig1.savefig(plot_file)
                 list_labeled_satellite_image = []
 
                 if use_mlflow:
+                    plot_file = filename + ".png"
                     mlflow.log_artifact(plot_file, artifact_path="plots")
 
         del images, dic
@@ -277,45 +278,45 @@ def ROC_classification_pleiade(
     Returns:
         None
     """
-    model.eval()
-    y_true = []
-    y_pred_prob = []
+    with torch.no_grad():
+        model.eval()
+        y_true = []
+        y_pred = []
 
-    for idx, batch in enumerate(test_dl):
+        for idx, batch in enumerate(test_dl):
 
-        images, labels, __ = batch
+            images, labels, __ = batch
 
-        model = model.to("cuda:0")
-        images = images.to("cuda:0")
+            model = model.to("cuda:0")
+            images = images.to("cuda:0")
 
-        output_model = model(images)
-        output_model = output_model.to("cpu")
-        y_pred_prob.append(output_model[:, 1])
+            output_model = model(images)
+            output_model = output_model.to("cpu")
+            y_pred_idx = output_model[:, 1].tolist()
+            y_pred.append(y_pred_idx)
 
-        y_true.append(labels)
+            y_true.append(labels.tolist())
 
-        del images, labels
+            del images, labels
+        print(y_true)
+        print(y_pred)
 
-    fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
-    auc = roc_auc_score(y_true, y_pred_prob)
+        y_true = np.array(y_true).flatten().tolist()
+        y_pred = np.array(y_pred).flatten().tolist()
 
-    plt.plot(fpr, tpr, label='ROC Curve (AUC = {:.2f})'.format(auc))
-    plt.plot([0, 1], [0, 1], 'r--', label='Random Classifier')  # Ligne diagonale pour le classificateur aléatoire
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic')
-    plt.legend()
+        fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+        roc_auc = auc(fpr, tpr)
+        display = RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc)
+        display.plot()
 
-    if not os.path.exists("img/"):
-        os.makedirs("img/")
+        if not os.path.exists("img/"):
+            os.makedirs("img/")
 
-    plot_file = "ROC.png"
-    # plot_file = /img/ROC.png"
+        plt.savefig('img/ROC.png')
 
-    plt.savefig('roc_curve.png')
-
-    if use_mlflow:
-        mlflow.log_artifact(plot_file, artifact_path="plots")
+        if use_mlflow:
+            plot_file = "ROC.png"
+            mlflow.log_artifact(plot_file, artifact_path="plots")
 
 
 def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(

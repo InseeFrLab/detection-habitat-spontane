@@ -844,7 +844,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     else:
         trainer.fit(light_module, train_dl, valid_dl)
 
-        light_module_checkpoint = light_module.load_from_checkpoint(
+        light_module = light_module.load_from_checkpoint(
             loss=instantiate_loss(config),
             checkpoint_path="epoch=13-step=11242.ckpt",
             model=light_module.model,
@@ -854,7 +854,11 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             scheduler_params=light_module.scheduler_params,
             scheduler_interval=light_module.scheduler_interval,
         )
-        model = light_module_checkpoint.model
+
+        torch.cuda.empty_cache()
+        gc.collect()
+
+        model = light_module.model
 
         if src_task not in task_to_evaluation:
             raise ValueError("Invalid task type")
@@ -869,14 +873,16 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             config["donnees"]["n bands"],
             False,
         )
-        ROC_classification_pleiade(
-            test_dl,
-            model,
-            tile_size,
-            batch_size_test,
-            config["donnees"]["n bands"],
-            False,
-        )
+
+        if task_type == "classification":
+            ROC_classification_pleiade(
+                test_dl,
+                model,
+                tile_size,
+                batch_size_test,
+                config["donnees"]["n bands"],
+                False,
+            )
 
 
 if __name__ == "__main__":
