@@ -14,7 +14,7 @@ from data.components.change_detection_dataset import (
 )
 from data.components.classification_patch import PatchClassification
 from data.components.dataset import PleiadeDataset, SentinelDataset
-from data.components.dataset.ObjectDetectionDataset import ObjectDetectionDataset
+from data.components.object_detection_dataset import ObjectDetectionDataset
 from models.classification_module import ClassificationModule
 from models.components.classification_models import ResNet50Module
 from models.components.detection_models import FasterRCNNModule

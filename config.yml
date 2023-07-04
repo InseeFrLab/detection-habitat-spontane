@@ -1,5 +1,5 @@
-donnees:
-  source train: "PLEIADES"
+data:
+  source_train: "PLEIADES"
   dataset: "OBJECTDETECTION"
   dataset_test: "OBJECTDETECTION"
   task: "detection"
@@ -7,8 +7,8 @@ donnees:
   dep: ["976"]
   type_labeler: "BDTOPO"
   buffer_size: 10
-  n_channels_train: 13
-  n_bands: 13
+  n_channels_train: 3
+  n_bands: 3
   tile_size: 125
   augmentation: True
   num_workers: 5
