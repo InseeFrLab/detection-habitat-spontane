@@ -163,7 +163,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
 
 
 def evaluer_modele_sur_jeu_de_test_classification_pleiade(
-    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+    test_dl, model, tile_size, batch_size, threshold, n_bands=3, use_mlflow=False
 ):
     """
     Evaluates the model on the Pleiade test dataset for image classification.
@@ -188,17 +188,18 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
 
     for idx, batch in enumerate(test_dl):
 
-        images, __, dic = batch
+        images, labels, dic = batch
 
         model = model.to("cuda:0")
         images = images.to("cuda:0")
+        labels = labels.to("cuda:0")
 
         output_model = model(images)
         output_model = output_model.to("cpu")
         probability_class_1 = output_model[:, 1]
 
         # Set a threshold for class prediction
-        threshold = 0.85
+        # threshold = 0.90
 
         # Make predictions based on the threshold
         predictions = torch.where(
@@ -207,6 +208,7 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
             torch.tensor([0]),
         )
         predicted_classes = predictions.type(torch.float)
+
         if batch_size > len(images):
             batch_size_current = len(images)
 
@@ -223,8 +225,44 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
             if int(predicted_classes[i]) == 0:
                 mask_pred = np.full((tile_size, tile_size, 3), 255, dtype=np.uint8)
 
+                if int(predicted_classes[i]) != int(labels[i]):
+                    # Contours de l'image en rouge
+                    array_red_borders = si.array.copy()
+                    array_red_borders = array_red_borders.transpose(1, 2, 0)
+                    red_color = [1.0, 0.0, 0.0]
+                    array_red_borders[:, :7, :] = red_color
+                    array_red_borders[:, -7:-1, :] = red_color
+                    array_red_borders[:7, :, :] = red_color
+                    array_red_borders[-7:-1, :, :] = red_color
+                    array_red_borders = array_red_borders.transpose(2, 1, 0)
+                    si.array = array_red_borders
+
             elif int(predicted_classes[i]) == 1:
                 mask_pred = np.full((tile_size, tile_size, 3), 0, dtype=np.uint8)
+
+                if int(predicted_classes[i]) != int(labels[i]):
+                    # Contours de l'image en rouge
+                    array_red_borders = si.array.copy()
+                    array_red_borders = array_red_borders.transpose(1, 2, 0)
+                    red_color = [1.0, 0.0, 0.0]
+                    array_red_borders[:, :7, :] = red_color
+                    array_red_borders[:, -7:-1, :] = red_color
+                    array_red_borders[:7, :, :] = red_color
+                    array_red_borders[-7:-1, :, :] = red_color
+                    array_red_borders = array_red_borders.transpose(2, 1, 0)
+                    si.array = array_red_borders
+
+                elif int(predicted_classes[i]) == int(labels[i]):
+                    # Contours de l'image en rouge
+                    array_green_borders = si.array.copy()
+                    array_green_borders = array_green_borders.transpose(1, 2, 0)
+                    green_color = [0.0, 1.0, 0.0]
+                    array_green_borders[:, :7, :] = green_color
+                    array_green_borders[:, -7:-1, :] = green_color
+                    array_green_borders[:7, :, :] = green_color
+                    array_green_borders[-7:-1, :, :] = green_color
+                    array_green_borders = array_green_borders.transpose(2, 1, 0)
+                    si.array = array_green_borders
 
             list_labeled_satellite_image.append(
                 SegmentationLabeledSatelliteImage(
@@ -256,6 +294,8 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
                 if use_mlflow:
                     plot_file = filename + ".png"
                     mlflow.log_artifact(plot_file, artifact_path="plots")
+
+                plt.close()
 
         del images, dic
 
@@ -298,14 +338,18 @@ def ROC_classification_pleiade(
             y_true.append(labels.tolist())
 
             del images, labels
-        print(y_true)
-        print(y_pred)
 
         y_true = np.array(y_true).flatten().tolist()
         y_pred = np.array(y_pred).flatten().tolist()
 
         fpr, tpr, thresholds = roc_curve(y_true, y_pred)
         roc_auc = auc(fpr, tpr)
+
+        best_threshold_idx = np.argmax(tpr - fpr)  # Index of the best threshold
+        best_threshold = thresholds[best_threshold_idx]
+        best_tpr = tpr[best_threshold_idx]
+        best_fpr = fpr[best_threshold_idx]
+
         display = RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc)
         display.plot()
 
@@ -317,6 +361,8 @@ def ROC_classification_pleiade(
         if use_mlflow:
             plot_file = "ROC.png"
             mlflow.log_artifact(plot_file, artifact_path="plots")
+
+        return best_threshold, best_tpr, best_fpr
 
 
 def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(

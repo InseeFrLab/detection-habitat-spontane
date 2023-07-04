@@ -865,17 +865,18 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         else:
             evaluer_modele_sur_jeu_de_test = task_to_evaluation[src_task]
 
-        evaluer_modele_sur_jeu_de_test(
+        evaluer_modele_sur_jeu_de_test_classification_pleiade(
             test_dl,
             model,
             tile_size,
             batch_size_test,
+            0.36,
             config["donnees"]["n bands"],
             False,
         )
 
         if task_type == "classification":
-            ROC_classification_pleiade(
+            best_threshold, best_tpr, best_fpr = ROC_classification_pleiade(
                 test_dl,
                 model,
                 tile_size,
