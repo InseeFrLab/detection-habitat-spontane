@@ -96,7 +96,7 @@ class DetectionModule(pl.LightningModule):
         accuracy = torch.mean(
             torch.stack(
                 [
-                    self.accuracy(b, pb["boxes"], iou_threshold=0.5)
+                    self.accuracy(b, pb["boxes"], iou_threshold=0.5).to(self.device)
                     for b, pb in zip(boxes, pred_boxes)
                 ]
             )

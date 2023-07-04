@@ -244,7 +244,9 @@ def prepare_test_data(config, test_dir):
     list_name_label = np.sort(remove_dot_file(list_name_label))
     list_labels_path = [labels_path + "/" + name for name in list_name_label]
 
-    if config["data"]["task"] != "change-detection":
+    if config["data"]["task"] == "detection":
+        return
+    elif config["data"]["task"] != "change-detection":
         images_path = test_dir + "/images"
         list_name_image = os.listdir(images_path)
         list_name_image = np.sort(remove_dot_file(list_name_image))
@@ -398,7 +400,14 @@ def instantiate_dataloader(config, list_output_dir):
             if labels[0][0] == ".":
                 del labels[0]
 
-            if config_task != "classification":
+            if config_task == "detection":
+                list_labels = np.concatenate(
+                    (
+                        list_labels,
+                        np.sort([directory + "/labels/" + name for name in labels]),
+                    )
+                )
+            elif config_task != "classification":
                 with open(directory + "/balancing_dict.json") as json_file:
                     balancing_dict = json.load(json_file)
 
@@ -412,7 +421,7 @@ def instantiate_dataloader(config, list_output_dir):
                 for k, v in balancing_dict.items():
                     full_balancing_dict[k] = v
 
-            if config_task == "classification":
+            elif config_task == "classification":
                 list_labels_dir = []
 
                 # Load the initial CSV file
@@ -670,12 +679,19 @@ def instantiate_trainer(config, lightning_module):
             checkpoint_callback_IOU,
         ]
 
+    if config["data"]["task"] == "detection":
+        list_callbacks = [
+            lr_monitor,
+            checkpoint_callback,
+            early_stop_callback
+        ]
+
     strategy = "auto"
 
     trainer = pl.Trainer(
         callbacks=list_callbacks,
         max_epochs=config["optim"]["max_epochs"],
-        num_sanity_val_steps=2,
+        num_sanity_val_steps=config["optim"]["num_sanity_val_steps"],
         strategy=strategy,
         log_every_n_steps=2,
         accumulate_grad_batches=config["optim"]["accumulate_batch"],

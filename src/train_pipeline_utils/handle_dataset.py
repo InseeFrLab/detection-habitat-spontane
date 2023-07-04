@@ -118,12 +118,19 @@ def generate_transform_pleiades(tile_size, augmentation, task):
     """
     image_size = (tile_size, tile_size)
 
+    bbox_params = None
+    if task == "detection":
+        bbox_params = album.BboxParams(
+            format="pascal_voc", label_fields=["class_labels"]
+        )
+
     transforms_preprocessing = album.Compose(
         [
             # album.Resize(*image_size, always_apply=True),
             album.Normalize(),
             ToTensorV2(),
-        ]
+        ],
+        bbox_params=bbox_params
     )
 
     if augmentation:
@@ -137,7 +144,8 @@ def generate_transform_pleiades(tile_size, augmentation, task):
                 album.VerticalFlip(),
                 album.Normalize(),
                 ToTensorV2(),
-            ]
+            ],
+            bbox_params=bbox_params
         )
     else:
         transforms_augmentation = transforms_preprocessing
@@ -192,62 +200,6 @@ def generate_transform_sentinel(src, year, dep, tile_size, augmentation, task):
         )
     else:
         transforms_augmentation = transforms_preprocessing
-
-    return transforms_augmentation, transforms_preprocessing
-
-
-def generate_transform(tile_size, augmentation, task: str):
-    """
-    Generates PyTorch transforms for data augmentation and preprocessing.
-
-    Args:
-        tile_size (int): The size of the image tiles.
-        augmentation (bool): Whether or not to include data augmentation.
-        task (str): Task.
-
-    Returns:
-        (albumentations.core.composition.Compose,
-        albumentations.core.composition.Compose):
-        A tuple containing the augmentation and preprocessing transforms.
-
-    """
-    image_size = (tile_size, tile_size)
-
-    transforms_augmentation = None
-
-    if augmentation:
-        transforms_list = [
-            album.Resize(300, 300, always_apply=True),
-            album.RandomResizedCrop(*image_size, scale=(0.7, 1.0), ratio=(0.7, 1)),
-            album.HorizontalFlip(),
-            album.VerticalFlip(),
-            album.Normalize(),
-            ToTensorV2(),
-        ]
-        if task == "detection":
-            transforms_augmentation = album.Compose(
-                transforms_list,
-                bbox_params=album.BboxParams(
-                    format="pascal_voc", label_fields=["class_labels"]
-                ),
-            )
-        else:
-            transforms_augmentation = album.Compose(transforms_list)
-
-    test_transforms_list = [
-        album.Resize(*image_size, always_apply=True),
-        album.Normalize(),
-        ToTensorV2(),
-    ]
-    if task == "detection":
-        transforms_preprocessing = album.Compose(
-            test_transforms_list,
-            bbox_params=album.BboxParams(
-                format="pascal_voc", label_fields=["class_labels"]
-            ),
-        )
-    else:
-        transforms_preprocessing = album.Compose(test_transforms_list)
 
     return transforms_augmentation, transforms_preprocessing
 

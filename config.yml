@@ -27,5 +27,6 @@ optim:
   monitor: "validation_accuracy"
   mode: "min"
   patience: 10
+  num_sanity_val_steps: -1
 
 mlflow: True
