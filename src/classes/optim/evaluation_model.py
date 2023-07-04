@@ -5,8 +5,12 @@ import numpy as np
 import torch
 
 import matplotlib.pyplot as plt
-from sklearn.metrics import (roc_curve, auc, RocCurveDisplay)
-
+from sklearn.metrics import (
+    roc_curve,
+    auc,
+    RocCurveDisplay,
+    ConfusionMatrixDisplay
+)
 
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
 from classes.data.satellite_image import SatelliteImage
@@ -162,8 +166,8 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
                 mlflow.log_artifact(plot_file, artifact_path="plots")
 
 
-def evaluer_modele_sur_jeu_de_test_classification_pleiade(
-    test_dl, model, tile_size, batch_size, threshold, n_bands=3, use_mlflow=False
+def metrics_classification_pleiade(
+    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
 ):
     """
     Evaluates the model on the Pleiade test dataset for image classification.
@@ -180,6 +184,89 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
     Returns:
         None
     """
+    with torch.no_grad():
+        model.eval()
+        y_true = []
+        y_pred = []
+
+        for idx, batch in enumerate(test_dl):
+
+            images, labels, __ = batch
+
+            model = model.to("cuda:0")
+            images = images.to("cuda:0")
+
+            output_model = model(images)
+            output_model = output_model.to("cpu")
+            y_pred_idx = output_model[:, 1].tolist()
+            y_pred.append(y_pred_idx)
+
+            y_true.append(labels.tolist())
+
+            del images, labels
+
+        y_true = np.array(y_true).flatten().tolist()
+        y_pred = np.array(y_pred).flatten().tolist()
+
+        fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+        roc_auc = auc(fpr, tpr)
+
+        best_threshold_idx = np.argmax(tpr - fpr)  # Index of the best threshold
+        best_threshold = thresholds[best_threshold_idx]
+        best_tpr = tpr[best_threshold_idx]
+        best_fpr = fpr[best_threshold_idx]
+
+        display = RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc)
+        display.plot()
+
+        if not os.path.exists("img/"):
+            os.makedirs("img/")
+
+        plt.savefig('ROC.png')
+
+        class_names = ["Bâti", "Non bâti"]
+
+        disp = ConfusionMatrixDisplay.from_predictions(y_true, y_pred,
+                                                       display_labels=class_names,
+                                                       cmap="Pastel1",
+                                                       normalize="true")
+        disp.plot()
+        plt.savefig("confusion_matrix.png")
+
+        if use_mlflow:
+            plot_file_roc = "ROC.png"
+            mlflow.log_artifact(plot_file_roc, artifact_path="plots")
+            plot_file_cm = "confusion_matrix.png"
+            mlflow.log_artifact(plot_file_cm, artifact_path="plots")
+            mlflow.log_param("best true positif rate", best_tpr)
+            mlflow.log_param("best false positif rate", best_fpr)
+            mlflow.log_param("best threshold", best_threshold)
+
+        return best_threshold
+
+
+def evaluer_modele_sur_jeu_de_test_classification_pleiade(
+    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+):
+    """
+    Evaluates the model on the Pleiade test dataset for image classification.
+
+    Args:
+        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        dataset.
+        model (torchvision.models): The classification model to evaluate.
+        tile_size (int): The size of each tile in pixels.
+        batch_size (int): The batch size.
+        use_mlflow (bool, optional): Whether to use MLflow for logging
+        artifacts. Defaults to False.
+
+    Returns:
+        None
+    """
+    threshold = metrics_classification_pleiade(
+                    test_dl, model, tile_size, batch_size, n_bands, use_mlflow
+                )
+
     model.eval()
     npatch = int((2000 / tile_size) ** 2)
     count_patch = 0
@@ -297,72 +384,7 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
 
                 plt.close()
 
-        del images, dic
-
-
-def ROC_classification_pleiade(
-    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
-):
-    """
-    Evaluates the model on the Pleiade test dataset for image classification.
-
-    Args:
-        test_dl (torch.utils.data.DataLoader): The data loader for the test
-        dataset.
-        model (torchvision.models): The classification model to evaluate.
-        tile_size (int): The size of each tile in pixels.
-        batch_size (int): The batch size.
-        use_mlflow (bool, optional): Whether to use MLflow for logging
-        artifacts. Defaults to False.
-
-    Returns:
-        None
-    """
-    with torch.no_grad():
-        model.eval()
-        y_true = []
-        y_pred = []
-
-        for idx, batch in enumerate(test_dl):
-
-            images, labels, __ = batch
-
-            model = model.to("cuda:0")
-            images = images.to("cuda:0")
-
-            output_model = model(images)
-            output_model = output_model.to("cpu")
-            y_pred_idx = output_model[:, 1].tolist()
-            y_pred.append(y_pred_idx)
-
-            y_true.append(labels.tolist())
-
-            del images, labels
-
-        y_true = np.array(y_true).flatten().tolist()
-        y_pred = np.array(y_pred).flatten().tolist()
-
-        fpr, tpr, thresholds = roc_curve(y_true, y_pred)
-        roc_auc = auc(fpr, tpr)
-
-        best_threshold_idx = np.argmax(tpr - fpr)  # Index of the best threshold
-        best_threshold = thresholds[best_threshold_idx]
-        best_tpr = tpr[best_threshold_idx]
-        best_fpr = fpr[best_threshold_idx]
-
-        display = RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc)
-        display.plot()
-
-        if not os.path.exists("img/"):
-            os.makedirs("img/")
-
-        plt.savefig('img/ROC.png')
-
-        if use_mlflow:
-            plot_file = "ROC.png"
-            mlflow.log_artifact(plot_file, artifact_path="plots")
-
-        return best_threshold, best_tpr, best_fpr
+        del images, labels, dic
 
 
 def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(

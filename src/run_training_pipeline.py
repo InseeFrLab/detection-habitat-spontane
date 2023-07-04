@@ -55,7 +55,6 @@ from train_pipeline_utils.prepare_data import (
     filter_images_by_path,
 )
 from utils.utils import remove_dot_file, split_array, update_storage_access
-from classes.optim.evaluation_model import ROC_classification_pleiade
 
 # with open("../config.yml") as f:
 #     config = yaml.load(f, Loader=SafeLoader)
@@ -147,14 +146,14 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
             + "/"
         )
 
-        date = datetime.strptime(str(year) + "0101", "%Y%m%d")
-        if type_labeler == "RIL":
-            buffer_size = config_data["buffer size"]
-            labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
-        elif type_labeler == "BDTOPO":
-            labeler = BDTOPOLabeler(date, dep=dep)
-
         if not check_labelled_images(output_dir):
+            date = datetime.strptime(str(year) + "0101", "%Y%m%d")
+            if type_labeler == "RIL":
+                buffer_size = config_data["buffer size"]
+                labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
+            elif type_labeler == "BDTOPO":
+                labeler = BDTOPOLabeler(date, dep=dep)
+
             list_name_cloud = []
             if src == "PLEIADES":
                 cloud_dir = list_masks_cloud_dir[i]
@@ -846,7 +845,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         light_module = light_module.load_from_checkpoint(
             loss=instantiate_loss(config),
-            checkpoint_path="epoch=13-step=11242.ckpt",
+            checkpoint_path=trainer.checkpoint_callback.best_model_path,
             model=light_module.model,
             optimizer=light_module.optimizer,
             optimizer_params=light_module.optimizer_params,
@@ -865,25 +864,14 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         else:
             evaluer_modele_sur_jeu_de_test = task_to_evaluation[src_task]
 
-        evaluer_modele_sur_jeu_de_test_classification_pleiade(
+        evaluer_modele_sur_jeu_de_test(
             test_dl,
             model,
             tile_size,
             batch_size_test,
-            0.36,
             config["donnees"]["n bands"],
-            False,
+            config["mlflow"],
         )
-
-        if task_type == "classification":
-            best_threshold, best_tpr, best_fpr = ROC_classification_pleiade(
-                test_dl,
-                model,
-                tile_size,
-                batch_size_test,
-                config["donnees"]["n bands"],
-                False,
-            )
 
 
 if __name__ == "__main__":
@@ -896,7 +884,7 @@ if __name__ == "__main__":
 
 # nohup python run_training_pipeline.py
 # https://projet-slums-detection-128833.user.lab.sspcloud.fr
-# classification good_test > out.txt &
+# classification test_roc_matrix_confusion_metrics > out.txt &
 # https://www.howtogeek.com/804823/nohup-command-linux/
 # TO DO :
 # test routine sur S2Looking dataset
