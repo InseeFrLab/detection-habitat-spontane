@@ -249,10 +249,7 @@ def load_bdtopo(
     )
 
     if os.path.exists(dir_path):
-        print(
-            "Le téléchargement de cette version de la \
-            BDTOPO a déjà été effectué"
-        )
+        print("Le téléchargement de cette version de la " "BDTOPO a déjà été effectué")
 
     else:
         os.makedirs(dir_path)

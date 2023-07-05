@@ -42,7 +42,6 @@ class Configurator:
         self.module = config["optim"]["module"]
         self.val_prop = config["optim"]["val_prop"]
         self.accumulate_batch = config["optim"]["accumulate_batch"]
-        self.dataset_test = config["optim"]["dataset_test"]
         self.monitor = config["optim"]["monitor"]
         self.mode = config["optim"]["mode"]
         self.patience = config["optim"]["patience"]

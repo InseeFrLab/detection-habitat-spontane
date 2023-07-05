@@ -21,7 +21,7 @@ optim:
   module: "deeplabv3"
   batch_size: 5
   batch_size_test: 4
-  max_epochs: 5
+  max_epochs: 2
   val_prop: 0.2
   accumulate_batch : 8
   monitor: "validation_accuracy"

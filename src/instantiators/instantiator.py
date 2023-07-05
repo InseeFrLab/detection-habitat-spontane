@@ -7,7 +7,7 @@ import os
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
-from lightning.pytorch.callbacks import (
+from pytorch_lightning.callbacks import (
     EarlyStopping,
     LearningRateMonitor,
     ModelCheckpoint,
@@ -170,7 +170,7 @@ class Instantiator:
         )
 
         # Retrieving the desired Dataset class
-        train_dataset = self.dataset(self.config, list_images[train_idx], list_labels[train_idx])
+        train_dataset = self.dataset(list_images[train_idx], list_labels[train_idx])
 
         valid_dataset = self.dataset(list_images[val_idx], list_labels[val_idx])
 
@@ -340,7 +340,9 @@ class Instantiator:
             monitor=self.config.monitor, save_top_k=1, save_last=True, mode=self.config.mode
         )
 
-        early_stop_callback = EarlyStopping(monitor=self.config.monitor, mode="min", patience=5)
+        early_stop_callback = EarlyStopping(
+            monitor=self.config.monitor, mode=self.config.mode, patience=self.config.patience
+        )
         lr_monitor = LearningRateMonitor(logging_interval="step")
 
         if self.config.task == "segmentation":
@@ -357,7 +359,7 @@ class Instantiator:
         if self.config.task == "classification":
             list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback]
 
-        if self.configtask == "change-detection":
+        if self.config.task == "change-detection":
             checkpoint_callback_IOU = ModelCheckpoint(
                 monitor=self.config.monitor, save_top_k=1, save_last=True, mode=self.config.mode
             )

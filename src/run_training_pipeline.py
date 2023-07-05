@@ -52,9 +52,9 @@ def download_data(config):
 
     print("Entre dans la fonction download_data")
     list_output_dir = []
+    list_masks_cloud_dir = []
 
     if config.source_train == "PLEIADES":
-        list_masks_cloud_dir = []
         for year, dep in zip(config.year, config.dep):
             cloud_dir = load_satellite_data(year, dep, "NUAGESPLEIADES")
             output_dir = load_satellite_data(year, dep, config.source_train)
@@ -118,7 +118,9 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     path.split("/")[-1].split(".")[0] for path in os.listdir(cloud_dir)
                 ]
 
-            list_path = [f"{list_data_dir[i]}/{filename}" for filename in os.listdir(dir)]
+            list_path = [
+                f"{list_data_dir[i]}/{filename}" for filename in os.listdir(list_data_dir[i])
+            ]
 
             full_balancing_dict = {}
             for path in tqdm(list_path):
@@ -287,7 +289,9 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     instantiator = Instantiator(configurator)
 
     train_dl, valid_dl, test_dl = instantiator.dataloader(list_output_dir)
-    trainer, light_module = instantiator.trainer()
+    trainer = instantiator.trainer()
+
+    light_module = instantiator.lightning_module()
 
     torch.cuda.empty_cache()
     gc.collect()

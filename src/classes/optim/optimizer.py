@@ -14,48 +14,46 @@ def generate_optimization_elements(config):
         scheduler, scheduler parameters, and scheduler interval.
 
     """
-    task_liste = ["segmentation", "classification", "change-detection", "detection"]
-    task = config["data"]["task"]
 
-    if task in task_liste:
-        if task == "segmentation":
+    if config.task in ["segmentation", "classification", "change-detection", "detection"]:
+        if config.task == "segmentation":
             optimizer = torch.optim.SGD
             optimizer_params = {
-                "lr": config["optim"]["lr"],
-                "momentum": config["optim"]["momentum"],
+                "lr": config.lr,
+                "momentum": config.momentum,
             }
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
             scheduler_params = {}
             scheduler_interval = "epoch"
 
-        elif task == "classification":
+        elif config.task == "classification":
             optimizer = torch.optim.SGD
             optimizer_params = {
-                "lr": config["optim"]["lr"],
-                "momentum": config["optim"]["momentum"],
+                "lr": config.lr,
+                "momentum": config.momentum,
             }
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
             scheduler_params = {}
             scheduler_interval = "epoch"
 
-        elif task == "change-detection":
+        elif config.task == "change-detection":
             optimizer = torch.optim.SGD
             optimizer_params = {
-                "lr": config["optim"]["lr"],
-                "momentum": config["optim"]["momentum"],
+                "lr": config.lr,
+                "momentum": config.momentum,
             }
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
             scheduler_params = {}
             scheduler_interval = "epoch"
 
-        elif task == "detection":
+        elif config.task == "detection":
             optimizer = torch.optim.SGD
             optimizer_params = {
-                "lr": config["optim"]["lr"],
-                "momentum": config["optim"]["momentum"],
+                "lr": config.lr,
+                "momentum": config.momentum,
             }
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
-            scheduler_params = {"monitor": config["optim"]["monitor"], "mode": "min"}
+            scheduler_params = {"monitor": config.monitor, "mode": config.mode}
             scheduler_interval = "epoch"
 
         return (
