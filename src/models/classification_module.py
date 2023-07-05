@@ -146,7 +146,7 @@ class ClassificationModule(pl.LightningModule):
         scheduler = self.scheduler(optimizer, **self.scheduler_params)
         scheduler = {
             "scheduler": scheduler,
-            "monitor": "validation_loss",
+            "monitor": self.scheduler_params["monitor"],
             "interval": self.scheduler_interval,
         }
 

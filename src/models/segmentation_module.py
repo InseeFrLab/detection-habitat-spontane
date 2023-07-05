@@ -19,9 +19,7 @@ class SegmentationModule(pl.LightningModule):
         loss: Union[nn.Module],
         optimizer: Union[optim.SGD, optim.Adam],
         optimizer_params: Dict,
-        scheduler: Union[
-            optim.lr_scheduler.OneCycleLR, optim.lr_scheduler.ReduceLROnPlateau
-        ],
+        scheduler: Union[optim.lr_scheduler.OneCycleLR, optim.lr_scheduler.ReduceLROnPlateau],
         scheduler_params: Dict,
         scheduler_interval: str,
     ):
@@ -116,10 +114,10 @@ class SegmentationModule(pl.LightningModule):
         Returns: optimizer and scheduler for pytorch lighting.
         """
         optimizer = self.optimizer(self.parameters(), **self.optimizer_params)
-        scheduler = self.scheduler(optimizer, **self.scheduler_params)
+        scheduler = self.scheduler(optimizer, self.scheduler_params["mode"])
         scheduler = {
             "scheduler": scheduler,
-            "monitor": "validation_loss",
+            "monitor": self.scheduler_params["monitor"],
             "interval": self.scheduler_interval,
         }
 

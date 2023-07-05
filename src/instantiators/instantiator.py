@@ -336,39 +336,13 @@ class Instantiator:
             trainer: return a trainer object
         """
         # def callbacks
-        checkpoint_callback = ModelCheckpoint(
-            monitor=self.config.monitor, save_top_k=1, save_last=True, mode=self.config.mode
-        )
 
-        early_stop_callback = EarlyStopping(
-            monitor=self.config.monitor, mode=self.config.mode, patience=self.config.patience
-        )
         lr_monitor = LearningRateMonitor(logging_interval="step")
+        early_stop_callback = EarlyStopping(**self.config.earlystop)
+        list_callbacks = [ModelCheckpoint(**checkpoint) for checkpoint in self.config.checkpoints]
 
-        if self.config.task == "segmentation":
-            checkpoint_callback_IOU = ModelCheckpoint(
-                monitor=self.config.monitor, save_top_k=1, save_last=True, mode=self.config.mode
-            )
-            list_callbacks = [
-                lr_monitor,
-                checkpoint_callback,
-                early_stop_callback,
-                checkpoint_callback_IOU,
-            ]
-
-        if self.config.task == "classification":
-            list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback]
-
-        if self.config.task == "change-detection":
-            checkpoint_callback_IOU = ModelCheckpoint(
-                monitor=self.config.monitor, save_top_k=1, save_last=True, mode=self.config.mode
-            )
-            list_callbacks = [
-                lr_monitor,
-                checkpoint_callback,
-                early_stop_callback,
-                checkpoint_callback_IOU,
-            ]
+        list_callbacks.append(early_stop_callback)
+        list_callbacks.append(lr_monitor)
 
         strategy = "auto"
 

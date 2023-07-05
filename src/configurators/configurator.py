@@ -42,8 +42,7 @@ class Configurator:
         self.module = config["optim"]["module"]
         self.val_prop = config["optim"]["val_prop"]
         self.accumulate_batch = config["optim"]["accumulate_batch"]
-        self.monitor = config["optim"]["monitor"]
-        self.mode = config["optim"]["mode"]
-        self.patience = config["optim"]["patience"]
+        self.checkpoints = config["optim"]["monitoring"]["checkpoints"]
+        self.earlystop = config["optim"]["monitoring"]["earlystop"]
 
         self.mlflow = config["mlflow"]

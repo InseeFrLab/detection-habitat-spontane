@@ -24,8 +24,19 @@ optim:
   max_epochs: 2
   val_prop: 0.2
   accumulate_batch : 8
-  monitor: "validation_accuracy"
-  mode: "min"
-  patience: 10
+  monitoring:
+    checkpoints:
+    - monitor: validation_loss
+      save_top_k: 1
+      save_last: True
+      mode: min
+    - monitor: validation_IOU
+      save_top_k: 1
+      save_last: True
+      mode: max
+    earlystop:
+      monitor: validation_loss
+      patience: 5
+      mode: min
 
-mlflow: True
+mlflow: False
