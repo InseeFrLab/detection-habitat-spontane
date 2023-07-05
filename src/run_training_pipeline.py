@@ -361,10 +361,10 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         )
         model = light_module_checkpoint.model
 
-        if configurator.task not in task_to_evaluation:
+        if configurator.src_task not in task_to_evaluation:
             raise ValueError("Invalid task type")
         else:
-            evaluer_modele_sur_jeu_de_test = task_to_evaluation[configurator.task]
+            evaluer_modele_sur_jeu_de_test = task_to_evaluation[configurator.src_task]
 
         evaluer_modele_sur_jeu_de_test(
             test_dl,
@@ -383,22 +383,4 @@ if __name__ == "__main__":
     run_name = sys.argv[3]
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
-
 # nohup python run_training_pipeline.py
-# https://projet-slums-detection-128833.user.lab.sspcloud.fr
-# classification test_classifpleiade_branchsentinel2 > out.txt &
-# https://www.howtogeek.com/804823/nohup-command-linux/
-# TO DO :
-# test routine sur S2Looking dataset
-# import os
-
-# list_data_dir = ["../data/PLEIADES/2022/MARTINIQUE/"]
-# def delete_files_in_dir(dir_path,length_delete):
-#    # Get a list of all the files in the directory
-#  files = os.listdir(dir_path)[:length_delete]
-
-#  for file in files:
-#        file_path = os.path.join(dir_path, file)
-#        if os.path.isfile(file_path):
-#            os.remove(file_path)
-# delete_files_in_dir(list_data_dir[0], 600)

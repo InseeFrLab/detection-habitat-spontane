@@ -24,7 +24,7 @@ def generate_optimization_elements(config):
     scheduler_params = {
         "monitor": config.earlystop["monitor"],
         "mode": config.earlystop["mode"],
-    }  # TODO: vérifier ça et voir si on met dans la config
+    }  # TODO: vérifiersi ok d'utilise config d'early stop ici
     scheduler_interval = "epoch"
 
     return (

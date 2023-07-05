@@ -2,7 +2,6 @@
 Configurator class.
 """
 import yaml
-from yaml.loader import SafeLoader
 
 
 class Configurator:
@@ -15,7 +14,7 @@ class Configurator:
         Constructor for the Configurator class.
         """
         with open(config_path) as f:
-            config = yaml.load(f, Loader=SafeLoader)
+            config = yaml.load(f, Loader=yaml.SafeLoader)
 
         self.year = config["data"]["year"]
         self.dep = config["data"]["dep"]
