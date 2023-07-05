@@ -75,9 +75,7 @@ def export_s1(DOM, AOIs, EPSGs, start_date, end_date):
     if ee.Feature(image).contains(feature_aoi).getInfo():
         export_s1_grd_first(start_date, AOI, image, DOM)
     else:
-        export_s1_grd_mean(
-            start_date, AOI, ee.Image(s1_grd.mean()).clip(feature_aoi), DOM
-        )
+        export_s1_grd_mean(start_date, AOI, ee.Image(s1_grd.mean()).clip(feature_aoi), DOM)
 
 
 def export_s1_grd_first(start_date, AOI, s1_grd, DOM):
@@ -100,14 +98,10 @@ def export_s1_grd_first(start_date, AOI, s1_grd, DOM):
     environment = get_environment()
 
     bucket = environment["bucket"]
-    path_s3 = environment["sources"]["SENTINEL1"][int(start_date[0:4])][
-        DEPs[DOM.upper()]
-    ]
+    path_s3 = environment["sources"]["SENTINEL1"][int(start_date[0:4])][DEPs[DOM.upper()]]
     path_local = os.path.join(
         root_path,
-        environment["local-path"]["SENTINEL1"][int(start_date[0:4])][
-            DEPs[DOM.upper()]
-        ],
+        environment["local-path"]["SENTINEL1"][int(start_date[0:4])][DEPs[DOM.upper()]],
     )
 
     fishnet = geemap.fishnet(AOI, rows=4, cols=4, delta=0.5)
@@ -142,14 +136,10 @@ def export_s1_grd_mean(start_date, AOI, s1_grd, DOM):
     environment = get_environment()
 
     bucket = environment["bucket"]
-    path_s3 = environment["sources"]["SENTINEL1"][int(start_date[0:4])][
-        DEPs[DOM.upper()]
-    ]
+    path_s3 = environment["sources"]["SENTINEL1"][int(start_date[0:4])][DEPs[DOM.upper()]]
     path_local = os.path.join(
         root_path,
-        environment["local-path"]["SENTINEL1"][int(start_date[0:4])][
-            DEPs[DOM.upper()]
-        ],
+        environment["local-path"]["SENTINEL1"][int(start_date[0:4])][DEPs[DOM.upper()]],
     )
 
     fishnet = geemap.fishnet(AOI, rows=4, cols=4, delta=0.5)
@@ -190,7 +180,7 @@ def exportToMinio(image, rpath):
     """
 
     fs = s3fs.S3FileSystem(
-        client_kwargs={"endpoint_url": "https://" + "minio.lab.sspcloud.fr"},
+        client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"},
         key=os.environ["AWS_ACCESS_KEY_ID"],
         secret=os.environ["AWS_SECRET_ACCESS_KEY"],
     )
@@ -227,7 +217,7 @@ def upload_satelliteImages(
     images_paths = os.listdir(lpath)
 
     for i in range(len(images_paths)):
-        images_paths[i] = lpath + "/" + images_paths[i]
+        images_paths[i] = f"{lpath}/{images_paths[i]}"
 
     list_satellite_images = [
         SatelliteImage.from_raster(filename, dep=dep, n_bands=n_bands)
@@ -241,7 +231,7 @@ def upload_satelliteImages(
     for i in range(len(splitted_list_images)):
         image = splitted_list_images[i]
         bb = image.bounds
-        filename = str(int(bb[0])) + "_" + str(int(bb[1])) + "_" + str(i)
+        filename = f"{str(int(bb[0]))}_{str(int(bb[1]))}_{str(i)}"
         in_ds = gdal.Open(images_paths[1])
         proj = in_ds.GetProjection()
 
@@ -250,19 +240,19 @@ def upload_satelliteImages(
         if check_nbands12:
             try:
                 image = SatelliteImage.from_raster(
-                    file_path=filename + ".tif",
+                    file_path=f"{filename}.tif",
                     dep=dep,
                     date=year,
                     n_bands=12,
                 )
-                exportToMinio(filename + ".tif", rpath)
-                os.remove(filename + ".tif")
+                exportToMinio(f"{filename}.tif", rpath)
+                os.remove(f"{filename}.tif")
 
             except PIL.UnidentifiedImageError:
                 print("L'image ne possède pas assez de bandes")
         else:
-            exportToMinio(filename + ".tif", rpath)
-            os.remove(filename + ".tif")
+            exportToMinio(f"{filename}.tif", rpath)
+            os.remove(f"{filename}.tif")
 
 
 if __name__ == "__main__":
@@ -274,35 +264,3 @@ if __name__ == "__main__":
     AOIs = utils.mappings.name_dep_to_aoi
 
     export_s1("Guadeloupe", AOIs, EPSGs, START_DATE, END_DATE)
-
-    # export_s1(
-    #     "Martinique",
-    #     AOIs,
-    #     EPSGs,
-    #     START_DATE,
-    #     END_DATE
-    # )
-
-    # export_s1(
-    #     "Mayotte",
-    #     AOIs,
-    #     EPSGs,
-    #     START_DATE,
-    #     END_DATE
-    # )
-
-    # export_s1(
-    #     "Reunion",
-    #     AOIs,
-    #     EPSGs,
-    #     START_DATE,
-    #     END_DATE
-    # )
-
-    # export_s1(
-    #     "Guyane",
-    #     AOIs,
-    #     EPSGs,
-    #     START_DATE,
-    #     END_DATE
-    # )

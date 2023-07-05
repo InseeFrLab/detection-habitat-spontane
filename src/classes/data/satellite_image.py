@@ -111,9 +111,7 @@ class SatelliteImage:
 
         for i in range(0, m, tile_length):
             for j in range(0, n, tile_length):
-                sub_array = original_array[
-                    :, i : i + tile_length, j : j + tile_length
-                ]
+                sub_array = original_array[:, i : i + tile_length, j : j + tile_length]
                 sub_arrays.append(sub_array)
                 rows.append(i)
                 cols.append(j)
@@ -164,9 +162,7 @@ class SatelliteImage:
             print("Warning: this SatelliteImage is already normalized.")
             return
         if quantile < 0.5 or quantile > 1:
-            raise ValueError(
-                "Value of the `quantile` parameter must be between 0.5 and 1."
-            )
+            raise ValueError("Value of the `quantile` parameter must be between 0.5 and 1.")
 
         normalized_bands = [
             rp.adjust_band(
@@ -315,7 +311,7 @@ def to_raster_jp2(self, directory_name: str, file_name: str):
     if not os.path.exists(directory_name):
         os.makedirs(directory_name)
 
-    file = directory_name + "/" + file_name
+    file = f"{directory_name}/{file_name}"
     with rasterio.open(file, "w", **metadata) as dst:
         dst.write(data, indexes=np.arange(n_bands) + 1)
 
@@ -337,15 +333,13 @@ def to_raster_tif(self, directory_name: str, filename: str, proj):
 
     driver = gdal.GetDriverByName("GTiff")
     out_ds = driver.Create(
-        filename + ".tif",
+        f"{filename}.tif",
         array.shape[2],
         array.shape[1],
         array.shape[0],
         gdal.GDT_Float64,
     )
-    out_ds.SetGeoTransform(
-        [transf[2], transf[0], transf[1], transf[5], transf[3], transf[4]]
-    )
+    out_ds.SetGeoTransform([transf[2], transf[0], transf[1], transf[5], transf[3], transf[4]])
     out_ds.SetProjection(proj)
 
     for j in range(array.shape[0]):

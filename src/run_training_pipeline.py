@@ -118,8 +118,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     path.split("/")[-1].split(".")[0] for path in os.listdir(cloud_dir)
                 ]
 
-            dir = list_data_dir[i]
-            list_path = [dir + "/" + filename for filename in os.listdir(dir)]
+            list_path = [f"{list_data_dir[i]}/{filename}" for filename in os.listdir(dir)]
 
             full_balancing_dict = {}
             for path in tqdm(list_path):
@@ -131,7 +130,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                         n_bands=config.n_bands,
                     )
                 except RasterioIOError:
-                    print("Erreur de lecture du fichier " + path)
+                    print(f"Erreur de lecture du fichier {path}")
                     continue
 
                 mask = labeler.create_segmentation_label(si)
@@ -170,12 +169,12 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                 elif np.sum(mask) == 0 and proba != 10:
                     continue
 
-            with open(output_dir + "/balancing_dict.json", "w") as fp:
+            with open(f"{output_dir}/balancing_dict.json", "w") as fp:
                 json.dump(full_balancing_dict, fp)
 
         list_output_dir.append(output_dir)
-        nb = len(os.listdir(output_dir + "/images"))
-        print(str(nb) + " couples images/masques retenus")
+        nb = len(os.listdir(f"{output_dir}/images"))
+        print(f"{str(nb)} couples images/masques retenus")
 
     return list_output_dir
 
@@ -197,11 +196,11 @@ def prepare_test_data(config, test_dir):
     list_labels_path = [f"{labels_path}/{name}" for name in list_name_label]
 
     if config.task != "change-detection":
-        images_path = test_dir + "/images"
+        images_path = f"{test_dir}/images"
         list_name_image = os.listdir(images_path)
         list_name_image = np.sort(remove_dot_file(list_name_image))
         list_images_path = [f"{images_path}/{name}" for name in list_name_image]
-        output_images_path = output_test + "/images"
+        output_images_path = f"{output_test}/images"
 
         for image_path, label_path, name in zip(
             list_images_path, list_labels_path, list_name_image
@@ -215,22 +214,22 @@ def prepare_test_data(config, test_dir):
             list_lsi = lsi.split(config.tile_size)
 
             for i, lsi in enumerate(list_lsi):
-                file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+                file_name_i = f"{name.split('.')[0]}_{i:03d}"
 
-                lsi.satellite_image.to_raster(output_images_path, file_name_i + ".jp2")
+                lsi.satellite_image.to_raster(output_images_path, f"{file_name_i}.jp2")
                 np.save(f"{output_labels_path}/{file_name_i}.npy", lsi.label)
     else:
-        images_path_1 = test_dir + "/images_1"
+        images_path_1 = f"{test_dir}/images_1"
         list_name_image_1 = os.listdir(images_path_1)
         list_name_image_1 = np.sort(remove_dot_file(list_name_image_1))
-        list_images_path_1 = [images_path_1 + "/" + name for name in list_name_image_1]
-        output_images_path_1 = output_test + "/images_1"
+        list_images_path_1 = [f"{images_path_1}/{name}" for name in list_name_image_1]
+        output_images_path_1 = f"{output_test}/images_1"
 
-        images_path_2 = test_dir + "/images_2"
+        images_path_2 = f"{test_dir}/images_2"
         list_name_image_2 = os.listdir(images_path_2)
         list_name_image_2 = np.sort(remove_dot_file(list_name_image_2))
-        list_images_path_2 = [images_path_2 + "/" + name for name in list_name_image_2]
-        output_images_path_2 = output_test + "/images_2"
+        list_images_path_2 = [f"{images_path_2}/{name}" for name in list_name_image_2]
+        output_images_path_2 = f"{output_test}/images_2"
 
         for image_path_1, image_path_2, label_path, name in zip(
             list_images_path_1,
@@ -253,11 +252,11 @@ def prepare_test_data(config, test_dir):
             list_lsi2 = lsi2.split(config.tile_size)
 
             for i, (lsi1, lsi2) in enumerate(zip(list_lsi1, list_lsi2)):
-                file_name_i = name.split(".")[0] + "_" + "{:03d}".format(i)
+                file_name_i = f"{name.split('.')[0]}_{i:03d}"
 
-                lsi1.satellite_image.to_raster(output_images_path_1, file_name_i + ".jp2")
-                lsi2.satellite_image.to_raster(output_images_path_2, file_name_i + ".jp2")
-                np.save(output_labels_path + "/" + file_name_i + ".npy", lsi1.label)
+                lsi1.satellite_image.to_raster(output_images_path_1, f"{file_name_i}.jp2")
+                lsi2.satellite_image.to_raster(output_images_path_2, f"{file_name_i}.jp2")
+                np.save(f"{output_labels_path}/{file_name_i}.npy", lsi1.label)
 
 
 def run_pipeline(remote_server_uri, experiment_name, run_name):

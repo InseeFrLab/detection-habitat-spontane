@@ -50,9 +50,7 @@ def split_array(array, tile_length):
 
     indices = get_indices_from_tile_length(m, n, tile_length)
 
-    list_array = [
-        array[rows[0] : rows[1], cols[0] : cols[1]] for rows, cols in indices
-    ]
+    list_array = [array[rows[0] : rows[1], cols[0] : cols[1]] for rows, cols in indices]
 
     return list_array
 
@@ -72,7 +70,7 @@ def get_file_system() -> S3FileSystem:
     Return the s3 file system.
     """
     return S3FileSystem(
-        client_kwargs={"endpoint_url": "https://" + os.environ["AWS_S3_ENDPOINT"]},
+        client_kwargs={"endpoint_url": f"https://{os.environ['AWS_S3_ENDPOINT']}"},
         key=os.environ["AWS_ACCESS_KEY_ID"],
         secret=os.environ["AWS_SECRET_ACCESS_KEY"],
     )
@@ -95,9 +93,7 @@ def get_transform_for_tiles(transform: Affine, row_off: int, col_off: int) -> Af
     return Affine.translation(x - transform.c, y - transform.f) * transform
 
 
-def get_bounds_for_tiles(
-    transform: Affine, row_indices: Tuple, col_indices: Tuple
-) -> Tuple:
+def get_bounds_for_tiles(transform: Affine, row_indices: Tuple, col_indices: Tuple) -> Tuple:
     """
     Given an Affine transformation, and indices for a tile's row and column,
     returns the bounding coordinates (left, bottom, right, top) of the tile.
@@ -170,8 +166,7 @@ def get_indices_from_tile_length(m: int, n: int, tile_length: int) -> List:
 
     if (tile_length > m) | (tile_length > n):
         raise ValueError(
-            "The size of the tile should be smaller"
-            "than the size of the original image."
+            "The size of the tile should be smaller" "than the size of the original image."
         )
 
     indices = [
@@ -210,8 +205,8 @@ def load_ril(
         os.path.join(
             environment["bucket"],
             environment["sources"]["RIL"],
-            "dep=" + dep,
-            "millesime=" + millesime,
+            f"dep={dep}",
+            f"millesime={millesime}",
         ),
         filesystem=fs,
     )
@@ -219,15 +214,13 @@ def load_ril(
     df = dataset.read().to_pandas()
     gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.x, df.y))
     crs = dep_to_crs[dep]
-    gdf = gdf.set_crs("epsg:" + crs)
+    gdf = gdf.set_crs(f"epsg:{crs}")
 
     return gdf
 
 
 def load_bdtopo(
-    millesime: Literal[
-        "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"
-    ],
+    millesime: Literal["2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"],
     dep: Literal["971", "972", "973", "974", "976", "977", "978"],
 ) -> gpd.GeoDataFrame:
     """
@@ -265,10 +258,8 @@ def load_bdtopo(
         os.makedirs(dir_path)
 
         update_storage_access()
-        fs = S3FileSystem(
-            client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"}
-        )
-        print("download " + dep + " " + str(millesime) + " in " + dir_path)
+        fs = S3FileSystem(client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"})
+        print(f"download {dep} {str(millesime)} in {dir_path}")
         extensions = ["cpg", "dbf", "prj", "shp", "shx"]
         couche_split = couche.split(".")[0]
         for ext in extensions:
@@ -314,20 +305,14 @@ def update_storage_access():
     If AWS_SESSION_TOKEN is present, it will be deleted.
     """
 
-    client = hvac.Client(
-        url="https://vault.lab.sspcloud.fr", token=os.environ["VAULT_TOKEN"]
-    )
+    client = hvac.Client(url="https://vault.lab.sspcloud.fr", token=os.environ["VAULT_TOKEN"])
 
-    secret = os.environ["VAULT_MOUNT"] + os.environ["VAULT_TOP_DIR"] + "/s3"
+    secret = f"{os.environ['VAULT_MOUNT']}{os.environ['VAULT_TOP_DIR']}/s3"
     mount_point, secret_path = secret.split("/", 1)
-    secret_dict = client.secrets.kv.read_secret_version(
-        path=secret_path, mount_point=mount_point
-    )
+    secret_dict = client.secrets.kv.read_secret_version(path=secret_path, mount_point=mount_point)
 
     os.environ["AWS_ACCESS_KEY_ID"] = secret_dict["data"]["data"]["ACCESS_KEY_ID"]
-    os.environ["AWS_SECRET_ACCESS_KEY"] = secret_dict["data"]["data"][
-        "SECRET_ACCESS_KEY"
-    ]
+    os.environ["AWS_SECRET_ACCESS_KEY"] = secret_dict["data"]["data"]["SECRET_ACCESS_KEY"]
     try:
         del os.environ["AWS_SESSION_TOKEN"]
     except KeyError:

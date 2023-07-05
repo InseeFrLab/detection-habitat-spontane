@@ -31,7 +31,7 @@ class Configurator:
         self.tile_size = config["data"]["tile_size"]
         self.n_channels_train = config["data"]["n_channels_train"]
         self.num_workers = config["data"]["num_workers"]
-        self.src_task = self.source_train + self.task
+        self.src_task = f"{self.source_train}{self.task}"
 
         self.loss = config["optim"]["loss"]
         self.lr = config["optim"]["lr"]

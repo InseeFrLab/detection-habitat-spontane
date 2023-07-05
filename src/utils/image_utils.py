@@ -39,8 +39,8 @@ def crs_to_gps_image(
     if satellite_image:  # is not None
         year = (satellite_image.date).year
         dep = str(satellite_image.dep)
-        folder_path = "../" + environment["local-path"]["PLEIADES"][year][dep]
-        filepath = folder_path + "/" + satellite_image.filename
+        folder_path = f"../{environment['local-path']['PLEIADES'][year][dep]}"
+        filepath = f"{folder_path}/{satellite_image.filename}"
 
     delimiters = ["-", "_"]
 
@@ -51,14 +51,12 @@ def crs_to_gps_image(
     x = float(split_filepath[2]) * 1000.0  # left
     y = float(split_filepath[3]) * 1000.0  # top
 
-    pattern = "/"
-
-    split_filepath = re.split(pattern, filepath)
+    split_filepath = re.split("/", filepath)
 
     dep_num = name_dep_to_num_dep[split_filepath[4]]
     str_crs = dep_to_crs[dep_num]
 
-    transformer = Transformer.from_crs("EPSG:" + str_crs, "EPSG:4326", always_xy=True)
+    transformer = Transformer.from_crs(f"EPSG:{str_crs}", "EPSG:4326", always_xy=True)
     lon, lat = transformer.transform(x, y)
 
     # Return GPS coordinates (latitude, longitude)
@@ -91,7 +89,7 @@ def gps_to_crs_point(
     # Convert GPS coordinates to coordinates in destination coordinate system
     # (CRS)
     transformer = Transformer.from_crs(
-        "EPSG:4326", "EPSG:" + str(crs), always_xy=True
+        "EPSG:4326", f"EPSG:{str(crs)}", always_xy=True
     )  # in case the input CRS is of integer type
     x, y = transformer.transform(lon, lat)
     # because y=lat and x=lon, the gps coordinates are in (lat,lon)
@@ -165,7 +163,7 @@ def find_image_of_point(
 
         if left <= x <= right:
             if bottom <= y <= top:
-                return folder_path + "/" + filename
+                return f"{folder_path}/{filename}"
     else:
         return "The point is not find in the folder."
 
@@ -205,8 +203,8 @@ def find_image_different_years(
     if satellite_image is not None:
         year = (satellite_image.date).year
         dep = str(satellite_image.dep)
-        folder_path = "../" + environment["local-path"]["PLEIADES"][year][dep]
-        filepath = folder_path + "/" + satellite_image.filename
+        folder_path = f"../{environment['local-path']['PLEIADES'][year][dep]}"
+        filepath = f"{folder_path}/{satellite_image.filename}"
 
     # Retrieve base department
     pattern = "/"
@@ -217,7 +215,7 @@ def find_image_different_years(
     dep = name_dep_to_num_dep[departement_base.upper()]
     year = different_year
 
-    folder_path = "../" + environment["local-path"]["PLEIADES"][year][dep]
+    folder_path = f"../{environment['local-path']['PLEIADES'][year][dep]}"
 
     # Retrieve left-top coordinates
     if filepath.find("_") != -1:
@@ -244,9 +242,6 @@ def find_image_different_years(
     new_filename = pattern.join(split_filename)
 
     if new_filename in os.listdir(folder_path):
-        return folder_path + "/" + new_filename
+        return f"{folder_path}/{new_filename}"
     else:
-        return (
-            "There is no image of this place in the requested year "
-            "in the database Pléiades."
-        )
+        return "There is no image of this place in the requested year in the database Pléiades."

@@ -117,19 +117,19 @@ class Instantiator:
             full_balancing_dict = {}
             for directory in list_output_dir:
                 # dir = list_output_dir[0]
-                labels = os.listdir(directory + "/labels")
-                images = os.listdir(directory + "/images")
+                labels = os.listdir(f"{directory}/labels")
+                images = os.listdir(f"{directory}/images")
                 if labels[0][0] == ".":
                     del labels[0]
 
                 if self.config.task != "classification":
-                    with open(directory + "/balancing_dict.json") as json_file:
+                    with open(f"{directory}/balancing_dict.json") as json_file:
                         balancing_dict = json.load(json_file)
 
                     list_labels = np.concatenate(
                         (
                             list_labels,
-                            np.sort([directory + "/labels/" + name for name in labels]),
+                            np.sort([f"{directory}/labels/{name}" for name in labels]),
                         )
                     )
 
@@ -140,7 +140,7 @@ class Instantiator:
                     list_labels_dir = []
 
                     # Load the initial CSV file
-                    df = pd.read_csv(directory + "/labels/" + labels[0])
+                    df = pd.read_csv(f"{directory}/labels/{labels[0]}")
 
                     list_labels_dir = df[["Path_image", "Classification"]].values.tolist()
 
@@ -152,7 +152,7 @@ class Instantiator:
                 list_images = np.concatenate(
                     (
                         list_images,
-                        np.sort([directory + "/images/" + name for name in images]),
+                        np.sort([f"{directory}/images/{name}" for name in images]),
                     )
                 )
 
@@ -204,32 +204,32 @@ class Instantiator:
         ]
 
         output_test = "../test-data"
-        output_labels_path = output_test + "/labels/"
+        output_labels_path = f"{output_test}/labels/"
         list_name_label_test = os.listdir(output_labels_path)
         list_path_labels_test = np.sort(
-            [output_labels_path + name_label for name_label in list_name_label_test]
+            [f"{output_labels_path}{name_label}" for name_label in list_name_label_test]
         )
 
         if self.config.task != "change-detection":
-            output_images_path = output_test + "/images/"
+            output_images_path = f"{output_test}/images/"
             list_name_image_test = os.listdir(output_images_path)
             list_path_images_test = np.sort(
-                [output_images_path + name_image for name_image in list_name_image_test]
+                [f"{output_images_path}{name_image}" for name_image in list_name_image_test]
             )
 
             dataset_test = self.dataset(list_path_images_test, list_path_labels_test, test=True)
             dataset_test.transforms = t_preproc
         else:
-            output_images_path_1 = output_test + "/images_1/"
+            output_images_path_1 = f"{output_test}/images_1/"
             list_name_image_1 = os.listdir(output_images_path_1)
             list_path_images_1 = np.sort(
-                [output_images_path_1 + name_image for name_image in list_name_image_1]
+                [f"{output_images_path_1}{name_image}" for name_image in list_name_image_1]
             )
 
-            output_images_path_2 = output_test + "/images_2/"
+            output_images_path_2 = f"{output_test}/images_2/"
             list_name_image_2 = os.listdir(output_images_path_2)
             list_path_images_2 = np.sort(
-                [output_images_path_2 + name_image for name_image in list_name_image_2]
+                [f"{output_images_path_2}{name_image}" for name_image in list_name_image_2]
             )
 
             dataset_test = self.dataset(

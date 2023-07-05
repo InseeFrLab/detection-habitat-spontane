@@ -26,8 +26,8 @@ def check_labelled_images(output_directory_name):
     """
 
     print("Entre dans la fonction check_labelled_images")
-    output_images_path = output_directory_name + "/images"
-    output_masks_path = output_directory_name + "/labels"
+    output_images_path = f"{output_directory_name}/images"
+    output_masks_path = f"{output_directory_name}/labels"
     if (os.path.exists(output_masks_path)) and (len(os.listdir(output_masks_path)) != 0):
         print("The directory already exists and is not empty.")
         return True
@@ -133,24 +133,16 @@ def label_images(list_images, labeler, task: str):
         mask = labeler.create_segmentation_label(satellite_image)
         if task != "classification":
             if np.sum(mask) != 0:
-                balancing_dict[
-                    satellite_image.filename.split(".")[0] + "_" + "{:04d}".format(i)
-                ] = 1
+                balancing_dict[f"{satellite_image.filename.split('.')[0]}_{i:04d}"] = 1
             else:
-                balancing_dict[
-                    satellite_image.filename.split(".")[0] + "_" + "{:04d}".format(i)
-                ] = 0
+                balancing_dict[f"{satellite_image.filename.split('.')[0]}_{i:04d}"] = 0
             labels.append(mask)
         elif task == "classification":
             if np.sum(mask) != 0:
-                balancing_dict[
-                    satellite_image.filename.split(".")[0] + "_" + "{:04d}".format(i)
-                ] = 1
+                balancing_dict[f"{satellite_image.filename.split('.')[0]}_{i:04d}"] = 1
                 labels.append(1)
             else:
-                balancing_dict[
-                    satellite_image.filename.split(".")[0] + "_" + "{:04d}".format(i)
-                ] = 0
+                balancing_dict[f"{satellite_image.filename.split('.')[0]}_{i:04d}"] = 0
                 labels.append(0)
 
     balancing_dict_copy = balancing_dict.copy()
@@ -270,8 +262,8 @@ def save_images_and_masks(list_images, list_masks, output_directory_name, task="
         str: The name of the output directory.
     """
     # print("Entre dans la fonction save_images_and_masks")
-    output_images_path = output_directory_name + "/images"
-    output_masks_path = output_directory_name + "/labels"
+    output_images_path = f"{output_directory_name}/images"
+    output_masks_path = f"{output_directory_name}/labels"
 
     # if task == "classification":
     #     count_ones = list_masks.count(1)
@@ -283,25 +275,21 @@ def save_images_and_masks(list_images, list_masks, output_directory_name, task="
     #     selected_indices = indices_1 + selected_indices_0
 
     for i, (image, mask) in enumerate(zip(list_images, list_masks)):
-        # image = list_images[0]
-        # bb = image.bounds
+        filename = f"{image.filename.split('.')[0]}_{i:04d}"
 
-        # filename = str(bb[0]) + "_" + str(bb[1]) + "_" \
-        #   + "{:03d}".format(i)
-        filename = image.filename.split(".")[0] + "_" + "{:04d}".format(i)
         i = i + 1
 
         try:
             if task != "classification":
-                image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
+                image.to_raster(output_images_path, f"{filename}.jp2", "jp2", None)
                 np.save(
-                    output_masks_path + "/" + filename + ".npy",
+                    f"{output_masks_path}/{filename}.npy",
                     mask,
                 )
             if task == "classification":
                 # if i in selected_indices:
-                image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
-                csv_file_path = output_masks_path + "/" + "fichierlabeler.csv"
+                image.to_raster(output_images_path, f"{filename}.jp2", "jp2", None)
+                csv_file_path = f"{output_masks_path}/fichierlabeler.csv"
 
                 # Create the csv file if it does not exist
                 if not os.path.isfile(csv_file_path):
@@ -325,9 +313,8 @@ def save_images_and_masks(list_images, list_masks, output_directory_name, task="
 
 
 def extract_proportional_subset(
-    input_file="train_data-classification-PLEIADES-RIL-972-2022/" + "labels/fichierlabeler.csv",
-    output_file="train_data-classification-PLEIADES-RIL-972-2022/"
-    + "labels/fichierlabeler_echant.csv",
+    input_file="train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler.csv",
+    output_file="train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv",
     target_column="Classification",
 ):
     """
@@ -362,8 +349,7 @@ def extract_proportional_subset(
 
 
 def filter_images_by_path(
-    csv_file="train_data-classification-PLEIADES-RIL-972-2022/"
-    + "labels/fichierlabeler_echant.csv",
+    csv_file="train_data-classification-PLEIADES-RIL-972-2022/labels/fichierlabeler_echant.csv",
     image_folder="train_data-classification-PLEIADES-RIL-972-2022/images",
     path_column="Path_image",
 ):
@@ -386,7 +372,7 @@ def filter_images_by_path(
     # Extract the "path_image" column as a list
     list_name = df[path_column].tolist()
 
-    list_name_jp2 = [name + ".jp2" for name in list_name]
+    list_name_jp2 = [f"{name}.jp2" for name in list_name]
 
     # Iterate over the files in the image folder
     for filename in tqdm(os.listdir(image_folder)):

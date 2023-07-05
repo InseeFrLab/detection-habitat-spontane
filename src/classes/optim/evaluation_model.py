@@ -76,9 +76,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
 
         for i in range(len(batch)):
             pthimg = dic["pathimage"][i]
-            si = SatelliteImage.from_raster(
-                file_path=pthimg, dep=None, date=None, n_bands=n_bands
-            )
+            si = SatelliteImage.from_raster(file_path=pthimg, dep=None, date=None, n_bands=n_bands)
             si.normalize()
 
             list_labeled_satellite_image.append(
@@ -95,14 +93,12 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
             if not os.path.exists("img/"):
                 os.makedirs("img/")
 
-            fig1 = plot_list_labeled_sat_images(
-                list_labeled_satellite_image, [0, 1, 2]
-            )
+            fig1 = plot_list_labeled_sat_images(list_labeled_satellite_image, [0, 1, 2])
 
             filename = pthimg.split("/")[-1]
             filename = filename.split(".")[0]
             filename = "_".join(filename.split("_")[0:6])
-            plot_file = "img/" + filename + ".png"
+            plot_file = f"img/{filename}.png"
 
             fig1.savefig(plot_file)
             list_labeled_satellite_image = []
@@ -135,9 +131,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
 
         for i in range(batch_size):
             pthimg = dic["pathimage"][i]
-            si = SatelliteImage.from_raster(
-                file_path=pthimg, dep=None, date=None, n_bands=n_bands
-            )
+            si = SatelliteImage.from_raster(file_path=pthimg, dep=None, date=None, n_bands=n_bands)
             si.normalize()
 
             labeled_satellite_image = SegmentationLabeledSatelliteImage(
@@ -158,7 +152,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
             filename = pthimg.split("/")[-1]
             filename = filename.split(".")[0]
             filename = "_".join(filename.split("_")[0:6])
-            plot_file = filename + ".png"
+            plot_file = f"{filename}.png"
 
             fig1.savefig(plot_file)
 
@@ -228,9 +222,7 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
 
         for i in range(batch_size):
             pthimg = dic["pathimage"][i]
-            si = SatelliteImage.from_raster(
-                file_path=pthimg, dep=None, date=None, n_bands=3
-            )
+            si = SatelliteImage.from_raster(file_path=pthimg, dep=None, date=None, n_bands=3)
             si.normalize()
 
             if int(predicted_classes[i]) == 0:
@@ -253,14 +245,12 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
             if not os.path.exists("img/"):
                 os.makedirs("img/")
 
-            fig1 = plot_list_labeled_sat_images(
-                list_labeled_satellite_image, [0, 1, 2]
-            )
+            fig1 = plot_list_labeled_sat_images(list_labeled_satellite_image, [0, 1, 2])
 
             filename = pthimg.split("/")[-1]
             filename = filename.split(".")[0]
             filename = "_".join(filename.split("_")[0:6])
-            plot_file = "img/" + filename + ".png"
+            plot_file = f"img/{filename}.png"
 
             fig1.savefig(plot_file)
             list_labeled_satellite_image = []
@@ -315,9 +305,7 @@ def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(
 
         for i in range(batch_size):
             pthimg2 = dic["pathimage2"][i]
-            si2 = SatelliteImage.from_raster(
-                file_path=pthimg2, dep=None, date=None, n_bands=3
-            )
+            si2 = SatelliteImage.from_raster(file_path=pthimg2, dep=None, date=None, n_bands=3)
             si2.normalize()
 
             list_labeled_satellite_image.append(
@@ -341,7 +329,7 @@ def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(
             filename = pthimg2.split("/")[-1]
             filename = filename.split(".")[0]
             filename = "_".join(filename.split("_")[0:6])
-            plot_file = filename + ".png"
+            plot_file = f"{filename}.png"
 
             fig1.savefig(plot_file)
             list_labeled_satellite_image = []
@@ -394,9 +382,7 @@ def calculate_pourcentage_loss(output, labels):
     threshold = 0.51
 
     # Make predictions based on the threshold
-    predictions = torch.where(
-        probability_class_1 > threshold, torch.tensor([1]), torch.tensor([0])
-    )
+    predictions = torch.where(probability_class_1 > threshold, torch.tensor([1]), torch.tensor([0]))
 
     predicted_classes = predictions.type(torch.float)
 

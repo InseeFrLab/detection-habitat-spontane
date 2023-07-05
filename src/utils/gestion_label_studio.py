@@ -43,20 +43,17 @@ def create_mask_from_label_studio_export(
     with zipfile.ZipFile(emplacement_zip, "r") as zip_ref:
         zip_ref.extractall("labelstudio")
 
-    dir = "labelstudio/"
-
-    liste_name = os.listdir(dir)
+    liste_name = os.listdir("labelstudio/")
 
     list_num_task = [file.split("-")[1] for file in liste_name]
     list_type_label = [file.split("-")[7] for file in liste_name]
 
     booleen = [
-        nt == num_task and tl == type_label
-        for nt, tl in zip(list_num_task, list_type_label)
+        nt == num_task and tl == type_label for nt, tl in zip(list_num_task, list_type_label)
     ]
 
     list_name_select = [name for name, b in zip(liste_name, booleen) if b]
-    list_path_mask = [dir + name for name in list_name_select]
+    list_path_mask = [f"labelstudio/{name}" for name in list_name_select]
 
     list_mask = [np.load(path) for path in list_path_mask]
     mask = reduce(lambda x, y: x + y, list_mask)
@@ -71,4 +68,4 @@ def create_mask_from_label_studio_export(
     directory = "../export/"
     if not os.path.exists(directory):
         os.mkdir(directory)
-    np.save(directory + name_output, mask)
+    np.save(f"{directory}{name_output}", mask)

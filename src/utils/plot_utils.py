@@ -376,8 +376,8 @@ def plot_square_images(
         year = (satellite_image.date).year
         path = environment["local-path"]["PLEIADES"][year][name_dep]
 
-        folder_path = "../" + path
-        filepath_center_image = folder_path + "/" + satellite_image.filename
+        folder_path = f"../{path}"
+        filepath_center_image = f"{folder_path}/{satellite_image.filename}"
     else:
         # Retrieve the year and the department
         annee = split_filepath_center[3]
@@ -412,8 +412,8 @@ def plot_square_images(
             if limit_left_l <= left <= limit_left_r:
                 if limit_top_l <= top <= limit_top_r:
                     image = SatelliteImage.from_raster(
-                        folder_path + "/" + filename,
-                        date=date.fromisoformat(annee + "-01-01"),
+                        f"{folder_path}/{filename}",
+                        date=date.fromisoformat(f"{annee}-01-01"),
                         n_bands=len(bands_indices),
                         dep=dep_num,
                     )
@@ -450,7 +450,7 @@ def plot_list_images_square(folder_path, borne_inf, borne_sup):
     for filepath in tqdm(list_filepaths):
         # Retrieve left-top coordinates of all images
         image = SatelliteImage.from_raster(
-            folder_path + "/" + filepath, date=None, n_bands=3, dep=None
+            f"{folder_path}/{filepath}", date=None, n_bands=3, dep=None
         )
         image.normalize()
         list_images.append(image)
