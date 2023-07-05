@@ -11,10 +11,8 @@ from sklearn.metrics import (
         accuracy_score,
         f1_score)
 
-from classes.optim.evaluation_model import (
-    calculate_pourcentage_loss,
-    proportion_ones
-)
+from classes.optim.evaluation_model import proportion_ones
+
 
 
 class ClassificationModule(pl.LightningModule):
@@ -86,22 +84,22 @@ class ClassificationModule(pl.LightningModule):
 
         loss = self.loss(output, targets_one_hot)
 
-        targets_one_hot = targets_one_hot.numpy()
-        targets_one_hot = np.where(targets_one_hot >= 0.5, 1, 0)
-        output = output.numpy()
+        threshold = 0.5
+        predicted_labels = (output >= threshold).long()  # Convert probabilities to binary predictions
+        predictions = torch.argmax(predicted_labels, dim=1)
 
-        precision = precision_score(targets_one_hot, output)
-        recall = recall_score(targets_one_hot, output)
-        accuracy = accuracy_score(targets_one_hot, output)
-        f1 = f1_score(targets_one_hot, output)
+        # precision = precision_score(target, predictions)
+        # recall = recall_score(target, predictions)
+        # f1 = f1_score(target, predictions)
+        accuracy = accuracy_score(target, predictions)
 
         prop_ones = proportion_ones(labels)
 
         self.log("train_loss", loss, on_epoch=True)
-        self.log("train_precision", precision, on_epoch=True)
-        self.log("train_recall", recall, on_epoch=True)
+        # self.log("train_precision", precision, on_epoch=True)
+        # self.log("train_recall", recall, on_epoch=True)
+        # self.log("train_f1_score", f1, on_epoch=True)
         self.log("train_accuracy", accuracy, on_epoch=True)
-        self.log("train_f1_score", f1, on_epoch=True)
         print(prop_ones)
 
         return loss
@@ -127,24 +125,22 @@ class ClassificationModule(pl.LightningModule):
 
         loss = self.loss(output, targets_one_hot)
 
-        targets_one_hot = targets_one_hot.numpy()
-        targets_one_hot = np.where(targets_one_hot >= 0.5, 1, 0)
-        output = output.numpy()
+        threshold = 0.5
+        predicted_labels = (output >= threshold).long()  # Convert probabilities to binary predictions
+        predictions = torch.argmax(predicted_labels, dim=1)
 
-        precision = precision_score(targets_one_hot, output)
-        recall = recall_score(targets_one_hot, output)
-        accuracy = accuracy_score(targets_one_hot, output)
-        f1 = f1_score(targets_one_hot, output)
+        # precision = precision_score(target, predictions)
+        # recall = recall_score(target, predictions)
+        # f1 = f1_score(target, predictions)
+        accuracy = accuracy_score(target, predictions)
 
-        loss_pourcentage = calculate_pourcentage_loss(output, labels)
         prop_ones = proportion_ones(labels)
 
         self.log("validation_loss", loss, on_epoch=True)
-        self.log("validation_missclassed", loss_pourcentage, on_epoch=True)
-        self.log("validation_precision", precision, on_epoch=True)
-        self.log("validation_recall", recall, on_epoch=True)
+        # self.log("validation_precision", precision, on_epoch=True)
+        # self.log("validation_recall", recall, on_epoch=True)
+        # self.log("validation_f1_score", f1, on_epoch=True)
         self.log("validation_accuracy", accuracy, on_epoch=True)
-        self.log("validation_f1_score", f1, on_epoch=True)
         print(prop_ones)
 
         return loss
@@ -170,14 +166,14 @@ class ClassificationModule(pl.LightningModule):
 
         loss = self.loss(output, targets_one_hot)
 
-        targets_one_hot = targets_one_hot.numpy()
-        targets_one_hot = np.where(targets_one_hot >= 0.5, 1, 0)
-        output = output.numpy()
+        threshold = 0.5
+        predicted_labels = (output >= threshold).long()  # Convert probabilities to binary predictions
+        predictions = torch.argmax(predicted_labels, dim=1)
 
-        precision = precision_score(targets_one_hot, output)
-        recall = recall_score(targets_one_hot, output)
-        accuracy = accuracy_score(targets_one_hot, output)
-        f1 = f1_score(targets_one_hot, output)
+        precision = precision_score(target, predictions)
+        recall = recall_score(target, predictions)
+        accuracy = accuracy_score(target, predictions)
+        f1 = f1_score(target, predictions)
 
         self.log("test_loss", loss, on_epoch=True)
         self.log("test_precision", precision, on_epoch=True)

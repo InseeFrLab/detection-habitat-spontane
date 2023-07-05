@@ -499,35 +499,6 @@ def calculate_IOU(output, labels):
     return IOU
 
 
-# calculate num and denomionateur IOU
-def calculate_pourcentage_loss(output, labels):
-    """
-    Calculate the pourcentage of wrong predicted classes
-    based on output classification predictions of a model
-    and the true classes.
-
-    Args:
-        output: the output of the classification
-        labels: the true classes
-
-    """
-    probability_class_1 = output[:, 1]
-
-    # Set a threshold for class prediction
-    threshold = 0.51
-
-    # Make predictions based on the threshold
-    predictions = torch.where(
-        probability_class_1 > threshold, torch.tensor([1]), torch.tensor([0])
-    )
-
-    predicted_classes = predictions.type(torch.float)
-
-    misclassified_percentage = (predicted_classes != labels).float().mean()
-
-    return misclassified_percentage
-
-
 def proportion_ones(labels):
     """
     Calculate the proportion of ones in the validation dataloader.

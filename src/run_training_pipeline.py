@@ -18,7 +18,7 @@ from pytorch_lightning.callbacks import (
     ModelCheckpoint,
 )
 from rasterio.errors import RasterioIOError
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from tqdm import tqdm
 from yaml.loader import SafeLoader
 
@@ -553,15 +553,35 @@ def instantiate_dataloader(config, list_output_dir):
 
     # Creation of the dataloaders
     batch_size = config["optim"]["batch size"]
+    
+    #Balancing batchs
+    # if config_task == "classification":
+    #     class_counts_train = np.bincount(train_dataset.list_labels.astype(np.int64))
+    #     class_counts_valid = np.bincount(valid_dataset.list_labels.astype(np.int64))
+
+    #     class_weights_train = class_counts_train/np.sum(class_counts_train)
+    #     train_sampler = WeightedRandomSampler(weights=class_weights_train, num_samples=len(train_dataset), replacement=True)
+
+    #     class_weights_valid = class_counts_valid/np.sum(class_counts_valid)
+    #     valid_sampler = WeightedRandomSampler(weights=class_weights_valid, num_samples=len(valid_dataset), replacement=True)
+
+    #     shuffle_bool = [False, False]
+    # else:
+    #     train_sampler, valid_sampler = None, None
+    #     shuffle_bool = [True, False]
+
+    train_sampler, valid_sampler = None, None
+    shuffle_bool = [True, False]
 
     train_dataloader, valid_dataloader = [
         DataLoader(
             ds,
             batch_size=batch_size,
             shuffle=boolean,
+            sampler=smpl,
             num_workers=0,
         )
-        for ds, boolean in zip([train_dataset, valid_dataset], [True, False])
+        for ds, boolean, smpl in zip([train_dataset, valid_dataset], shuffle_bool, [train_sampler, valid_sampler])
     ]
 
     # Gestion datset test
