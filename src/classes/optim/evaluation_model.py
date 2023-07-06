@@ -252,6 +252,54 @@ def metrics_classification_pleiade(
         return best_threshold
 
 
+def metrics_classification_pleiade2(
+    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+):
+    """
+    Evaluates the model on the Pleiade test dataset for image classification.
+
+    Args:
+        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        dataset.
+        model (torchvision.models): The classification model to evaluate.
+        tile_size (int): The size of each tile in pixels.
+        batch_size (int): The batch size.
+        use_mlflow (bool, optional): Whether to use MLflow for logging
+        artifacts. Defaults to False.
+
+    Returns:
+        None
+    """
+    with torch.no_grad():
+        model.eval()
+        best_threshold = []
+
+        for idx, batch in enumerate(test_dl):
+
+            images, labels, __ = batch
+
+            model = model.to("cuda:0")
+            images = images.to("cuda:0")
+
+            output_model = model(images)
+            output_model = output_model.to("cpu")
+            y_pred = output_model[:, 1].tolist()
+
+            y_true = labels.tolist()
+
+            del images, labels
+
+            y_true = np.array(y_true).flatten().tolist()
+            y_pred = np.array(y_pred).flatten().tolist()
+
+            fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+
+            best_threshold_idx = np.argmax(tpr - fpr)  # Index of the best threshold
+            best_threshold.append(thresholds[best_threshold_idx])
+
+        return best_threshold
+
+
 def evaluer_modele_sur_jeu_de_test_classification_pleiade(
     test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
 ):

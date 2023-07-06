@@ -264,7 +264,7 @@ def prepare_test_data(config, test_dir):
     if not os.path.exists(output_labels_path):
         os.makedirs(output_labels_path)
     else:
-        return None
+        return output_test
 
     labels_path = test_dir + "/masks"
     list_name_label = os.listdir(labels_path)
@@ -378,7 +378,7 @@ def prepare_test_data(config, test_dir):
 
             lsi1 = SegmentationLabeledSatelliteImage(si1, mask, "", "")
             lsi2 = SegmentationLabeledSatelliteImage(si2, mask, "", "")
-            
+
             list_lsi1 = lsi1.split(tile_size)
             list_lsi2 = lsi2.split(tile_size)
 
@@ -421,7 +421,7 @@ def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, 
         raise ValueError("Invalid dataset type")
     else:
         dataset_select = dataset_dict[dataset_type]
-       
+
         if list_images_2 is None:
             full_dataset = dataset_select(
                 list_images, list_labels, config["donnees"]["n bands"]
@@ -888,7 +888,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         light_module = light_module.load_from_checkpoint(
             loss=instantiate_loss(config),
-            checkpoint_path=trainer.checkpoint_callback.best_model_path,
+            checkpoint_path="epoch=13-step=11242.ckpt",
             model=light_module.model,
             optimizer=light_module.optimizer,
             optimizer_params=light_module.optimizer_params,
@@ -901,6 +901,16 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         gc.collect()
 
         model = light_module.model
+
+        # trshld = metrics_classification_pleiade2(
+        #     test_dl,
+        #     model,
+        #     tile_size,
+        #     batch_size_test,
+        #     config["donnees"]["n bands"],
+        #     False,
+        # )
+        # print(trshld)
 
         if src_task not in task_to_evaluation:
             raise ValueError("Invalid task type")
@@ -927,7 +937,7 @@ if __name__ == "__main__":
 
 # nohup python run_training_pipeline.py
 # https://projet-slums-detection-128833.user.lab.sspcloud.fr
-# classification test_roc_matrix_confusion_metrics > out.txt &
+# classification 125_bdtopo_good > out.txt &
 # https://www.howtogeek.com/804823/nohup-command-linux/
 # TO DO :
 # test routine sur S2Looking dataset
