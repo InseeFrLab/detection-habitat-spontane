@@ -1,6 +1,12 @@
 import torch.nn as nn
 from torch.nn import CrossEntropyLoss
 
+from classes.labelers.labeler import (
+    BDTOPOLabeler,
+    RILLabeler,
+    BDTOPOFiltreLabeler
+)
+
 from classes.optim.evaluation_model import (
     evaluer_modele_sur_jeu_de_test_classification_pleiade,
     evaluer_modele_sur_jeu_de_test_segmentation_pleiade,
@@ -15,6 +21,12 @@ from models.classification_module import ClassificationModule
 from models.components.classification_models import ResNet50Module
 from models.components.segmentation_models import DeepLabv3Module
 from models.segmentation_module import SegmentationModule
+
+labeler_dict = {
+    "RIL": RILLabeler,
+    "BDTOPO": BDTOPOLabeler,
+    "BDTOPOFiltre": BDTOPOFiltreLabeler
+}
 
 dataset_dict = {
     "PLEIADE": SegmentationDataset,

@@ -26,13 +26,10 @@ from classes.data.labeled_satellite_image import (  # noqa: E501
     SegmentationLabeledSatelliteImage,
 )
 from classes.data.satellite_image import SatelliteImage
-from classes.labelers.labeler import (
-    BDTOPOLabeler,
-    RILLabeler,
-    BDTOPOFiltreLabeler
-)
+
 from classes.optim.optimizer import generate_optimization_elements
 from dico_config import (
+    labeler_dict,
     dataset_dict,
     loss_dict,
     module_dict,
@@ -152,13 +149,12 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
 
         if not check_labelled_images(output_dir):
             date = datetime.strptime(str(year) + "0101", "%Y%m%d")
+            Labeler = labeler_dict[type_labeler]
             if type_labeler == "RIL":
                 buffer_size = config_data["buffer size"]
-                labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
-            elif type_labeler == "BDTOPO":
-                labeler = BDTOPOLabeler(date, dep=dep)
-            elif type_labeler == "BDTOPOFiltre":
-                labeler = BDTOPOFiltreLabeler(date, dep=dep)
+                labeler = Labeler(date, dep=dep, buffer_size=buffer_size)
+            else:
+                labeler = Labeler(date, dep=dep)
 
             list_name_cloud = []
             if src == "PLEIADES":
