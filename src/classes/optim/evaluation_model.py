@@ -222,21 +222,28 @@ def metrics_classification_pleiade(
         if not os.path.exists("img/"):
             os.makedirs("img/")
 
-        plt.savefig('ROC.png')
+        plot_file_roc = "img/ROC.png"
+        plt.savefig(plot_file_roc)
 
         class_names = ["Bâti", "Non bâti"]
 
-        disp = ConfusionMatrixDisplay.from_predictions(y_true, y_pred,
+        predictions = np.where(
+            y_pred > best_threshold,
+            np.array([1.0]),
+            np.array([0.0]),
+        )
+        predicted_classes = predictions.tolist()
+
+        disp = ConfusionMatrixDisplay.from_predictions(y_true, predicted_classes,
                                                        display_labels=class_names,
                                                        cmap="Pastel1",
                                                        normalize="true")
         disp.plot()
-        plt.savefig("confusion_matrix.png")
+        plot_file_cm = "img/confusion_matrix.png"
+        plt.savefig(plot_file_cm)
 
         if use_mlflow:
-            plot_file_roc = "ROC.png"
             mlflow.log_artifact(plot_file_roc, artifact_path="plots")
-            plot_file_cm = "confusion_matrix.png"
             mlflow.log_artifact(plot_file_cm, artifact_path="plots")
             mlflow.log_param("best true positif rate", best_tpr)
             mlflow.log_param("best false positif rate", best_fpr)
@@ -379,7 +386,6 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
                 list_labeled_satellite_image = []
 
                 if use_mlflow:
-                    plot_file = filename + ".png"
                     mlflow.log_artifact(plot_file, artifact_path="plots")
 
                 plt.close()
@@ -464,7 +470,7 @@ def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(
             filename = pthimg2.split('/')[-1]
             filename = filename.split('.')[0]
             filename = '_'.join(filename.split('_')[0:6])
-            plot_file = filename + ".png"
+            plot_file = "img/" + filename + ".png"
 
             fig1.savefig(plot_file)
             list_labeled_satellite_image = []

@@ -127,6 +127,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     src = config_data["source train"]
     type_labeler = config_data["type labeler"]
     config_task = config_data["task"]
+    tile_size = config_data["tile size"]
 
     list_output_dir = []
 
@@ -144,6 +145,8 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
             + dep
             + "-"
             + str(year)
+            + "-"
+            + str(tile_size)
             + "/"
         )
 
@@ -235,10 +238,27 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
 def prepare_test_data(config, test_dir):
     print("Entre dans la fonction prepare_test_data")
 
-    n_bands = config["donnees"]["n bands"]
-    tile_size = config["donnees"]["tile size"]
+    config_data = config["donnees"]
 
-    output_test = "../test-data"
+    n_bands = config_data["n bands"]
+    src = config_data["source train"]
+    type_labeler = config_data["type labeler"]
+    config_task = config_data["task"]
+    tile_size = config_data["tile size"]
+
+    output_test = (
+        "../test_data"
+        + "-"
+        + config_task
+        + "-"
+        + src
+        + "-"
+        + type_labeler
+        + "-"
+        + str(tile_size)
+        + "/"
+    )
+
     output_labels_path = output_test + "/labels"
 
     if not os.path.exists(output_labels_path):
@@ -373,6 +393,8 @@ def prepare_test_data(config, test_dir):
                     )
                 np.save(output_labels_path + "/" + file_name_i + ".npy", lsi1.label)
 
+    return output_test
+
 
 def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, test=False):
     """
@@ -412,7 +434,7 @@ def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, 
     return full_dataset
 
 
-def instantiate_dataloader(config, list_output_dir):
+def instantiate_dataloader(config, list_output_dir, output_test):
     """
     Instantiates and returns the data loaders for
     training, validation, and testing datasets.
@@ -592,7 +614,6 @@ def instantiate_dataloader(config, list_output_dir):
     # output_images_path = output_test_task + "/images/"
     # output_labels_path = output_test_task + "/masks/"
 
-    output_test = "../test-data"
     output_labels_path = output_test + "/labels/"
     list_name_label_test = os.listdir(output_labels_path)
     list_name_label_test = remove_dot_file(list_name_label_test)
@@ -807,9 +828,9 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
 
     list_output_dir = prepare_train_data(config, list_data_dir, list_masks_cloud_dir)
-    prepare_test_data(config, test_dir)
+    output_test = prepare_test_data(config, test_dir)
 
-    train_dl, valid_dl, test_dl = instantiate_dataloader(config, list_output_dir)
+    train_dl, valid_dl, test_dl = instantiate_dataloader(config, list_output_dir, output_test)
 
     # train_dl.dataset[0][0].shape
     light_module = instantiate_lightning_module(config)
