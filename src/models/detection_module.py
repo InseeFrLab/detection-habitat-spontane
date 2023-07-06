@@ -67,6 +67,7 @@ class DetectionModule(pl.LightningModule):
             batch_idx (int): batch index.
         Returns: Tensor
         """
+        self.model.model.train()
         images = batch[0]
 
         targets = []
