@@ -203,7 +203,28 @@ class BDTOPOLabeler(Labeler):
 
         return rasterized
 
-    def create_segmentation_label_filtered(
+
+class BDTOPOFiltreLabeler(Labeler):
+    """ """
+
+    def __init__(
+        self,
+        labeling_date: datetime,
+        dep: Literal["971", "972", "973", "974", "976", "977", "978"],
+    ):
+        """
+        Constructor.
+
+        Args:
+            labeling_date (datetime): Date of labeling data.
+            dep (Literal): Departement.
+        """
+        super(BDTOPOFiltreLabeler, self).__init__(labeling_date, dep)
+        self.labeling_data = load_bdtopo(
+            millesime=str(self.labeling_date.year), dep=self.dep
+        )
+
+    def create_segmentation_label(
         self, satellite_image: SatelliteImage
     ) -> np.array:
         """

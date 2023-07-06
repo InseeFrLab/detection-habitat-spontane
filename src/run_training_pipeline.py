@@ -26,7 +26,11 @@ from classes.data.labeled_satellite_image import (  # noqa: E501
     SegmentationLabeledSatelliteImage,
 )
 from classes.data.satellite_image import SatelliteImage
-from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
+from classes.labelers.labeler import (
+    BDTOPOLabeler,
+    RILLabeler,
+    BDTOPOFiltreLabeler
+)
 from classes.optim.optimizer import generate_optimization_elements
 from dico_config import (
     dataset_dict,
@@ -153,6 +157,8 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                 labeler = RILLabeler(date, dep=dep, buffer_size=buffer_size)
             elif type_labeler == "BDTOPO":
                 labeler = BDTOPOLabeler(date, dep=dep)
+            elif type_labeler == "BDTOPOFiltre":
+                labeler = BDTOPOFiltreLabeler(date, dep=dep)
 
             list_name_cloud = []
             if src == "PLEIADES":
@@ -170,7 +176,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
             full_balancing_dict = {}
             cpt_ones = 0
             max_echant = 15000
-            
+
             for path in tqdm(list_path):
                 if cpt_ones >= max_echant:
                     break
@@ -553,8 +559,8 @@ def instantiate_dataloader(config, list_output_dir):
 
     # Creation of the dataloaders
     batch_size = config["optim"]["batch size"]
-    
-    #Balancing batchs
+
+    # Balancing batchs
     # if config_task == "classification":
     #     class_counts_train = np.bincount(train_dataset.list_labels.astype(np.int64))
     #     class_counts_valid = np.bincount(valid_dataset.list_labels.astype(np.int64))
@@ -624,7 +630,7 @@ def instantiate_dataloader(config, list_output_dir):
         output_images_path_1 = output_test + "/images_1/"
         list_name_image_1 = os.listdir(output_images_path_1)
         list_path_images_1 = np.sort([output_images_path_1 + name_image for name_image in list_name_image_1])
-        
+
         output_images_path_2 = output_test + "/images_2/"
         list_name_image_2 = os.listdir(output_images_path_2)
         list_path_images_2 = np.sort([output_images_path_2 + name_image for name_image in list_name_image_2])
@@ -846,10 +852,10 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
             model = light_module_checkpoint.model
 
-            if task_type not in task_to_evaluation:
+            if src_task not in task_to_evaluation:
                 raise ValueError("Invalid task type")
             else:
-                evaluer_modele_sur_jeu_de_test = task_to_evaluation[task_type]
+                evaluer_modele_sur_jeu_de_test = task_to_evaluation[src_task]
 
             evaluer_modele_sur_jeu_de_test(
                     test_dl,
