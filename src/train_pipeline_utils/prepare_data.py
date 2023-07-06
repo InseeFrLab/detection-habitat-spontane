@@ -8,6 +8,7 @@ import rasterio
 from tqdm import tqdm
 
 from utils.filter import is_too_black, is_too_water
+from classes.data.satellite_image import SatelliteImage
 
 
 def check_labelled_images(output_directory_name):
@@ -104,12 +105,12 @@ def filter_images_sentinel(list_images):
             filtered data.
     """
 
-    # print("Entre dans la fonction filter_images_sentinel")
     list_filtered_splitted_images = []
     for splitted_image in list_images:
+        array = splitted_image.array
         if not is_too_water(splitted_image, 0.95):
-            list_filtered_splitted_images.append(splitted_image)
-
+            if not np.isnan(array).any():
+                list_filtered_splitted_images.append(splitted_image)
     return list_filtered_splitted_images
 
 
@@ -235,6 +236,7 @@ def save_images_and_masks(
     #     selected_indices = indices_1 + selected_indices_0
 
     for i, (image, mask) in enumerate(zip(list_images, list_masks)):
+        print('all : ', np.min(image.array[12, :, :]), np.max(image.array[12, :, :]), np.mean(image.array[12, :, :]))
         # image = list_images[0]
         # bb = image.bounds
 

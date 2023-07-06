@@ -184,7 +184,9 @@ class SentinelDataset(Dataset):
 
         img = SatelliteImage.from_raster(
             file_path=pathim, dep=None, date=None, n_bands=self.n_bands
-        ).array
+        )
+        img.normalize()
+        img = img.array
 
         img = np.transpose(img.astype(float), [1, 2, 0])
         label = torch.tensor(np.load(pathlabel))

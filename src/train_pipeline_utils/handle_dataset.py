@@ -25,7 +25,7 @@ def select_indices_to_split_dataset(
             train_indices (list): The selected indices for the training set.
             val_indices (list): The selected indices for the validation set.
     """
-    
+
     zero_indices = [i for i, label in enumerate(list_labels) if full_balancing_dict[label.split('/')[-1].split('.')[0]] == 0]
     one_indices = [i for i, label in enumerate(list_labels) if full_balancing_dict[label.split('/')[-1].split('.')[0]] == 1]
 
@@ -131,10 +131,10 @@ def select_indices_to_balance(
     if lenght_unlabelled < len(idx_no_building):
         list_to_add = random.sample(idx_no_building, lenght_unlabelled)
         for i in list_to_add:
-            idx = idx_no_building.index(i)
             idx_balanced.append(i)
     else:
         idx_balanced.extend(idx_no_building)
+
     return idx_balanced
 
 
@@ -207,7 +207,7 @@ def generate_transform_sentinel(src, year, dep, tile_size, augmentation):
     transforms_preprocessing = album.Compose(
         [
             album.Resize(*image_size, always_apply=True),
-            album.Normalize(mean, std),
+            # album.Normalize(mean, std),
             ToTensorV2(),
         ]
     )
@@ -221,7 +221,7 @@ def generate_transform_sentinel(src, year, dep, tile_size, augmentation):
                 ),
                 album.HorizontalFlip(),
                 album.VerticalFlip(),
-                album.Normalize(mean, std),
+                # album.Normalize(mean, std),
                 ToTensorV2(),
             ]
         )

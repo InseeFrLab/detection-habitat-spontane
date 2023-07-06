@@ -4,6 +4,7 @@ import os
 import random
 import sys
 from datetime import datetime
+import shutil
 
 import mlflow
 import numpy as np
@@ -168,50 +169,52 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     si = SatelliteImage.from_raster(
                         file_path=path,
                         dep=dep,
-                        date=date,
+                        date=None,
                         n_bands=config_data["n bands"],
                     )
+                    # if src == "SENTINEL2" or src == "SENTINEL1-2":
+                    #     si.normalized = False
                 except RasterioIOError:
                     print("Erreur de lecture du fichier " + path)
                     continue
 
-                mask = labeler.create_segmentation_label(si)
-                proba = random.randint(1, 10)
+                # mask = labeler.create_segmentation_label(si)
+                # proba = random.randint(1, 10)
 
-                if (np.sum(mask) == 0 and proba == 10) or np.sum(mask) != 0:
-                    filename = path.split("/")[-1].split(".")[0]
-                    list_splitted_mask_cloud = None
+                # if (np.sum(mask) == 0 and proba == 10) or np.sum(mask) != 0:
+                filename = path.split("/")[-1].split(".")[0]
+                list_splitted_mask_cloud = None
 
-                    if filename in list_name_cloud:
-                        mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
-                        list_splitted_mask_cloud = split_array(
-                            mask_full_cloud, config_data["tile size"]
-                        )
-
-                    list_splitted_images = si.split(config_data["tile size"])
-
-                    list_filtered_splitted_images = filter_images(
-                        config_data["source train"],
-                        list_splitted_images,
-                        list_splitted_mask_cloud,
+                if filename in list_name_cloud:
+                    mask_full_cloud = np.load(cloud_dir + "/" + filename + ".npy")
+                    list_splitted_mask_cloud = split_array(
+                        mask_full_cloud, config_data["tile size"]
                     )
 
-                    labels, balancing_dict = label_images(
-                        list_filtered_splitted_images, labeler, task=config_task
-                    )
+                list_splitted_images = si.split(config_data["tile size"])
 
-                    save_images_and_masks(
-                        list_filtered_splitted_images,
-                        labels,
-                        output_dir,
-                        task=config_task,
-                    )
+                list_filtered_splitted_images = filter_images(
+                    config_data["source train"],
+                    list_splitted_images,
+                    list_splitted_mask_cloud,
+                )
 
-                    for k, v in balancing_dict.items():
-                        full_balancing_dict[k] = v
+                labels, balancing_dict = label_images(
+                    list_filtered_splitted_images, labeler, task=config_task
+                )
 
-                elif np.sum(mask) == 0 and proba != 10:
-                    continue
+                save_images_and_masks(
+                    list_filtered_splitted_images,
+                    labels,
+                    output_dir,
+                    task=config_task,
+                )
+
+                for k, v in balancing_dict.items():
+                    full_balancing_dict[k] = v
+
+                # elif np.sum(mask) == 0 and proba != 10:
+                #     continue
 
             with open(output_dir + "/balancing_dict.json", "w") as fp:
                 json.dump(full_balancing_dict, fp)
@@ -248,6 +251,14 @@ def prepare_test_data(config, test_dir):
         list_images_path = [images_path + "/" + name for name in list_name_image]
         output_images_path = output_test + "/images"
 
+        if len(list_labels_path) < len(list_images_path):
+            diff = len(list_images_path) - len(list_labels_path)
+            file_to_duplicate = list_labels_path[0]
+            for i in range(diff):
+                new_file = file_to_duplicate[0:-4]+f"_{i}.npy'"
+                shutil.copyfile(file_to_duplicate, new_file)
+                list_labels_path.append(list_labels_path[0][0:-4]+f"_{i}.npy'")
+
         for image_path, label_path, name in zip(
             list_images_path,
             list_labels_path,
@@ -263,7 +274,6 @@ def prepare_test_data(config, test_dir):
 
             for i, lsi in enumerate(list_lsi):
                 file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
-
                 lsi.satellite_image.to_raster(
                     output_images_path, file_name_i + ".jp2"
                     )
@@ -529,7 +539,7 @@ def instantiate_dataloader(config, list_output_dir):
         list_path_images_2 = np.sort([output_images_path_2 + name_image for name_image in list_name_image_2])
 
         dataset_test = instantiate_dataset(
-                config, list_path_images_1, list_path_labels_test, list_images_2= list_path_images_2, test = True
+                config, list_path_images_1, list_path_labels_test, list_images_2 = list_path_images_2, test = True
             )
         dataset_test.transforms = t_preproc
 
@@ -707,13 +717,13 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     prepare_test_data(config, test_dir)
 
     train_dl, valid_dl, test_dl = instantiate_dataloader(config, list_output_dir)
-
     # train_dl.dataset[0][0].shape
     light_module = instantiate_lightning_module(config)
     trainer = instantiate_trainer(config, light_module)
 
     torch.cuda.empty_cache()
     gc.collect()
+    return
 
     remote_server_uri = "https://projet-slums-detection-128833.user.lab.sspcloud.fr"
     # experiment_name = "classification"
