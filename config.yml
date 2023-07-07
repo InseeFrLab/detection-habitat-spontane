@@ -3,8 +3,12 @@ data:
   dataset: "SENTINEL"
   dataset_test: "SENTINEL"
   task: "segmentation"
-  year: [2022]
-  dep: ["976"]
+
+  millesime:
+    - dep: 976
+      year: 2022
+    - dep: 975
+      year: 2022
   type_labeler: "BDTOPO"
   buffer_size: 10
   n_channels_train: 13
