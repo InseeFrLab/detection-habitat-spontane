@@ -207,6 +207,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     list_filtered_splitted_images,
                     labels,
                     output_dir,
+                    direc=dir,
                     task=config_task,
                 )
 
@@ -255,9 +256,9 @@ def prepare_test_data(config, test_dir):
             diff = len(list_images_path) - len(list_labels_path)
             file_to_duplicate = list_labels_path[0]
             for i in range(diff):
-                new_file = file_to_duplicate[0:-4]+f"_{i}.npy'"
+                new_file = file_to_duplicate[0:-4]+f"_{i}.npy"
                 shutil.copyfile(file_to_duplicate, new_file)
-                list_labels_path.append(list_labels_path[0][0:-4]+f"_{i}.npy'")
+                list_labels_path.append(list_labels_path[0][0:-4]+f"_{i}.npy")
 
         for image_path, label_path, name in zip(
             list_images_path,
@@ -723,7 +724,6 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     torch.cuda.empty_cache()
     gc.collect()
-    return
 
     remote_server_uri = "https://projet-slums-detection-128833.user.lab.sspcloud.fr"
     # experiment_name = "classification"

@@ -333,7 +333,7 @@ def to_raster_tif(self, directory_name: str, filename: str, proj):
 
     driver = gdal.GetDriverByName("GTiff")
     out_ds = driver.Create(
-        filename + ".tif",
+        directory_name + '/' + filename + ".tif",
         array.shape[2],
         array.shape[1],
         array.shape[0],

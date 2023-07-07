@@ -124,5 +124,5 @@ class CustomLoss(nn.Module):
 
 def to_one_hot(tensor, nClasses):
     n, h, w = tensor.size()
-    one_hot = torch.zeros(n, nClasses, h, w).scatter_(1, tensor.view(n, 1, h, w), 1)
+    one_hot = torch.zeros(n, nClasses, h, w, device="cuda:0").scatter_(1, tensor.view(n, 1, h, w), 1)
     return one_hot
