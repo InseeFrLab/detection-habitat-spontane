@@ -902,6 +902,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         model = light_module.model
 
+        # from classes.optim.evaluation_model import metrics_classification_pleiade2
         # trshld = metrics_classification_pleiade2(
         #     test_dl,
         #     model,
@@ -937,7 +938,7 @@ if __name__ == "__main__":
 
 # nohup python run_training_pipeline.py
 # https://projet-slums-detection-128833.user.lab.sspcloud.fr
-# classification 125_bdtopo_good > out.txt &
+# classification 250_bdtopo_filtre > out3.txt &
 # https://www.howtogeek.com/804823/nohup-command-linux/
 # TO DO :
 # test routine sur S2Looking dataset

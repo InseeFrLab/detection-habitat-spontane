@@ -273,6 +273,10 @@ def metrics_classification_pleiade2(
     with torch.no_grad():
         model.eval()
         best_threshold = []
+        npatch = int((2000 / tile_size) ** 2)
+        count_patch = 0
+        y_pred = []
+        y_true = []
 
         for idx, batch in enumerate(test_dl):
 
@@ -283,19 +287,33 @@ def metrics_classification_pleiade2(
 
             output_model = model(images)
             output_model = output_model.to("cpu")
-            y_pred = output_model[:, 1].tolist()
+            y_pred_idx = output_model[:, 1].tolist()
+            labels2 = labels.tolist()
 
-            y_true = labels.tolist()
+            if batch_size > len(images):
+                batch_size_current = len(images)
 
-            del images, labels
+            elif batch_size <= len(images):
+                batch_size_current = batch_size
 
-            y_true = np.array(y_true).flatten().tolist()
-            y_pred = np.array(y_pred).flatten().tolist()
+            for i in range(batch_size_current):
+                y_pred.append(y_pred_idx[i])
 
-            fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+                y_true.append(labels2[i])
+                count_patch += 1
 
-            best_threshold_idx = np.argmax(tpr - fpr)  # Index of the best threshold
-            best_threshold.append(thresholds[best_threshold_idx])
+                if ((count_patch) % npatch) == 0:
+                    y_true = np.array(y_true).flatten().tolist()
+                    y_pred = np.array(y_pred).flatten().tolist()
+
+                    fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+
+                    best_threshold_idx = np.argmax(tpr - fpr)  # Index of the best threshold
+                    best_threshold.append(thresholds[best_threshold_idx])
+                    y_true = []
+                    y_pred = []
+
+        del images, labels
 
         return best_threshold
 

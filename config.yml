@@ -4,11 +4,11 @@ donnees:
   dataset-test: "CLASSIFICATION"
   year: [2022]
   dep: ["972"]
-  type labeler: "BDTOPOFiltre"
+  type labeler: "BDTOPO"
   buffer size: 10
   n channels train: 3
   n bands: 3
-  tile size: 250
+  tile size: 125
   augmentation: False
   task: "classification"
   prop: 1
