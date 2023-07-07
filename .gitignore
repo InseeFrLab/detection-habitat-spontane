@@ -142,4 +142,9 @@ GCP_credentials.json
 *.prj
 *.shp
 *.shx
+*.csv
+*.npy
+*.json
 *.keep
+*.ckpt
+*.yaml

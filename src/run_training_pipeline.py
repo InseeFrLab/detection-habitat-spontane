@@ -170,10 +170,8 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                         file_path=path,
                         dep=dep,
                         date=None,
-                        n_bands=config_data["n bands"],
+                        n_bands=config_data["n bands entry"],
                     )
-                    # if src == "SENTINEL2" or src == "SENTINEL1-2":
-                    #     si.normalized = False
                 except RasterioIOError:
                     print("Erreur de lecture du fichier " + path)
                     continue

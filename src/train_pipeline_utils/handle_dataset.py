@@ -126,7 +126,7 @@ def select_indices_to_balance(
     # Get images with buildings and without according
     # to a certain proportion
     length_labelled = len(idx_building)
-    lenght_unlabelled = prop * length_labelled
+    lenght_unlabelled = int(prop * length_labelled)
     idx_balanced = idx_building.copy()
     if lenght_unlabelled < len(idx_no_building):
         list_to_add = random.sample(idx_no_building, lenght_unlabelled)

@@ -14,6 +14,8 @@ sources:
       segmentation: donnees-test/SENTINEL1-2/segmentation
       #change-detection: donnees-test/SENTINEL/change_detection
       #classification: donnees-test/SENTINEL/classification
+    SENTINEL2-RVB:
+      segmentation: donnees-test/SENTINEL2-RVB/segmentation
   PAPERS:
     S2Looking: Donnees/PAPERS/S2Looking
     LEVIR_CD: Donnees/PAPERS/LEVIR_CD
@@ -107,6 +109,19 @@ sources:
       "973": Donnees/SENTINEL2/GUYANE/TUILES_2022
       "976": Donnees/SENTINEL2/MAYOTTE/TUILES_2022
 
+  SENTINEL2-RVB:
+    2021:
+      "971": Donnees/SENTINEL2/GUADELOUPE/TUILES_2021
+      "972": Donnees/SENTINEL2/MARTINIQUE/TUILES_2021
+      "974": Donnees/SENTINEL2/REUNION/TUILES_2021
+      "976": Donnees/SENTINEL2/MAYOTTE/TUILES_2021
+    2022:
+      "971": Donnees/SENTINEL2/GUADELOUPE/TUILES_2022
+      "972": Donnees/SENTINEL2/MARTINIQUE/TUILES_2022
+      "974": Donnees/SENTINEL2/REUNION/TUILES_2022
+      "973": Donnees/SENTINEL2/GUYANE/TUILES_2022
+      "976": Donnees/SENTINEL2/MAYOTTE/TUILES_2022
+
   BDTOPO:
       2022:
         "971": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D971_2022-03-15/BDTOPO/1_DONNEES_LIVRAISON_2022-03-00081/BDT_3-0_SHP_RGAF09UTM20_D971-ED2022-03-15/BATI
@@ -184,6 +199,8 @@ local-path:
       segmentation: donnees-test/SENTINEL1-2/segmentation
       #change-detection: donnees-test/SENTINEL/change_detection
       #classification: donnees-test/SENTINEL/classification
+    SENTINEL2-RVB: 
+      segmentation: donnees-test/SENTINEL2-RVB/segmentation
 
   PAPERS: data/paper_dataset
   PLEIADES:
@@ -302,10 +319,24 @@ local-path:
       "974": data/SENTINEL1-2/REUNION/TUILES_2022
       "976": data/SENTINEL1-2/MAYOTTE/TUILES_2022
 
+  SENTINEL2-RVB:
+    2021:
+      "971": data/SENTINEL2-RVB/GUADELOUPE/TUILES_2021
+      "972": data/SENTINEL2-RVB/MARTINIQUE/TUILES_2021
+      "974": data/SENTINEL2-RVB/REUNION/TUILES_2021
+      "976": data/SENTINEL2-RVB/MAYOTTE/TUILES_2021
+    2022:
+      "971": data/SENTINEL2-RVB/GUADELOUPE/TUILES_2022
+      "972": data/SENTINEL2-RVB/MARTINIQUE/TUILES_2022
+      "974": data/SENTINEL2-RVB/REUNION/TUILES_2022
+      "973": data/SENTINEL2-RVB/GUYANE/TUILES_2022
+      "976": data/SENTINEL2-RVB/MAYOTTE/TUILES_2022
+
   BDTOPO:
       2021:
         "971": data/BDTOPO/2021/GUADELOUPE
         "972": data/BDTOPO/2021/MARTINIQUE
+        "974": data/BDTOPO/2021/REUNION
         "976": data/BDTOPO/2021/MAYOTTE
       2022:
           "971": data/BDTOPO/2022/BDTOPO_GUADELOUPE

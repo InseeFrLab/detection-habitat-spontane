@@ -63,7 +63,7 @@ def filter_images(src, list_images, list_array_cloud=None):
     if src == "PLEIADES":
         return filter_images_pleiades(list_images, list_array_cloud)
     else:
-        return filter_images_sentinel(list_images)
+        return filter_images_sentinel(list_images, src)
 
 
 def filter_images_pleiades(list_images, list_array_cloud):
@@ -94,7 +94,7 @@ def filter_images_pleiades(list_images, list_array_cloud):
     return list_filtered_splitted_images
 
 
-def filter_images_sentinel(list_images):
+def filter_images_sentinel(list_images, src):
     """
     filters the Sentinel images.
 
@@ -111,6 +111,8 @@ def filter_images_sentinel(list_images):
         array = splitted_image.array
         if not is_too_water(splitted_image, 0.95):
             if not np.isnan(array).any():
+                if src == 'SENTINEL2-RVB':
+                    splitted_image.array = splitted_image.array[(3, 2, 1), :, :]
                 list_filtered_splitted_images.append(splitted_image)
     return list_filtered_splitted_images
 
