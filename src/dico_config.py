@@ -43,6 +43,7 @@ task_to_evaluation = {
     "PLEIADESclassification": evaluer_modele_sur_jeu_de_test_classification_pleiade,
     "SENTINEL2segmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
     "SENTINEL1-2segmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
-    "change-detection": evaluer_modele_sur_jeu_de_test_change_detection_pleiade
+    "SENTINEL2-RVBsegmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
+    # "change-detection": evaluer_modele_sur_jeu_de_test_change_detection_pleiade
 
 }

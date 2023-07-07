@@ -404,6 +404,7 @@ def instantiate_dataloader(config, list_output_dir):
         "PLEIADES",
         "SENTINEL2",
         "SENTINEL1-2",
+        "SENTINEL2-RVB",
     ]:
         list_labels = []
         list_images = []

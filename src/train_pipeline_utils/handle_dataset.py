@@ -197,10 +197,10 @@ def generate_transform_sentinel(src, year, dep, tile_size, augmentation):
         A tuple containing the augmentation and preprocessing transforms.
 
     """
-    with open("utils/normalize_sentinel.yml", "r") as stream:
-        normalize_sentinel = yaml.safe_load(stream)
-    mean = eval(normalize_sentinel[src]["mean"][year][dep])
-    std = eval(normalize_sentinel[src]["std"][year][dep])
+    # with open("utils/normalize_sentinel.yml", "r") as stream:
+    #     normalize_sentinel = yaml.safe_load(stream)
+    # mean = eval(normalize_sentinel[src]["mean"][year][dep])
+    # std = eval(normalize_sentinel[src]["std"][year][dep])
 
     image_size = (tile_size, tile_size)
 

@@ -6,7 +6,7 @@ donnees:
   dep: ["971", "972", "974", "971", "972", "974"]
   type labeler: "BDTOPO"
   buffer size: 10
-  n channels train: 13
+  n channels train: 3
   n bands entry: 12
   n bands: 3
   tile size: 125
