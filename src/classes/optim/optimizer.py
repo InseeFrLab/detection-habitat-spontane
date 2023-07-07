@@ -55,7 +55,10 @@ def generate_optimization_elements(config):
                 "momentum": config["optim"]["momentum"],
             }
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
-            scheduler_params = {"monitor": config["optim"]["monitor"], "mode": "min"}
+            scheduler_params = {
+                "monitor": config["optim"]["monitor"],
+                "mode": config["optim"]["mode"],
+                "patience": config["optim"]["scheduler_patience"]}
             scheduler_interval = "epoch"
 
         return (
