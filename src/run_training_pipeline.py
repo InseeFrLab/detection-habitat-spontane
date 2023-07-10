@@ -31,10 +31,10 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     configurator = Configurator(get_root_path() / "config.yml")
 
     instantiator = Instantiator(configurator)
-    preprocessor = Preprocessor()
+    preprocessor = Preprocessor(configurator)
 
     # TODO :  Download data devrait rien retourner donc à améliorer
-    preprocessor.download_data(configurator)
+    preprocessor.download_data()
     preprocessor.prepare_train_data(configurator)
     preprocessor.prepare_test_data(configurator)
 
