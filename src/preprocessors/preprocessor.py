@@ -7,6 +7,7 @@ import random
 from datetime import datetime
 
 import numpy as np
+import s3fs
 from rasterio.errors import RasterioIOError
 from tqdm import tqdm
 
@@ -16,11 +17,6 @@ from classes.data.labeled_satellite_image import (  # noqa: E501
 from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
 from configurators.configurator import Configurator
-from train_pipeline_utils.download_data import (
-    load_2satellites_data,
-    load_donnees_test,
-    load_satellite_data,
-)
 from train_pipeline_utils.prepare_data import (
     check_labelled_images,
     filter_images,
@@ -39,7 +35,12 @@ class Preprocessor:
         """
         Constructor for the Preprocessor class.
         """
-        self.config = config
+        self.path_local_test = config.path_local_test
+        self.path_local = config.path_local
+        self.path_local_cloud = config.path_local_cloud
+        self.path_s3_test = config.path_s3_test
+        self.path_s3 = config.path_s3
+        self.path_s3_cloud = config.path_s3_cloud
 
     def download_data(self):
         """
@@ -53,31 +54,20 @@ class Preprocessor:
             A list of output directories for each downloaded dataset.
         """
 
-        print("Entre dans la fonction download_data")
-        list_output_dir = []
-        list_masks_cloud_dir = []
+        print("\n*** Téléchargement des données...\n")
+        fs = s3fs.S3FileSystem(client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"})
 
-        if self.config.source_train == "PLEIADES":
-            for year, dep in zip(self.config.year, self.config.dep):
-                cloud_dir = load_satellite_data(year, dep, "NUAGESPLEIADES")
-                output_dir = load_satellite_data(year, dep, self.config.source_train)
-                list_masks_cloud_dir.append(cloud_dir)
-                list_output_dir.append(output_dir)
+        [
+            fs.download(rpath=path_s3, lpath=f"../{path_local}", recursive=True)
+            for path_local, path_s3 in zip(
+                self.path_local_test + self.path_local + self.path_local_cloud,
+                self.path_s3_test + self.path_s3 + self.path_s3_cloud,
+            )
+            if not os.path.exists(path_local)
+        ]
+        print("\n*** Téléchargement terminé !\n")
 
-        elif self.config.source_train == "SENTINEL1-2":
-            for year, dep in zip(self.config.year, self.config.dep):
-                output_dir = load_2satellites_data(year, dep, self.config.source_train)
-                list_output_dir.append(output_dir)
-
-        elif self.config.source_train == "SENTINEL2":
-            for year, dep in zip(self.config.year, self.config.dep):
-                output_dir = load_satellite_data(year, dep, self.config.source_train)
-                list_output_dir.append(output_dir)
-
-        print("Chargement des données test")
-        test_dir = load_donnees_test(type=self.config.task, src=self.config.source_train)
-
-        return list_output_dir, list_masks_cloud_dir, test_dir
+        return None
 
     def prepare_train_data(self, list_data_dir, list_masks_cloud_dir):
         """

@@ -119,6 +119,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             configurator.batch_size_test,
             configurator.n_bands,
             configurator.mlflow,
+            device,
         )
 
 

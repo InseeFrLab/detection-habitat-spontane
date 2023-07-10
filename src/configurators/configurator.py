@@ -9,15 +9,17 @@ class Configurator:
     Configurator class.
     """
 
-    def __init__(self, config_path: str) -> None:
+    def __init__(self, config_path: str, environment_path: str) -> None:
         """
         Constructor for the Configurator class.
         """
         with open(config_path) as f:
             config = yaml.load(f, Loader=yaml.SafeLoader)
 
-        self.year = config["data"]["year"]
-        self.dep = config["data"]["dep"]
+        with open(environment_path) as f:
+            env = yaml.load(f, Loader=yaml.SafeLoader)
+
+        self.millesime = config["data"]["millesime"]
         self.type_labeler = config["data"]["type_labeler"]
         self.buffer_size = config["data"]["buffer_size"]
         self.dataset = config["data"]["dataset"]
@@ -45,3 +47,43 @@ class Configurator:
         self.earlystop = config["optim"]["monitoring"]["earlystop"]
 
         self.mlflow = config["mlflow"]
+
+        self.src_to_download = (
+            ["SENTINEL1", "SENTINEL2"] if "SENTINEL1" in self.source_train else [self.source_train]
+        )
+        self.path_local = [
+            env["local-path"][src][mlsm["year"]][mlsm["dep"]]
+            for mlsm in self.millesime
+            for src in self.src_to_download
+        ]
+        self.path_s3 = [
+            f"{env['bucket']}/{env['sources'][src][mlsm['year']][mlsm['dep']]}"
+            for mlsm in self.millesime
+            for src in self.src_to_download
+        ]
+        self.path_local_test = [env["local-path"]["TEST"][self.source_train][self.task]]
+        self.path_s3_test = [
+            f"{env['bucket']}/{env['sources']['TEST'][self.source_train][self.task]}"
+        ]
+        self.path_local_cloud = self.get_cloud_local_path(env)
+        self.path_s3_cloud = self.get_cloud_s3_path(env)
+
+    def get_cloud_local_path(self, env: dict):
+        if self.source_train == "PLEIADES":
+            path = [
+                env["local-path"]["NUAGESPLEIADES"][mlsm["year"]][mlsm["dep"]]
+                for mlsm in self.millesime
+                for src in self.src_to_download
+            ]
+            return path
+        return []
+
+    def get_cloud_s3_path(self, env: dict):
+        if self.source_train == "PLEIADES":
+            path = [
+                f"{env['bucket']}/{env['sources']['NUAGESPLEIADES'][mlsm['year']][mlsm['dep']]}"
+                for mlsm in self.millesime
+                for src in self.src_to_download
+            ]
+            return path
+        return []
