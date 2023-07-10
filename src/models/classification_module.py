@@ -3,7 +3,6 @@ from typing import Dict, Union
 import pytorch_lightning as pl
 import torch
 from torch import nn, optim
-import numpy as np
 
 from sklearn.metrics import (
         recall_score,
@@ -12,7 +11,6 @@ from sklearn.metrics import (
         f1_score)
 
 from classes.optim.evaluation_model import proportion_ones
-
 
 
 class ClassificationModule(pl.LightningModule):

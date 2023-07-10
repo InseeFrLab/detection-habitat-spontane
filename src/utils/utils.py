@@ -244,7 +244,11 @@ def load_bdtopo(
             client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"}
         )
         print("download " + dep + " " + str(millesime) + " in " + dir_path)
-        extensions = ["cpg", "dbf", "prj", "shp", "shx", 'CPG', 'DBF', 'PRJ', 'SHP', 'SHX']
+        if int(millesime) >= 2019:
+            extensions = ["cpg", "dbf", "prj", "shp", "shx"]
+        elif int(millesime) < 2019:
+            extensions = ['CPG', 'DBF', 'PRJ', 'SHP', 'SHX']
+
         couche_split = couche.split(".")[0]
         for ext in extensions:
             fs.download(

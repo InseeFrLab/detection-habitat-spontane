@@ -199,13 +199,12 @@ local-path:
           #"974": NA
           "976": data/PLEIADES/2019/MAYOTTE
       2018:
-          #"971": NA
+          "971": data/PLEIADES/2022/GUADELOUPE
           #"972": NA
           #"973": NA
           "974": data/PLEIADES/2018/REUNION
           #"976": NA
       2017:
-
           #"971": NA
           "972": data/PLEIADES/2017/MARTINIQUE
           #"973": NA
@@ -233,7 +232,7 @@ local-path:
           #"974": NA
           "976": data/NUAGESPLEIADES/2019/MAYOTTE
       2018:
-          #"971": NA
+          "971": data/NUAGESPLEIADES/2018/GUADELOUPE
           #"972": NA
           #"973": NA
           "974": data/NUAGESPLEIADES/2018/REUNION
