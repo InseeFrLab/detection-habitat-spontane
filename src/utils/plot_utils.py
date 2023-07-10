@@ -179,7 +179,6 @@ def plot_list_segmentation_labeled_satellite_image(
             label = mat_list_labels[compteur_ligne, compteur_col, :, :]
             show_mask = np.zeros((label.shape[0], label.shape[1], 3))
             show_mask[label == 1, :] = [255, 255, 255]
-            show_mask = show_mask.astype(np.uint8)
             output_mask[i : i + tile_size, j : j + tile_size, :] = show_mask
             compteur_col += 1
 

@@ -5,6 +5,7 @@ import random
 import sys
 from datetime import datetime
 import shutil
+from osgeo import gdal
 
 import mlflow
 import numpy as np
@@ -249,6 +250,8 @@ def prepare_test_data(config, test_dir):
         list_name_image = np.sort(remove_dot_file(list_name_image))
         list_images_path = [images_path + "/" + name for name in list_name_image]
         output_images_path = output_test + "/images"
+        if not os.path.exists(output_images_path):
+            os.makedirs(output_images_path)
 
         if len(list_labels_path) < len(list_images_path):
             diff = len(list_images_path) - len(list_labels_path)
@@ -272,10 +275,17 @@ def prepare_test_data(config, test_dir):
             list_lsi = lsi.split(tile_size)
 
             for i, lsi in enumerate(list_lsi):
+                if np.isnan(lsi.satellite_image.array).any():
+                    continue
                 file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
+                in_ds = gdal.Open(image_path)
+                proj = in_ds.GetProjection()
                 lsi.satellite_image.to_raster(
-                    output_images_path, file_name_i + ".jp2"
+                    output_images_path, file_name_i, "tif", proj
                     )
+                # lsi.satellite_image.to_raster(
+                #     output_images_path, file_name_i + ".jp2"
+                #     )
                 np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
     else:
         images_path_1 = test_dir + "/images_1"
@@ -485,9 +495,6 @@ def instantiate_dataloader(config, list_output_dir):
         t_aug, t_preproc = generate_transform_pleiades(tile_size, augmentation)
     else:
         t_aug, t_preproc = generate_transform_sentinel(
-            config["donnees"]["source train"],
-            config["donnees"]["year"][0],
-            config["donnees"]["dep"][0],
             tile_size,
             augmentation,
         )
@@ -525,7 +532,7 @@ def instantiate_dataloader(config, list_output_dir):
         list_path_images_test = np.sort([output_images_path + name_image for name_image in list_name_image_test])
 
         dataset_test = instantiate_dataset(
-            config, list_path_images_test, list_path_labels_test, test = True
+            config, list_path_images_test, list_path_labels_test, test=True
         )
         dataset_test.transforms = t_preproc
     else:
@@ -752,6 +759,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             light_module_checkpoint = light_module.load_from_checkpoint(
                 loss=instantiate_loss(config),
                 checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
+                # checkpoint_path='',
                 model=light_module.model,
                 optimizer=light_module.optimizer,
                 optimizer_params=light_module.optimizer_params,

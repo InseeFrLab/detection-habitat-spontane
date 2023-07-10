@@ -3,6 +3,7 @@ import os
 import mlflow
 import numpy as np
 import torch
+import matplotlib
 
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
 from classes.data.satellite_image import SatelliteImage
@@ -127,36 +128,43 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
         mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
 
         for i in range(batch_size):
-            pthimg = dic["pathimage"][i]
-            si = SatelliteImage.from_raster(
-                file_path=pthimg, dep=None, date=None, n_bands=n_bands
-            )
-            si.normalize()
+            try:
+                pthimg = dic["pathimage"][i]
+                si = SatelliteImage.from_raster(
+                    file_path=pthimg, dep=None, date=None, n_bands=n_bands
+                )
+                si.normalize()
 
-            labeled_satellite_image = SegmentationLabeledSatelliteImage(
-                satellite_image=si,
-                label=mask_pred[i],
-                source="",
-                labeling_date="",
-            )
+                labeled_satellite_image = SegmentationLabeledSatelliteImage(
+                    satellite_image=si,
+                    label=mask_pred[i],
+                    source="",
+                    labeling_date="",
+                )
 
-            print("ecriture image")
-            if not os.path.exists("img/"):
-                os.makedirs("img/")
+                print("ecriture image")
+                if not os.path.exists("img/"):
+                    os.makedirs("img/")
+                try:
+                    fig1 = plot_list_segmentation_labeled_satellite_image(
+                        [labeled_satellite_image], [3, 2, 1]
+                    )
+                except IndexError:
+                    fig1 = plot_list_segmentation_labeled_satellite_image(
+                        [labeled_satellite_image], [0, 1, 2]
+                    )
 
-            fig1 = plot_list_segmentation_labeled_satellite_image(
-                [labeled_satellite_image], [3, 2, 1]
-            )
+                filename = pthimg.split("/")[-1]
+                filename = filename.split(".")[0]
+                filename = "_".join(filename.split("_")[0:6])
+                plot_file = "img/" + filename + ".png"
 
-            filename = pthimg.split("/")[-1]
-            filename = filename.split(".")[0]
-            filename = "_".join(filename.split("_")[0:6])
-            plot_file = filename + ".png"
+                fig1.savefig(plot_file)
 
-            fig1.savefig(plot_file)
-
-            if use_mlflow:
-                mlflow.log_artifact(plot_file, artifact_path="plots")
+                if use_mlflow:
+                    mlflow.log_artifact(plot_file, artifact_path="plots")
+            except IndexError:
+                pass
 
 
 def evaluer_modele_sur_jeu_de_test_classification_pleiade(
@@ -342,7 +350,6 @@ def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(
 
         del images, label, dic
 
- 
 
 def calculate_IOU(output, labels):
     """

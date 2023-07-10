@@ -260,7 +260,7 @@ def save_images_and_masks(
                 in_ds = gdal.Open(direc+'/'+image.filename)
                 proj = in_ds.GetProjection()
 
-                image.to_raster(output_images_path, filename + ".tif", "tif", proj)
+                image.to_raster(output_images_path, filename, "tif", proj)
                 np.save(
                     output_masks_path + "/" + filename + ".npy",
                     mask,
