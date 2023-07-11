@@ -242,10 +242,10 @@ def load_bdtopo(
         couche = "BATI_INDIFFERENCIE.shp"
 
     bucket = environment["bucket"]
-    path_s3 = environment["sources"]["BDTOPO"][int(millesime)][dep]
+    path_s3 = environment["sources"]["BDTOPO"][millesime][dep]
     dir_path = os.path.join(
         root_path,
-        environment["local-path"]["BDTOPO"][int(millesime)][dep],
+        environment["local-path"]["BDTOPO"][millesime][dep],
     )
 
     if os.path.exists(dir_path):
@@ -256,7 +256,7 @@ def load_bdtopo(
 
         update_storage_access()
         fs = S3FileSystem(client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"})
-        print(f"download {dep} {str(millesime)} in {dir_path}")
+        print(f"download {dep} {millesime} in {dir_path}")
         extensions = ["cpg", "dbf", "prj", "shp", "shx"]
         couche_split = couche.split(".")[0]
         for ext in extensions:

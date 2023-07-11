@@ -6,10 +6,16 @@ sources:
       segmentation: donnees-test/segmentation
       change-detection: donnees-test/change_detection
       classification: donnees-test/classification
+    SENTINEL2:
+      segmentation: donnees-test/SENTINEL2/segmentation
+      #change-detection: donnees-test/SENTINEL/change_detection
+      #classification: donnees-test/SENTINEL/classification
     SENTINEL1-2:
       segmentation: donnees-test/SENTINEL1-2/segmentation
       #change-detection: donnees-test/SENTINEL/change_detection
       #classification: donnees-test/SENTINEL/classification
+    SENTINEL2-RVB:
+      segmentation: donnees-test/SENTINEL2-RVB/segmentation
   PAPERS:
     S2Looking: Donnees/PAPERS/S2Looking
     LEVIR_CD: Donnees/PAPERS/LEVIR_CD
@@ -20,9 +26,7 @@ sources:
           "973": Donnees/PLEIADES/Cayenne_200722/16bits/ORT_2022072050325085_U22N
           "974": Donnees/PLEIADES/REUNION/2022/MOSA
           "976": Donnees/PLEIADES/MAYOTTE/2022/MOSA
-          "dummy": Donnees/PLEIADES/dummy/2022/MOSA
-      "2021":
-          "dummy": Donnees/PLEIADES/dummy/2021/MOSA
+
       "2020":
           #"971": NA
           #"972": NA
@@ -54,16 +58,14 @@ sources:
           "973": Donnees/NUAGESPLEIADES/2022/GUYANE
           "974": Donnees/NUAGESPLEIADES/2022/REUNION
           "976": Donnees/NUAGESPLEIADES/2022/MAYOTTE
-          "dummy": Donnees/NUAGESPLEIADES/2020/MAYOTTE
-      "2021":
-          "dummy": Donnees/NUAGESPLEIADES/2020/MAYOTTE
+
       "2020":
           #"971": NA
           #"972": NA
           #"973": NA
           #"974": NA
           "976": Donnees/NUAGESPLEIADES/2020/MAYOTTE
-      2019:
+      "2019":
           #"971": NA
           #"972": NA
           #"973": NA
@@ -107,6 +109,19 @@ sources:
       "973": Donnees/SENTINEL2/GUYANE/TUILES_2022
       "976": Donnees/SENTINEL2/MAYOTTE/TUILES_2022
 
+  SENTINEL2-RVB:
+    "2021":
+      "971": Donnees/SENTINEL2/GUADELOUPE/TUILES_2021
+      "972": Donnees/SENTINEL2/MARTINIQUE/TUILES_2021
+      "974": Donnees/SENTINEL2/REUNION/TUILES_2021
+      "976": Donnees/SENTINEL2/MAYOTTE/TUILES_2021
+    "2022":
+      "971": Donnees/SENTINEL2/GUADELOUPE/TUILES_2022
+      "972": Donnees/SENTINEL2/MARTINIQUE/TUILES_2022
+      "974": Donnees/SENTINEL2/REUNION/TUILES_2022
+      "973": Donnees/SENTINEL2/GUYANE/TUILES_2022
+      "976": Donnees/SENTINEL2/MAYOTTE/TUILES_2022
+
   BDTOPO:
       "2022":
         "971": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D971_2022-03-15/BDTOPO/1_DONNEES_LIVRAISON_2022-03-00081/BDT_3-0_SHP_RGAF09UTM20_D971-ED2022-03-15/BATI
@@ -115,14 +130,12 @@ sources:
         "973": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_UTM22RGFG95_D973_2022-03-15/BDTOPO/1_DONNEES_LIVRAISON_2022-03-00081/BDT_3-0_SHP_UTM22RGFG95_D973-ED2022-03-15/BATI
         # "973": Donnees/BDTOPO/BDTOPO_3-3_TOUSTHEMES_SHP_UTM22RGFG95_D973_2022-12-15
         "976": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGM04UTM38S_D976_2022-03-15/BDTOPO/1_DONNEES_LIVRAISON_2022-03-00081/BDT_3-0_SHP_RGM04UTM38S_D976-ED2022-03-15/BATI
-        "dummy": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGM04UTM38S_D976_2020-06-15/BDTOPO/1_DONNEES_LIVRAISON_2020-06-00047/BDT_3-0_SHP_RGM04UTM38S_D976-ED2020-06-15/BATI
       "2021":
         "971": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D971_2021-03-15/BDTOPO/1_DONNEES_LIVRAISON_2021-03-00272/BDT_3-0_SHP_RGAF09UTM20_D971-ED2021-03-15/BATI
         "972": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D972_2021-03-15/BDTOPO/1_DONNEES_LIVRAISON_2021-03-00272/BDT_3-0_SHP_RGAF09UTM20_D972-ED2021-03-15/BATI
         "974": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGR92UTM40S_D974_2021-03-15/BDTOPO/1_DONNEES_LIVRAISON_2021-03-00272/BDT_3-0_SHP_RGR92UTM40S_D974-ED2021-03-15/BATI
         "973": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_UTM22RGFG95_D973_2021-03-15/BDTOPO/1_DONNEES_LIVRAISON_2021-03-00272/BDT_3-0_SHP_UTM22RGFG95_D973-ED2021-03-15/BATI
         "976": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGM04UTM38S_D976_2021-03-15/BDTOPO/1_DONNEES_LIVRAISON_2021-03-00272/BDT_3-0_SHP_RGM04UTM38S_D976-ED2021-03-15/BATI
-        "dummy": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGM04UTM38S_D976_2020-06-15/BDTOPO/1_DONNEES_LIVRAISON_2020-06-00047/BDT_3-0_SHP_RGM04UTM38S_D976-ED2020-06-15/BATI
       "2020":
         "971": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D971_2020-06-15/BDTOPO/1_DONNEES_LIVRAISON_2020-06-00047/BDT_3-0_SHP_RGAF09UTM20_D971-ED2020-06-15/BATI
         "972": Donnees/BDTOPO/BDTOPO_3-0_TOUSTHEMES_SHP_RGAF09UTM20_D972_2020-06-15/BDTOPO/1_DONNEES_LIVRAISON_2020-06-00047/BDT_3-0_SHP_RGAF09UTM20_D972-ED2020-06-15/BATI
@@ -178,10 +191,16 @@ local-path:
       segmentation: donnees-test/segmentation
       change-detection: donnees-test/change_detection
       classification: donnees-test/classification
-    SENTINEL1-2:
-      segmentation: donnees-test/SENTINEL/segmentation
+    SENTINEL2:
+      segmentation: donnees-test/SENTINEL2/segmentation
       #change-detection: donnees-test/SENTINEL/change_detection
       #classification: donnees-test/SENTINEL/classification
+    SENTINEL1-2:
+      segmentation: donnees-test/SENTINEL1-2/segmentation
+      #change-detection: donnees-test/SENTINEL/change_detection
+      #classification: donnees-test/SENTINEL/classification
+    SENTINEL2-RVB:
+      segmentation: donnees-test/SENTINEL2-RVB/segmentation
 
   PAPERS: data/paper_dataset
   PLEIADES:
@@ -191,9 +210,7 @@ local-path:
           "973": data/PLEIADES/2022/GUYANE
           "974": data/PLEIADES/2022/REUNION
           "976": data/PLEIADES/2022/MAYOTTE
-          "dummy": data/PLEIADES/2022/dummy
-      "2021":
-          "dummy": data/PLEIADES/2021/dummy
+
       "2020":
           #"971": NA
           #"972": NA
@@ -227,9 +244,7 @@ local-path:
           "973": data/NUAGESPLEIADES/2022/GUYANE
           "974": data/NUAGESPLEIADES/2022/REUNION
           "976": data/NUAGESPLEIADES/2022/MAYOTTE
-          "dummy": data/NUAGESPLEIADES/2022/dummy
-      "2021":
-          "dummy": data/NUAGESPLEIADES/2021/dummy
+
       "2020":
           #"971": NA
           #"972": NA
@@ -304,46 +319,58 @@ local-path:
       "974": data/SENTINEL1-2/REUNION/TUILES_2022
       "976": data/SENTINEL1-2/MAYOTTE/TUILES_2022
 
+  SENTINEL2-RVB:
+    "2021":
+      "971": data/SENTINEL2-RVB/GUADELOUPE/TUILES_2021
+      "972": data/SENTINEL2-RVB/MARTINIQUE/TUILES_2021
+      "974": data/SENTINEL2-RVB/REUNION/TUILES_2021
+      "976": data/SENTINEL2-RVB/MAYOTTE/TUILES_2021
+    "2022":
+      "971": data/SENTINEL2-RVB/GUADELOUPE/TUILES_2022
+      "972": data/SENTINEL2-RVB/MARTINIQUE/TUILES_2022
+      "974": data/SENTINEL2-RVB/REUNION/TUILES_2022
+      "973": data/SENTINEL2-RVB/GUYANE/TUILES_2022
+      "976": data/SENTINEL2-RVB/MAYOTTE/TUILES_2022
+
   BDTOPO:
       "2021":
         "971": data/BDTOPO/2021/GUADELOUPE
         "972": data/BDTOPO/2021/MARTINIQUE
+        "974": data/BDTOPO/2021/REUNION
         "976": data/BDTOPO/2021/MAYOTTE
-        "dummy": data/BDTOPO/2021/BDTOPO_DUMMY
       "2022":
-        "971": data/BDTOPO/2022/BDTOPO_GUADELOUPE
-        "972": data/BDTOPO/2022/BDTOPO_MARTINIQUE
-        "973": data/BDTOPO/2022/BDTOPO_GUYANE
-        "974": data/BDTOPO/2022/BDTOPO_REUNION
-        "976": data/BDTOPO/2022/BDTOPO_MAYOTTE
-        "dummy": data/BDTOPO/2022/BDTOPO_DUMMY
+          "971": data/BDTOPO/2022/BDTOPO_GUADELOUPE
+          "972": data/BDTOPO/2022/BDTOPO_MARTINIQUE
+          "973": data/BDTOPO/2022/BDTOPO_GUYANE
+          "974": data/BDTOPO/2022/BDTOPO_REUNION
+          "976": data/BDTOPO/2022/BDTOPO_MAYOTTE
       "2020":
-        "971": data/BDTOPO/2020/BDTOPO_GUADELOUPE
-        "972": data/BDTOPO/2020/BDTOPO_MARTINIQUE
-        "973": data/BDTOPO/2020/BDTOPO_GUYANE
-        "974": data/BDTOPO/2020/BDTOPO_REUNION
-        "976": data/BDTOPO/2020/BDTOPO_MAYOTTE
+          "971": data/BDTOPO/2020/BDTOPO_GUADELOUPE
+          "972": data/BDTOPO/2020/BDTOPO_MARTINIQUE
+          "973": data/BDTOPO/2020/BDTOPO_GUYANE
+          "974": data/BDTOPO/2020/BDTOPO_REUNION
+          "976": data/BDTOPO/2020/BDTOPO_MAYOTTE
       "2019":
-        "971": data/BDTOPO/2019/BDTOPO_GUADELOUPE
-        "972": data/BDTOPO/2019/BDTOPO_MARTINIQUE
-        "973": data/BDTOPO/2019/BDTOPO_GUYANE
-        "974": data/BDTOPO/2019/BDTOPO_REUNION
-        "976": data/BDTOPO/2019/BDTOPO_MAYOTTE
+          "971": data/BDTOPO/2019/BDTOPO_GUADELOUPE
+          "972": data/BDTOPO/2019/BDTOPO_MARTINIQUE
+          "973": data/BDTOPO/2019/BDTOPO_GUYANE
+          "974": data/BDTOPO/2019/BDTOPO_REUNION
+          "976": data/BDTOPO/2019/BDTOPO_MAYOTTE
       "2018":
-        "971": data/BDTOPO/2018/BDTOPO_GUADELOUPE
-        "972": data/BDTOPO/2018/BDTOPO_MARTINIQUE
-        "973": data/BDTOPO/2018/BDTOPO_GUYANE
-        "974": data/BDTOPO/2018/BDTOPO_REUNION
-        "976": data/BDTOPO/2018/BDTOPO_MAYOTTE
+          "971": data/BDTOPO/2018/BDTOPO_GUADELOUPE
+          "972": data/BDTOPO/2018/BDTOPO_MARTINIQUE
+          "973": data/BDTOPO/2018/BDTOPO_GUYANE
+          "974": data/BDTOPO/2018/BDTOPO_REUNION
+          "976": data/BDTOPO/2018/BDTOPO_MAYOTTE
       "2017":
-        "971": data/BDTOPO/2017/BDTOPO_GUADELOUPE
-        "972": data/BDTOPO/2017/BDTOPO_MARTINIQUE
-        "973": data/BDTOPO/2017/BDTOPO_GUYANE
-        "974": data/BDTOPO/2017/BDTOPO_REUNION
-        "976": data/BDTOPO/2017/BDTOPO_MAYOTTE
+          "971": data/BDTOPO/2017/BDTOPO_GUADELOUPE
+          "972": data/BDTOPO/2017/BDTOPO_MARTINIQUE
+          "973": data/BDTOPO/2017/BDTOPO_GUYANE
+          "974": data/BDTOPO/2017/BDTOPO_REUNION
+          "976": data/BDTOPO/2017/BDTOPO_MAYOTTE
       "2016":
-        "971": data/BDTOPO/2016/BDTOPO_GUADELOUPE
-        "972": data/BDTOPO/2016/BDTOPO_MARTINIQUE
-        "973": data/BDTOPO/2016/BDTOPO_GUYANE
-        "974": data/BDTOPO/2016/BDTOPO_REUNION
-        "976": data/BDTOPO/2016/BDTOPO_MAYOTTE
+          "971": data/BDTOPO/2016/BDTOPO_GUADELOUPE
+          "972": data/BDTOPO/2016/BDTOPO_MARTINIQUE
+          "973": data/BDTOPO/2016/BDTOPO_GUYANE
+          "974": data/BDTOPO/2016/BDTOPO_REUNION
+          "976": data/BDTOPO/2016/BDTOPO_MAYOTTE
