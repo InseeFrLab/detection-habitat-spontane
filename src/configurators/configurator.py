@@ -68,6 +68,12 @@ class Configurator:
         self.path_local_cloud = self.get_cloud_local_path(env)
         self.path_s3_cloud = self.get_cloud_s3_path(env)
 
+        self.path_prepro_data = [
+            f"../train_data-{self.task}-{self.source_train}-{self.type_labeler}"
+            "-{millesime['dep']}-{millesime['year']}/"
+            for millesime in self.millesime
+        ]
+
     def get_cloud_local_path(self, env: dict):
         if self.source_train == "PLEIADES":
             path = [

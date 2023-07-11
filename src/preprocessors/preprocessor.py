@@ -2,7 +2,8 @@
 Preprocessor class.
 """
 import csv
-import json
+
+# import json
 import os
 import random
 from datetime import datetime
@@ -20,14 +21,10 @@ from classes.data.satellite_image import SatelliteImage
 from classes.labelers.labeler import BDTOPOLabeler, RILLabeler
 from configurators.configurator import Configurator
 from train_pipeline_utils.prepare_data import (
-    check_labelled_images,
-    filter_images,
     filter_images_pleiades,
     filter_images_sentinel,
-    label_images,
-    save_images_and_masks,
 )
-from utils.utils import remove_dot_file, split_array
+from utils.utils import remove_dot_file  # split_array
 
 
 class Preprocessor:
@@ -87,24 +84,12 @@ class Preprocessor:
 
         print("Entre dans la fonction prepare_data")
 
-        list_output_dir = []
-        if not check_labelled_images():
-            # TODO: voir avec Clément pour ce truc
-            # list_name_cloud = []
-            # if self.config.source_train == "PLEIADES":
-            #     cloud_dir = list_masks_cloud_dir[i]
-            #     list_name_cloud = [
-            #         path.split("/")[-1].split(".")[0] for path in os.listdir(cloud_dir)
-            #     ]
+        for i, millesime in enumerate(self.config.millesime):
+            labeler = self.get_labeller(millesime)
 
-            # list_path = [
-            #     f"{list_data_dir[i]}/{filename}" for filename in os.listdir(list_data_dir[i])
-            # ]
+            if not self.check_labelled_images(millesime):
+                # TODO: récupérer les filepath des images de nuages
 
-            # full_balancing_dict = {}
-
-            for i, millesime in enumerate(self.config.millesime):
-                labeler = self.get_labeller(millesime)
                 for root, dirs, files in os.walk(f"../{self.config.path_local[i]}"):
                     for filename in tqdm(files):
                         try:
@@ -119,87 +104,93 @@ class Preprocessor:
                             continue
 
                         mask = labeler.create_segmentation_label(si)
-                        proba = random.randint(1, 10)
+                        # TODO: Mettre dans config la proba
+                        keep = np.random.binomial(size=1, n=1, p=0.9)[0]
 
-        for i, (year, dep) in enumerate(zip(self.config.year, self.config.dep)):
-            # i, year , dep = 0,config.year[0],config.dep[0]
-            output_dir = (
-                f"../train_data-{self. config.task}-{self.config.type_labeler}-{dep}-{year}/"
-            )
+                        if (np.sum(mask) == 0 and keep) or np.sum(mask) != 0:
+                            2 + 2
+                        elif np.sum(mask) == 0 and not keep:
+                            2 + 2
 
-            date = datetime.strptime(f"{year}0101", "%Y%m%d")
+        # for i, (year, dep) in enumerate(zip(self.config.year, self.config.dep)):
+        #     # i, year , dep = 0,config.year[0],config.dep[0]
+        #     output_dir = (
+        #         f"../train_data-{self. config.task}-{self.config.type_labeler}-{dep}-{year}/"
+        #     )
 
-            if not check_labelled_images(output_dir):
-                list_name_cloud = []
-                if self.config.source_train == "PLEIADES":
-                    cloud_dir = list_masks_cloud_dir[i]
-                    list_name_cloud = [
-                        path.split("/")[-1].split(".")[0] for path in os.listdir(cloud_dir)
-                    ]
+        #     date = datetime.strptime(f"{year}0101", "%Y%m%d")
 
-                list_path = [
-                    f"{list_data_dir[i]}/{filename}" for filename in os.listdir(list_data_dir[i])
-                ]
+        #     if not check_labelled_images(output_dir):
+        #         list_name_cloud = []
+        #         if self.config.source_train == "PLEIADES":
+        #             cloud_dir = list_masks_cloud_dir[i]
+        #             list_name_cloud = [
+        #                 path.split("/")[-1].split(".")[0] for path in os.listdir(cloud_dir)
+        #             ]
 
-                full_balancing_dict = {}
-                for path in tqdm(list_path):
-                    try:
-                        si = SatelliteImage.from_raster(
-                            file_path=path,
-                            dep=dep,
-                            date=date,
-                            n_bands=self.config.n_bands,
-                        )
-                    except RasterioIOError:
-                        print(f"Erreur de lecture du fichier {path}")
-                        continue
+        #         list_path = [
+        #             f"{list_data_dir[i]}/{filename}" for filename in os.listdir(list_data_dir[i])
+        #         ]
 
-                    mask = labeler.create_segmentation_label(si)
-                    proba = random.randint(1, 10)
+        #         full_balancing_dict = {}
+        #         for path in tqdm(list_path):
+        #             try:
+        #                 si = SatelliteImage.from_raster(
+        #                     file_path=path,
+        #                     dep=dep,
+        #                     date=date,
+        #                     n_bands=self.config.n_bands,
+        #                 )
+        #             except RasterioIOError:
+        #                 print(f"Erreur de lecture du fichier {path}")
+        #                 continue
 
-                    if (np.sum(mask) == 0 and proba == 10) or np.sum(mask) != 0:
-                        filename = path.split("/")[-1].split(".")[0]
-                        list_splitted_mask_cloud = None
+        #             mask = labeler.create_segmentation_label(si)
+        #             proba = random.randint(1, 10)
 
-                        if filename in list_name_cloud:
-                            mask_full_cloud = np.load(f"{cloud_dir}/{filename}.npy")
-                            list_splitted_mask_cloud = split_array(
-                                mask_full_cloud, self.config.tile_size
-                            )
+        #             if (np.sum(mask) == 0 and proba == 10) or np.sum(mask) != 0:
+        #                 filename = path.split("/")[-1].split(".")[0]
+        #                 list_splitted_mask_cloud = None
 
-                        list_splitted_images = si.split(self.config.tile_size)
+        #                 if filename in list_name_cloud:
+        #                     mask_full_cloud = np.load(f"{cloud_dir}/{filename}.npy")
+        #                     list_splitted_mask_cloud = split_array(
+        #                         mask_full_cloud, self.config.tile_size
+        #                     )
 
-                        list_filtered_splitted_images = filter_images(
-                            self.config.source_train,
-                            list_splitted_images,
-                            list_splitted_mask_cloud,
-                        )
+        #                 list_splitted_images = si.split(self.config.tile_size)
 
-                        labels, balancing_dict = label_images(
-                            list_filtered_splitted_images, labeler, task=self.config.task
-                        )
+        #                 list_filtered_splitted_images = filter_images(
+        #                     self.config.source_train,
+        #                     list_splitted_images,
+        #                     list_splitted_mask_cloud,
+        #                 )
 
-                        save_images_and_masks(
-                            list_filtered_splitted_images,
-                            labels,
-                            output_dir,
-                            task=self.config.task,
-                        )
+        #                 labels, balancing_dict = label_images(
+        #                     list_filtered_splitted_images, labeler, task=self.config.task
+        #                 )
 
-                        for k, v in balancing_dict.items():
-                            full_balancing_dict[k] = v
+        #                 save_images_and_masks(
+        #                     list_filtered_splitted_images,
+        #                     labels,
+        #                     output_dir,
+        #                     task=self.config.task,
+        #                 )
 
-                    elif np.sum(mask) == 0 and proba != 10:
-                        continue
+        #                 for k, v in balancing_dict.items():
+        #                     full_balancing_dict[k] = v
 
-                with open(f"{output_dir}/balancing_dict.json", "w") as fp:
-                    json.dump(full_balancing_dict, fp)
+        #             elif np.sum(mask) == 0 and proba != 10:
+        #                 continue
 
-            list_output_dir.append(output_dir)
-            nb = len(os.listdir(f"{output_dir}/images"))
-            print(f"{str(nb)} couples images/masques retenus")
+        #         with open(f"{output_dir}/balancing_dict.json", "w") as fp:
+        #             json.dump(full_balancing_dict, fp)
 
-        return list_output_dir
+        #     list_output_dir.append(output_dir)
+        #     nb = len(os.listdir(f"{output_dir}/images"))
+        #     print(f"{str(nb)} couples images/masques retenus")
+
+        return None  # list_output_dir
 
     def prepare_test_data(self, test_dir):
         print("Entre dans la fonction prepare_test_data")
@@ -280,7 +271,7 @@ class Preprocessor:
                     lsi2.satellite_image.to_raster(output_images_path_2, f"{file_name_i}.jp2")
                     np.save(f"{output_labels_path}/{file_name_i}.npy", lsi1.label)
 
-    def check_labelled_images(output_directory_name):
+    def check_labelled_images(self, millesime):
         """
         checks that there is not already a directory with images and their mask.
         if it doesn't exist, it is created.
@@ -295,17 +286,22 @@ class Preprocessor:
         """
 
         print("Entre dans la fonction check_labelled_images")
-        output_images_path = f"{output_directory_name}/images"
-        output_masks_path = f"{output_directory_name}/labels"
-        if (os.path.exists(output_masks_path)) and (len(os.listdir(output_masks_path)) != 0):
+
+        idx = [
+            path.endswith(f"{millesime['dep']}-{millesime['year']}/")
+            for path in self.config.path_prepro_data
+        ]
+        path_prepro = np.array(self.config.path_prepro_data)[idx][0]
+
+        if (os.path.exists(path_prepro)) and (len(os.listdir(path_prepro)) != 0):
             print("The directory already exists and is not empty.")
             return True
-        elif (os.path.exists(output_masks_path)) and (len(os.listdir(output_masks_path)) == 0):
+        elif (os.path.exists(path_prepro)) and (len(os.listdir(path_prepro)) == 0):
             print("The directory exists but is empty.")
             return False
         else:
-            os.makedirs(output_images_path)
-            os.makedirs(output_masks_path)
+            os.makedirs(f"{path_prepro}/images")
+            os.makedirs(f"{path_prepro}/labels")
             print("Directory created")
             return False
 
@@ -490,3 +486,37 @@ class Preprocessor:
                 pass
 
         return labeler
+
+    def prepare_yearly_data(self, millesime):
+        # TODO: METTRE CETTE PARTIE DU CODE DANS CETTE FONCTION
+        #                 filename = path.split("/")[-1].split(".")[0]
+        #                 list_splitted_mask_cloud = None
+
+        #                 if filename in list_name_cloud:
+        #                     mask_full_cloud = np.load(f"{cloud_dir}/{filename}.npy")
+        #                     list_splitted_mask_cloud = split_array(
+        #                         mask_full_cloud, self.config.tile_size
+        #                     )
+
+        #                 list_splitted_images = si.split(self.config.tile_size)
+
+        #                 list_filtered_splitted_images = filter_images(
+        #                     self.config.source_train,
+        #                     list_splitted_images,
+        #                     list_splitted_mask_cloud,
+        #                 )
+
+        #                 labels, balancing_dict = label_images(
+        #                     list_filtered_splitted_images, labeler, task=self.config.task
+        #                 )
+
+        #                 save_images_and_masks(
+        #                     list_filtered_splitted_images,
+        #                     labels,
+        #                     output_dir,
+        #                     task=self.config.task,
+        #                 )
+
+        #                 for k, v in balancing_dict.items():
+        #                     full_balancing_dict[k] = v
+        return None
