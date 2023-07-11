@@ -86,7 +86,7 @@ def download_data(config):
             cloud_dir = load_satellite_data(year, dep, "NUAGESPLEIADES")
             list_masks_cloud_dir.append(cloud_dir)
             output_dir = load_satellite_data(year, dep, src)
-        elif src == "SENTINEL1-2":
+        elif src == "SENTINEL1-2" or src == "SENTINEL1-2-RVB":
             output_dir = load_2satellites_data(year, dep, src)
         else:
             output_dir = load_satellite_data(year, dep, src)
