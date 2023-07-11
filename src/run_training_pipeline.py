@@ -168,7 +168,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                 ]
 
             dir = list_data_dir[i]
-            list_path = [dir + "/" + filename for filename in os.listdir(dir)]
+            list_path = [dir + "/" + filename for filename in remove_dot_file(os.listdir(dir))]
 
             random.shuffle(list_path)
 
@@ -888,7 +888,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         light_module = light_module.load_from_checkpoint(
             loss=instantiate_loss(config),
-            checkpoint_path="epoch=13-step=11242.ckpt",
+            checkpoint_path=trainer.checkpoint_callback.best_model_path,
             model=light_module.model,
             optimizer=light_module.optimizer,
             optimizer_params=light_module.optimizer_params,
@@ -902,7 +902,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         model = light_module.model
 
-        # from classes.optim.evaluation_model import metrics_classification_pleiade2
+        # from classes.optim.evaluation_model import metrics_classification_pleiade2, evaluer_modele_sur_jeu_de_test_classification_pleiade2
         # trshld = metrics_classification_pleiade2(
         #     test_dl,
         #     model,
@@ -912,6 +912,14 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         #     False,
         # )
         # print(trshld)
+        # evaluer_modele_sur_jeu_de_test_classification_pleiade2(
+        #     test_dl,
+        #     model,
+        #     tile_size,
+        #     batch_size_test,
+        #     config["donnees"]["n bands"],
+        #     False,
+        # )
 
         if src_task not in task_to_evaluation:
             raise ValueError("Invalid task type")

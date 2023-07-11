@@ -248,6 +248,7 @@ def metrics_classification_pleiade(
             mlflow.log_param("best true positif rate", best_tpr)
             mlflow.log_param("best false positif rate", best_fpr)
             mlflow.log_param("best threshold", best_threshold)
+            mlflow.log_param("auc", roc_auc)
 
         return best_threshold
 
@@ -424,6 +425,127 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
                     array_green_borders = array_green_borders.transpose(2, 1, 0)
                     si.array = array_green_borders
 
+            list_labeled_satellite_image.append(
+                SegmentationLabeledSatelliteImage(
+                    satellite_image=si,
+                    label=mask_pred,
+                    source="",
+                    labeling_date="",
+                )
+            )
+            count_patch += 1
+
+            if ((count_patch) % npatch) == 0:
+                print("ecriture image")
+                if not os.path.exists("img/"):
+                    os.makedirs("img/")
+
+                fig1 = plot_list_labeled_sat_images(
+                    list_labeled_satellite_image, [0, 1, 2]
+                )
+
+                filename = pthimg.split("/")[-1]
+                filename = filename.split(".")[0]
+                filename = "_".join(filename.split("_")[0:6])
+                plot_file = "img/" + filename + ".png"
+
+                fig1.savefig(plot_file)
+                list_labeled_satellite_image = []
+
+                if use_mlflow:
+                    mlflow.log_artifact(plot_file, artifact_path="plots")
+
+                plt.close()
+
+        del images, labels, dic
+
+
+def evaluer_modele_sur_jeu_de_test_classification_pleiade2(
+    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+):
+    """
+    Evaluates the model on the Pleiade test dataset for image classification.
+
+    Args:
+        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        dataset.
+        model (torchvision.models): The classification model to evaluate.
+        tile_size (int): The size of each tile in pixels.
+        batch_size (int): The batch size.
+        use_mlflow (bool, optional): Whether to use MLflow for logging
+        artifacts. Defaults to False.
+
+    Returns:
+        None
+    """
+    threshold = metrics_classification_pleiade(
+                    test_dl, model, tile_size, batch_size, n_bands, use_mlflow
+                )
+
+    model.eval()
+    npatch = int((2000 / tile_size) ** 2)
+    count_patch = 0
+
+    list_labeled_satellite_image = []
+
+    for idx, batch in enumerate(test_dl):
+
+        images, labels, dic = batch
+
+        model = model.to("cuda:0")
+        images = images.to("cuda:0")
+        labels = labels.to("cuda:0")
+
+        output_model = model(images)
+        output_model = output_model.to("cpu")
+        probability_class_1 = output_model[:, 1]
+
+        # Set a threshold for class prediction
+        # threshold = 0.90
+
+        # Make predictions based on the threshold
+        predictions = torch.where(
+            probability_class_1 > threshold,
+            torch.tensor([1]),
+            torch.tensor([0]),
+        )
+        predicted_classes = predictions.type(torch.float)
+
+        if batch_size > len(images):
+            batch_size_current = len(images)
+
+        elif batch_size <= len(images):
+            batch_size_current = batch_size
+
+        for i in range(batch_size_current):
+            pthimg = dic["pathimage"][i]
+            si = SatelliteImage.from_raster(
+                file_path=pthimg, dep=None, date=None, n_bands=n_bands
+            )
+
+            if int(predicted_classes[i]) == 0:
+                mask_pred = np.full((tile_size, tile_size, 3), 0, dtype=np.uint8)
+
+            elif int(predicted_classes[i]) == 1:
+                img = si.array.copy()
+                img = img[:3, :, :]
+                img = (img * 255).astype(np.uint8)
+                img = img.transpose(1, 2, 0)
+
+                shape = img.shape[0:2]
+
+                grayscale = np.mean(img, axis=2)
+
+                black = np.ones(shape, dtype=float)
+                white = np.zeros(shape, dtype=float)
+
+                # Creation of the mask : all grayscaled prixels below the threshold \
+                # will be black and all the grayscaled prixels above the threshold \
+                # will be white.
+
+                mask_pred = np.where(grayscale > 100, white, black)
+
+            si.normalize()
             list_labeled_satellite_image.append(
                 SegmentationLabeledSatelliteImage(
                     satellite_image=si,

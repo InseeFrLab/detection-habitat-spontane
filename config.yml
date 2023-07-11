@@ -2,8 +2,8 @@ donnees:
   source train: "PLEIADES"
   dataset: "CLASSIFICATION" 
   dataset-test: "CLASSIFICATION"
-  year: [2022, 2022]
-  dep: ["972", "971"]
+  year: [2022, 2018]
+  dep: ["974", "974"]
   type labeler: "BDTOPO"
   buffer size: 10
   n channels train: 3
