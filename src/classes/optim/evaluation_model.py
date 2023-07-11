@@ -130,6 +130,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
         for i in range(batch_size):
             try:
                 pthimg = dic["pathimage"][i]
+                src = pthimg.split('/')[1].split('segmentation-')[1].split('-BDTOPO')[0]
                 si = SatelliteImage.from_raster(
                     file_path=pthimg, dep=None, date=None, n_bands=n_bands
                 )
@@ -145,11 +146,11 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
                 print("ecriture image")
                 if not os.path.exists("img/"):
                     os.makedirs("img/")
-                try:
+                if src == 'SENTINEL1-2' or src == 'SENTINEL2':
                     fig1 = plot_list_segmentation_labeled_satellite_image(
                         [labeled_satellite_image], [3, 2, 1]
                     )
-                except IndexError:
+                elif src == 'SENTINEL2-RVB' or src == 'SENTINEL1-2-RVB':
                     fig1 = plot_list_segmentation_labeled_satellite_image(
                         [labeled_satellite_image], [0, 1, 2]
                     )
