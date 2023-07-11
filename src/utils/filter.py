@@ -1,19 +1,26 @@
 """
 """
+import rasterio
+from tqdm import tqdm
+from rasterio.errors import RasterioIOError
 import os
 from typing import Literal, Union
-
 import geopandas as gpd
 import numpy as np
 from rasterio.features import rasterize, shapes
 from scipy.ndimage import label
 from shapely.geometry import Polygon, box
 
+import sys
+sys.path.append('../src')
+from classes.data.satellite_image import SatelliteImage
+from train_pipeline_utils.download_data import load_satellite_data
+from classes.data.satellite_image import SatelliteImage
+
 from classes.data.labeled_satellite_image import (
     DetectionLabeledSatelliteImage,
     SegmentationLabeledSatelliteImage,
 )
-from classes.data.satellite_image import SatelliteImage
 from utils.utils import get_environment, get_file_system
 
 
@@ -481,6 +488,43 @@ def patch_nocloud(
             list_patch_nocloud.append(list_images[i])
 
     return list_patch_nocloud
+
+
+def create_doss_cloud(year, dep_num, dep_str):
+
+    load_satellite_data(int(year), str(dep_num), "PLEIADES")
+    file_path = '../data/PLEIADES/' + year + "/" + dep_str
+    output_masks_path = '../nuagespleiades/' + year + "/" + dep_str
+
+    if os.path.exists(output_masks_path):
+        print("fichiers déjà écrits")
+
+    if not os.path.exists(output_masks_path):
+        os.makedirs(output_masks_path)
+
+
+    list_name=os.listdir(file_path)
+    list_path=[file_path + "/" + name for name in list_name]
+
+
+    for path, file_name in tqdm(zip(list_path, list_name), total=len(list_path), desc='Processing'):
+        try:
+            big_satellite_image = SatelliteImage.from_raster(
+                file_path=path, dep=None, date=None, n_bands=3
+            )
+
+        except RasterioIOError:
+            continue
+
+        else:
+            boolean = has_cloud(big_satellite_image)
+
+            if boolean:
+                mask_full = mask_full_cloud(big_satellite_image)
+                file_name = file_name.split(".")[0]
+                np.save(output_masks_path + "/" + file_name + ".npy", mask_full)
+
+    return output_masks_path
 
 
 class RILFilter:
