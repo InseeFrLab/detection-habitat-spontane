@@ -14,8 +14,14 @@ sources:
       segmentation: donnees-test/SENTINEL1-2/segmentation
       #change-detection: donnees-test/SENTINEL/change_detection
       #classification: donnees-test/SENTINEL/classification
+    SENTINEL1-2-RVB:
+      segmentation: donnees-test/SENTINEL1-2-RVB/segmentation
+      #change-detection: donnees-test/SENTINEL/change_detection
+      #classification: donnees-test/SENTINEL/classification
     SENTINEL2-RVB:
       segmentation: donnees-test/SENTINEL2-RVB/segmentation
+      #change-detection: donnees-test/SENTINEL/change_detection
+      #classification: donnees-test/SENTINEL/classification
   PAPERS:
     S2Looking: Donnees/PAPERS/S2Looking
     LEVIR_CD: Donnees/PAPERS/LEVIR_CD
@@ -201,6 +207,12 @@ local-path:
       #classification: donnees-test/SENTINEL/classification
     SENTINEL2-RVB: 
       segmentation: donnees-test/SENTINEL2-RVB/segmentation
+      #change-detection: donnees-test/SENTINEL/change_detection
+      #classification: donnees-test/SENTINEL/classification
+    SENTINEL1-2-RVB: 
+      segmentation: donnees-test/SENTINEL1-2-RVB/segmentation
+      #change-detection: donnees-test/SENTINEL/change_detection
+      #classification: donnees-test/SENTINEL/classification
 
   PAPERS: data/paper_dataset
   PLEIADES:
@@ -330,6 +342,18 @@ local-path:
       "974": data/SENTINEL2-RVB/REUNION/TUILES_2022
       "973": data/SENTINEL2-RVB/GUYANE/TUILES_2022
       "976": data/SENTINEL2-RVB/MAYOTTE/TUILES_2022
+
+  SENTINEL1-2-RVB:
+    2021:
+      "971": data/SENTINEL1-2-RVB/GUADELOUPE/TUILES_2021
+      "972": data/SENTINEL1-2-RVB/MARTINIQUE/TUILES_2021
+      "974": data/SENTINEL1-2-RVB/REUNION/TUILES_2021
+      "976": data/SENTINEL1-2-RVB/MAYOTTE/TUILES_2021
+    2022:
+      "971": data/SENTINEL1-2-RVB/GUADELOUPE/TUILES_2022
+      "972": data/SENTINEL1-2-RVB/MARTINIQUE/TUILES_2022
+      "974": data/SENTINEL1-2-RVB/REUNION/TUILES_2022
+      "976": data/SENTINEL1-2-RVB/MAYOTTE/TUILES_2022
 
   BDTOPO:
       2021:

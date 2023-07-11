@@ -10,18 +10,18 @@ donnees:
   n bands entry: 12
   n bands: 3
   tile size: 125
-  augmentation: True
+  augmentation: False
   task: "segmentation"
-  prop: 0.2
+  prop: 0.05
 
 optim:
-  loss: "crossentropyselmade"
-  lr: 0.0001
+  loss: "crossentropy"
+  lr: 0.001
   momentum: 0.9
   module: "deeplabv3"
   batch size: 50
   batch size test: 16
-  max epochs: 40
+  max epochs: 50
   val prop: 0.2
   accumulate batch : 4
 

@@ -215,14 +215,15 @@ def save_images_and_masks(
 
         try:
             if task != "classification":
-                in_ds = gdal.Open(direc+'/'+image.filename)
-                proj = in_ds.GetProjection()
+                if np.sum(mask) >= 0.1*image.array.shape[1]**2:
+                    in_ds = gdal.Open(direc+'/'+image.filename)
+                    proj = in_ds.GetProjection()
 
-                image.to_raster(output_images_path, filename + ".tif", "tif", proj)
-                np.save(
-                    output_masks_path + "/" + filename + ".npy",
-                    mask,
-                )
+                    image.to_raster(output_images_path, filename, "tif", proj)
+                    np.save(
+                        output_masks_path + "/" + filename + ".npy",
+                        mask,
+                    )
             if task == "classification":
                 # if i in selected_indices:
                 image.to_raster(output_images_path, filename + ".jp2", "jp2", None)

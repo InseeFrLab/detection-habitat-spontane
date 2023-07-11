@@ -182,7 +182,7 @@ def generate_transform_pleiades(tile_size, augmentation):
     return transforms_augmentation, transforms_preprocessing
 
 
-def generate_transform_sentinel(src, year, dep, tile_size, augmentation):
+def generate_transform_sentinel(tile_size, augmentation):
     """
     Generates PyTorch transforms for data augmentation and preprocessing\
         for SENTINEL2 images.
