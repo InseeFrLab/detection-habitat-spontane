@@ -5,8 +5,10 @@ import numpy as np
 import pandas as pd
 import rasterio
 from tqdm import tqdm
+from osgeo import gdal
 
 from utils.filter import is_too_black, is_too_water
+from classes.data.satellite_image import SatelliteImage
 
 
 def check_labelled_images(output_directory_name):
@@ -60,7 +62,7 @@ def filter_images(src, list_images, list_array_cloud=None):
     if src == "PLEIADES":
         return filter_images_pleiades(list_images, list_array_cloud)
     else:
-        return filter_images_sentinel(list_images)
+        return filter_images_sentinel(list_images, src)
 
 
 def filter_images_pleiades(list_images, list_array_cloud):
@@ -91,7 +93,7 @@ def filter_images_pleiades(list_images, list_array_cloud):
     return list_filtered_splitted_images
 
 
-def filter_images_sentinel(list_images):
+def filter_images_sentinel(list_images, src):
     """
     filters the Sentinel images.
 
@@ -103,12 +105,14 @@ def filter_images_sentinel(list_images):
             filtered data.
     """
 
-    # print("Entre dans la fonction filter_images_sentinel")
     list_filtered_splitted_images = []
     for splitted_image in list_images:
+        array = splitted_image.array
         if not is_too_water(splitted_image, 0.95):
-            list_filtered_splitted_images.append(splitted_image)
-
+            if not np.isnan(array).any():
+                if src == 'SENTINEL2-RVB':
+                    splitted_image.array = splitted_image.array[(3, 2, 1), :, :]
+                list_filtered_splitted_images.append(splitted_image)
     return list_filtered_splitted_images
 
 
@@ -164,7 +168,11 @@ def label_images(list_images, labeler, task="segmentation"):
 
 
 def save_images_and_masks(
-    list_images, list_masks, output_directory_name, task="segmentation"
+    list_images,
+    list_masks,
+    output_directory_name,
+    direc=None,
+    task="segmentation",
 ):
     """
     write the couple images/masks into a specific folder.
@@ -172,9 +180,13 @@ def save_images_and_masks(
     Args:
         list_images : the list containing the splitted and filtered data \
             to be saved.
-        list_masks : the list containing the masks to be saved.
-        a string representing the name of the output \
+        list_masks : the list containing the masks to be saved. \
+            a string representing the name of the output \
             directory where the split images and their masks should be saved.
+        output_directory_name : the name of the directory where the images \
+            are saved.
+        direc : the directory containing the images for which the proj \
+            is to be retrieved.
 
     Returns:
         str: The name of the output directory.
@@ -203,7 +215,10 @@ def save_images_and_masks(
 
         try:
             if task != "classification":
-                image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
+                in_ds = gdal.Open(direc+'/'+image.filename)
+                proj = in_ds.GetProjection()
+
+                image.to_raster(output_images_path, filename + ".tif", "tif", proj)
                 np.save(
                     output_masks_path + "/" + filename + ".npy",
                     mask,

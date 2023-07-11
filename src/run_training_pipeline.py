@@ -5,6 +5,7 @@ import random
 import sys
 from datetime import datetime
 import csv
+import shutil
 
 import mlflow
 import numpy as np
@@ -184,8 +185,8 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     si = SatelliteImage.from_raster(
                         file_path=path,
                         dep=dep,
-                        date=date,
-                        n_bands=config_data["n bands"],
+                        date=None,
+                        n_bands=config_data["n bands entry"],
                     )
                 except RasterioIOError:
                     print("Erreur de lecture du fichier " + path)
@@ -219,6 +220,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     list_filtered_splitted_images,
                     labels,
                     output_dir,
+                    direc=dir,
                     task=config_task,
                 )
 
@@ -272,12 +274,19 @@ def prepare_test_data(config, test_dir):
     list_labels_path = [labels_path + "/" + name for name in list_name_label]
 
     if config["donnees"]["task"] == "segmentation":
-
         images_path = test_dir + "/images"
         list_name_image = os.listdir(images_path)
         list_name_image = np.sort(remove_dot_file(list_name_image))
         list_images_path = [images_path + "/" + name for name in list_name_image]
         output_images_path = output_test + "/images"
+
+        if len(list_labels_path) < len(list_images_path):
+            diff = len(list_images_path) - len(list_labels_path)
+            file_to_duplicate = list_labels_path[0]
+            for i in range(diff):
+                new_file = file_to_duplicate[0:-4]+f"_{i}.npy"
+                shutil.copyfile(file_to_duplicate, new_file)
+                list_labels_path.append(list_labels_path[0][0:-4]+f"_{i}.npy")
 
         for image_path, label_path, name in zip(
             list_images_path,
@@ -294,11 +303,17 @@ def prepare_test_data(config, test_dir):
             list_lsi = lsi.split(tile_size)
 
             for i, lsi in enumerate(list_lsi):
+                if np.isnan(lsi.satellite_image.array).any():
+                    continue
                 file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
-
+                in_ds = gdal.Open(image_path)
+                proj = in_ds.GetProjection()
                 lsi.satellite_image.to_raster(
-                    output_images_path, file_name_i + ".jp2"
+                    output_images_path, file_name_i, "tif", proj
                     )
+                # lsi.satellite_image.to_raster(
+                #     output_images_path, file_name_i + ".jp2"
+                #     )
                 np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
 
     elif config["donnees"]["task"] == "classification":
@@ -477,6 +492,7 @@ def instantiate_dataloader(config, list_output_dir, output_test):
         "PLEIADES",
         "SENTINEL2",
         "SENTINEL1-2",
+        "SENTINEL2-RVB",
     ]:
         list_labels = []
         list_images = []
@@ -545,7 +561,10 @@ def instantiate_dataloader(config, list_output_dir, output_test):
         list_labels = unbalanced_labels[indices_to_balance]
 
     train_idx, val_idx = select_indices_to_split_dataset(
-        config_task, config["optim"]["val prop"], list_labels
+        config_task,
+        config["optim"]["val prop"],
+        list_labels,
+        full_balancing_dict
     )
 
     # Retrieving the desired Dataset class
@@ -653,7 +672,7 @@ def instantiate_dataloader(config, list_output_dir, output_test):
         list_path_images_2 = np.sort([output_images_path_2 + name_image for name_image in list_name_image_2])
 
         dataset_test = instantiate_dataset(
-                config, list_path_images_1, list_path_labels_test, list_images_2= list_path_images_2, test = True
+                config, list_path_images_1, list_path_labels_test, list_images_2 = list_path_images_2, test = True
             )
         dataset_test.transforms = t_preproc
 
@@ -853,7 +872,10 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         with mlflow.start_run(run_name=run_name):
             mlflow.autolog()
-            mlflow.log_artifact("../config.yml", artifact_path="config.yml")
+            mlflow.log_artifact(
+                "../config.yml",
+                artifact_path="config.yml"
+            )
             trainer.fit(light_module, train_dl, valid_dl)
 
             light_module_checkpoint = light_module.load_from_checkpoint(
@@ -865,6 +887,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 scheduler=light_module.scheduler,
                 scheduler_params=light_module.scheduler_params,
                 scheduler_interval=light_module.scheduler_interval
+
             )
 
             model = light_module_checkpoint.model
@@ -888,13 +911,14 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         light_module = light_module.load_from_checkpoint(
             loss=instantiate_loss(config),
-            checkpoint_path=trainer.checkpoint_callback.best_model_path,
+            checkpoint_path=trainer.checkpoint_callback.best_model_path,  # je créé un module qui charge
+            # checkpoint_path='',
             model=light_module.model,
             optimizer=light_module.optimizer,
             optimizer_params=light_module.optimizer_params,
             scheduler=light_module.scheduler,
             scheduler_params=light_module.scheduler_params,
-            scheduler_interval=light_module.scheduler_interval,
+            scheduler_interval=light_module.scheduler_interval
         )
 
         torch.cuda.empty_cache()
@@ -934,6 +958,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             config["donnees"]["n bands"],
             config["mlflow"],
         )
+
 
 
 if __name__ == "__main__":

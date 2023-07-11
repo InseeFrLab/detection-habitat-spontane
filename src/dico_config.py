@@ -16,7 +16,7 @@ from classes.optim.evaluation_model import (
 from classes.optim.losses import CrossEntropySelfmade, SoftIoULoss
 from data.components.change_detection_dataset import ChangeIsEverywhereDataset, ChangeDetectionDataset
 from data.components.classification_patch import PatchClassification
-from data.components.dataset import SegmentationDataset
+from data.components.dataset import PleiadesDataset, SentinelDataset
 from models.classification_module import ClassificationModule
 from models.components.classification_models import ResNet50Module
 from models.components.segmentation_models import DeepLabv3Module
@@ -54,7 +54,9 @@ task_to_lightningmodule = {
 task_to_evaluation = {
     "PLEIADESsegmentation": evaluer_modele_sur_jeu_de_test_segmentation_pleiade,
     "PLEIADESclassification": evaluer_modele_sur_jeu_de_test_classification_pleiade,
-    "SENTINEL1-2segmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
     "SENTINEL2segmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
-    "PLEIADESchange-detection": evaluer_modele_sur_jeu_de_test_change_detection_pleiade
+    "SENTINEL1-2segmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
+    "PLEIADESchange-detection": evaluer_modele_sur_jeu_de_test_change_detection_pleiade,
+    "SENTINEL2-RVBsegmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
+    "SENTINEL1-2-RVBsegmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
 }

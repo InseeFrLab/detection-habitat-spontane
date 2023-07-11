@@ -122,6 +122,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
     n_bands,
     use_mlflow=False,
 ):
+    model.eval()
     for idx, batch in enumerate(test_dl):
         # idx, batch = 0, next(iter(test_dl))
         images, label, dic = batch

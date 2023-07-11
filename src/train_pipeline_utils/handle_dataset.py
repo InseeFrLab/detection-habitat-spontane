@@ -7,7 +7,46 @@ import yaml
 from albumentations.pytorch.transforms import ToTensorV2
 
 
-def select_indices_to_split_dataset(config_task, prop_val, list_labels):
+def select_indices_to_split_dataset(
+    config_task, prop_val, list_labels, full_balancing_dict
+):
+    """
+    Selects indices to split a dataset into training and validation sets based
+    on the configuration task.
+
+    Args:
+        config_task (str): The configuration task.
+        prop_val (float): The proportion of indices to allocate for the
+        validation set.
+        list_labels (list): The list of labels for each data point.
+
+    Returns:
+        tuple: A tuple containing two lists - train_indices and val_indices.
+            train_indices (list): The selected indices for the training set.
+            val_indices (list): The selected indices for the validation set.
+    """
+
+    zero_indices = [i for i, label in enumerate(list_labels) if full_balancing_dict[label.split('/')[-1].split('.')[0]] == 0]
+    one_indices = [i for i, label in enumerate(list_labels) if full_balancing_dict[label.split('/')[-1].split('.')[0]] == 1]
+
+    random.shuffle(zero_indices)
+    random.shuffle(one_indices)
+
+    num_val_zeros = int(prop_val * len(zero_indices))
+    num_val_ones = int(prop_val * len(one_indices))
+
+    val_indices = zero_indices[:num_val_zeros] + one_indices[:num_val_ones]
+    train_indices = zero_indices[num_val_zeros:] + one_indices[num_val_ones:]
+
+    random.shuffle(train_indices)
+    random.shuffle(val_indices)
+
+    return train_indices, val_indices
+
+
+def select_indices_to_split_dataset2(
+    config_task, prop_val, list_labels
+):
     """
     Selects indices to split a dataset into training and validation sets based
     on the configuration task.
@@ -25,7 +64,7 @@ def select_indices_to_split_dataset(config_task, prop_val, list_labels):
     """
     len_dataset = len(list_labels)
 
-    if config_task != "classification":
+    if config_task == "segmentation":
         num_val_indices = int(prop_val * len_dataset)
 
         all_indices = list(range(len_dataset))
@@ -87,15 +126,15 @@ def select_indices_to_balance(
     # Get images with buildings and without according
     # to a certain proportion
     length_labelled = len(idx_building)
-    lenght_unlabelled = prop * length_labelled
+    lenght_unlabelled = int(prop * length_labelled)
     idx_balanced = idx_building.copy()
     if lenght_unlabelled < len(idx_no_building):
         list_to_add = random.sample(idx_no_building, lenght_unlabelled)
         for i in list_to_add:
-            idx = idx_no_building.index(i)
             idx_balanced.append(i)
     else:
         idx_balanced.extend(idx_no_building)
+
     return idx_balanced
 
 
@@ -158,17 +197,17 @@ def generate_transform_sentinel(src, year, dep, tile_size, augmentation):
         A tuple containing the augmentation and preprocessing transforms.
 
     """
-    with open("utils/normalize_sentinel.yml", "r") as stream:
-        normalize_sentinel = yaml.safe_load(stream)
-    mean = eval(normalize_sentinel[src]["mean"][year][dep])
-    std = eval(normalize_sentinel[src]["std"][year][dep])
+    # with open("utils/normalize_sentinel.yml", "r") as stream:
+    #     normalize_sentinel = yaml.safe_load(stream)
+    # mean = eval(normalize_sentinel[src]["mean"][year][dep])
+    # std = eval(normalize_sentinel[src]["std"][year][dep])
 
     image_size = (tile_size, tile_size)
 
     transforms_preprocessing = album.Compose(
         [
             album.Resize(*image_size, always_apply=True),
-            album.Normalize(mean, std),
+            # album.Normalize(mean, std),
             ToTensorV2(),
         ]
     )
@@ -182,7 +221,7 @@ def generate_transform_sentinel(src, year, dep, tile_size, augmentation):
                 ),
                 album.HorizontalFlip(),
                 album.VerticalFlip(),
-                album.Normalize(mean, std),
+                # album.Normalize(mean, std),
                 ToTensorV2(),
             ]
         )

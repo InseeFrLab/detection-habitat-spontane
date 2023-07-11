@@ -126,16 +126,12 @@ class SatelliteImage:
                 "Value of the `quantile` parameter must be between 0.5 and 1."
             )
 
-        normalized_bands = [
-            rp.adjust_band(
-                np.clip(
-                    self.array[i, :, :],
-                    0,
-                    np.quantile(self.array[i, :, :], quantile),
-                )
-            )
-            for i in range(self.n_bands)
-        ]
+        normalized_bands = []
+        for i in range(self.n_bands):
+            array = self.array[i, :, :]
+            if i != 12:
+                array = np.clip(array, np.min(array), np.quantile(array, quantile))
+            normalized_bands.append((array-np.min(array))/(np.max(array)-np.min(array)))
         self.array = np.stack(normalized_bands)
         self.normalized = True
 
@@ -295,7 +291,7 @@ def to_raster_tif(self, directory_name: str, filename: str, proj):
 
     driver = gdal.GetDriverByName("GTiff")
     out_ds = driver.Create(
-        filename + ".tif",
+        directory_name + '/' + filename + ".tif",
         array.shape[2],
         array.shape[1],
         array.shape[0],
