@@ -160,6 +160,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
                 plot_file = "img/" + filename + ".png"
 
                 fig1.savefig(plot_file)
+                matplotlib.pyplot.close()
 
                 if use_mlflow:
                     mlflow.log_artifact(plot_file, artifact_path="plots")

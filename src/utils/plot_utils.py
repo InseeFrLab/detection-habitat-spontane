@@ -492,15 +492,14 @@ def creer_array_to_plot(pth_image):
         the correctly formatted arrays corresponding to the entry image.
     """
 
-    si = SatelliteImage.from_raster(pth_image, 974, 2000, 12)
-    # si.normalized()
-    si.array.shape
-    bands_indices = [3, 2, 1]
+    si = SatelliteImage.from_raster(pth_image, dep=None, date=None, n_bands=3)
+    si.normalize()
+    bands_indices = [0, 1, 2]
     array = si.array
-    normalized_array = (array.astype(np.float32) - np.min(array)) / (
-        np.max(array) / 3 - np.min(array)
-    )
-    # normalized_array = array
+    #normalized_array = (array.astype(np.float32) - np.min(array)) / (
+     #   np.max(array) / 3 - np.min(array)
+    #)
+    normalized_array = array
     array_to_plot = np.transpose(normalized_array, (1, 2, 0))[:, :, bands_indices]
 
     return array_to_plot
@@ -578,7 +577,7 @@ def plot_list_images_and_masks_square(
 
     return represent_image_label(list_array_to_plot, list_label)
 
-    
+
 def draw_change_is_everywhere_exemples(changeiseverywheredataset, n_exemples):
 
     """
