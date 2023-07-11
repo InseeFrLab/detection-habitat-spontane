@@ -25,54 +25,21 @@ def select_indices_to_split_dataset(
             train_indices (list): The selected indices for the training set.
             val_indices (list): The selected indices for the validation set.
     """
-
-    zero_indices = [i for i, label in enumerate(list_labels) if full_balancing_dict[label.split('/')[-1].split('.')[0]] == 0]
-    one_indices = [i for i, label in enumerate(list_labels) if full_balancing_dict[label.split('/')[-1].split('.')[0]] == 1]
-
-    random.shuffle(zero_indices)
-    random.shuffle(one_indices)
-
-    num_val_zeros = int(prop_val * len(zero_indices))
-    num_val_ones = int(prop_val * len(one_indices))
-
-    val_indices = zero_indices[:num_val_zeros] + one_indices[:num_val_ones]
-    train_indices = zero_indices[num_val_zeros:] + one_indices[num_val_ones:]
-
-    random.shuffle(train_indices)
-    random.shuffle(val_indices)
-
-    return train_indices, val_indices
-
-
-def select_indices_to_split_dataset2(
-    config_task, prop_val, list_labels
-):
-    """
-    Selects indices to split a dataset into training and validation sets based
-    on the configuration task.
-
-    Args:
-        config_task (str): The configuration task.
-        prop_val (float): The proportion of indices to allocate for the
-        validation set.
-        list_labels (list): The list of labels for each data point.
-
-    Returns:
-        tuple: A tuple containing two lists - train_indices and val_indices.
-            train_indices (list): The selected indices for the training set.
-            val_indices (list): The selected indices for the validation set.
-    """
-    len_dataset = len(list_labels)
-
     if config_task == "segmentation":
-        num_val_indices = int(prop_val * len_dataset)
+        zero_indices = [i for i, label in enumerate(list_labels) if full_balancing_dict[label.split('/')[-1].split('.')[0]] == 0]
+        one_indices = [i for i, label in enumerate(list_labels) if full_balancing_dict[label.split('/')[-1].split('.')[0]] == 1]
 
-        all_indices = list(range(len_dataset))
-        random.shuffle(all_indices)
+        random.shuffle(zero_indices)
+        random.shuffle(one_indices)
 
-        # Split the shuffled list into train and validation indices
-        val_indices = all_indices[:num_val_indices]
-        train_indices = all_indices[num_val_indices:]
+        num_val_zeros = int(prop_val * len(zero_indices))
+        num_val_ones = int(prop_val * len(one_indices))
+
+        val_indices = zero_indices[:num_val_zeros] + one_indices[:num_val_ones]
+        train_indices = zero_indices[num_val_zeros:] + one_indices[num_val_ones:]
+
+        random.shuffle(train_indices)
+        random.shuffle(val_indices)
 
     elif config_task == "classification":
         # Separating indices based on labels
@@ -96,6 +63,17 @@ def select_indices_to_split_dataset2(
         # Randomly shuffle the training and validation indices
         random.shuffle(train_indices)
         random.shuffle(val_indices)
+
+    elif config_task == "change-detection":
+        len_dataset = len(list_labels)
+        num_val_indices = int(prop_val * len_dataset)
+
+        all_indices = list(range(len_dataset))
+        random.shuffle(all_indices)
+
+        # Split the shuffled list into train and validation indices
+        val_indices = all_indices[:num_val_indices]
+        train_indices = all_indices[num_val_indices:]
 
     return train_indices, val_indices
 
