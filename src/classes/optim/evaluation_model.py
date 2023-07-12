@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import (
     roc_curve,
     auc,
+    accuracy_score,
     RocCurveDisplay,
     ConfusionMatrixDisplay
 )
@@ -238,12 +239,21 @@ def metrics_classification_pleiade(
 
         class_names = ["Bâti", "Non bâti"]
 
-        predictions = np.where(
+        predictions_best = np.where(
             y_pred > best_threshold,
             np.array([1.0]),
             np.array([0.0]),
         )
+        predicted_classes_best = predictions_best.tolist()
+        accuracy_best = accuracy_score(y_true, predicted_classes_best)
+
+        predictions = np.where(
+            y_pred > 0.5,
+            np.array([1.0]),
+            np.array([0.0]),
+        )
         predicted_classes = predictions.tolist()
+        accuracy = accuracy_score(y_true, predicted_classes)
 
         disp = ConfusionMatrixDisplay.from_predictions(y_true, predicted_classes,
                                                        display_labels=class_names,
@@ -256,10 +266,12 @@ def metrics_classification_pleiade(
         if use_mlflow:
             mlflow.log_artifact(plot_file_roc, artifact_path="plots")
             mlflow.log_artifact(plot_file_cm, artifact_path="plots")
-            mlflow.log_param("best true positif rate", best_tpr)
-            mlflow.log_param("best false positif rate", best_fpr)
-            mlflow.log_param("best threshold", best_threshold)
-            mlflow.log_param("auc", roc_auc)
+            mlflow.log_metric("test best accuracy", accuracy_best)
+            mlflow.log_metric("test 0.5 accuracy", accuracy)
+            mlflow.log_metric("best true positif rate", best_tpr)
+            mlflow.log_metric("best false positif rate", best_fpr)
+            mlflow.log_metric("best threshold", best_threshold)
+            mlflow.log_metric("auc", roc_auc)
 
         return best_threshold
 
@@ -328,6 +340,79 @@ def metrics_classification_pleiade2(
         del images, labels
 
         return best_threshold
+
+
+def metrics_classification_pleiade3(
+    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+):
+    """
+    Evaluates the model on the Pleiade test dataset for image classification.
+
+    Args:
+        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        dataset.
+        model (torchvision.models): The classification model to evaluate.
+        tile_size (int): The size of each tile in pixels.
+        batch_size (int): The batch size.
+        use_mlflow (bool, optional): Whether to use MLflow for logging
+        artifacts. Defaults to False.
+
+    Returns:
+        None
+    """
+    with torch.no_grad():
+        model.eval()
+        y_true = []
+        y_prob = []
+
+        for idx, batch in enumerate(test_dl):
+
+            images, labels, __ = batch
+
+            model = model.to("cuda:0")
+            images = images.to("cuda:0")
+
+            output_model = model(images)
+            output_model = output_model.to("cpu")
+            y_prob_idx = output_model[:, 1].tolist()
+            y_prob.append(y_prob_idx)
+
+            y_true.append(labels.tolist())
+
+            del images, labels
+
+        y_true = np.array(y_true).flatten().tolist()
+        y_prob = np.array(y_prob).flatten().tolist()
+
+        # Définir les seuils de classification à tester
+        thresholds = np.linspace(0, 1, num=100)  # De 0 à 1 avec 100 valeurs
+
+        # Initialiser la liste pour stocker les précisions
+        accuracies = []
+
+        # Calculer la précision pour chaque seuil de classification
+        for threshold in thresholds:
+            # Convertir les probabilités en prédictions binaires en utilisant le seuil
+            y_pred = (y_prob >= threshold).astype(int)
+
+            # Calculer la précision
+            accuracy = accuracy_score(y_true, y_pred)
+
+            # Ajouter la précision à la liste
+            accuracies.append(accuracy)
+
+        if not os.path.exists("img/"):
+            os.makedirs("img/")
+
+        plt.plot(thresholds, accuracies)
+        plt.plot(thresholds, accuracies)
+        plt.xlabel('Seuil de classification')
+        plt.ylabel('Précision (Accuracy)')
+        plt.title('Précision en fonction du seuil de classification')
+        plt.show()
+        plot_file = "img/AccuracyonThreshold.png"
+        plt.savefig(plot_file)
+        plt.close()
 
 
 def evaluer_modele_sur_jeu_de_test_classification_pleiade(
