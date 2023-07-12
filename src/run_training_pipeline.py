@@ -908,12 +908,24 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                     config["mlflow"]
                 )
 
+            # if task_type == "classification":
+            #     model_uri = mlflow.get_artifact_uri("model")
+            #     print(model_uri)
+
+            #     mlflow.evaluate(
+            #         model_uri,
+            #         test_dl,
+            #         targets="labels",
+            #         model_type="classifier",
+            #         evaluators=["default"]
+            #     )
+
     else:
         trainer.fit(light_module, train_dl, valid_dl)
 
         light_module = light_module.load_from_checkpoint(
             loss=instantiate_loss(config),
-            checkpoint_path=trainer.checkpoint_callback.best_model_path,  # je créé un module qui charge
+            checkpoint_path="epoch=18-step=7581.ckpt",  # je créé un module qui charge
             # checkpoint_path='',
             model=light_module.model,
             optimizer=light_module.optimizer,
@@ -927,6 +939,16 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         gc.collect()
 
         model = light_module.model
+
+        from classes.optim.evaluation_model import metrics_classification_pleiade3
+        metrics_classification_pleiade3(
+            test_dl,
+            model,
+            tile_size,
+            batch_size_test,
+            config["donnees"]["n bands"],
+            False,
+        )
 
         # from classes.optim.evaluation_model import metrics_classification_pleiade2, evaluer_modele_sur_jeu_de_test_classification_pleiade2
         # trshld = metrics_classification_pleiade2(
@@ -973,7 +995,7 @@ if __name__ == "__main__":
 
 # nohup python run_training_pipeline.py
 # https://projet-slums-detection-128833.user.lab.sspcloud.fr
-# classification 250_bdtopo_filtre > out3.txt &
+# classification 2022_2018_974 > out3.txt &
 # https://www.howtogeek.com/804823/nohup-command-linux/
 # TO DO :
 # test routine sur S2Looking dataset
