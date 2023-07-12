@@ -7,19 +7,19 @@ sources:
       change-detection: donnees-test/change_detection/PLEIADES
       classification: donnees-test/classification/PLEIADES
     SENTINEL2:
-      segmentation: donnees-test/SENTINEL2/segmentation
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2
       #change-detection: donnees-test/SENTINEL/change_detection
       #classification: donnees-test/SENTINEL/classification
     SENTINEL1-2:
-      segmentation: donnees-test/SENTINEL1-2/segmentation
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL1-2
       #change-detection: donnees-test/SENTINEL/change_detection
       #classification: donnees-test/SENTINEL/classification
     SENTINEL1-2-RVB:
-      segmentation: donnees-test/SENTINEL1-2-RVB/segmentation
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL1-2-RVB
       #change-detection: donnees-test/SENTINEL/change_detection
       #classification: donnees-test/SENTINEL/classification
     SENTINEL2-RVB:
-      segmentation: donnees-test/SENTINEL2-RVB/segmentation
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2-RVB
       #change-detection: donnees-test/SENTINEL/change_detection
       #classification: donnees-test/SENTINEL/classification
   PAPERS:
@@ -197,20 +197,20 @@ local-path:
       segmentation: donnees-test/segmentation
       change-detection: donnees-test/change_detection
       classification: donnees-test/classification
-    SENTINEL2: 
-      segmentation: donnees-test/SENTINEL2/segmentation
+    SENTINEL2:
+      segmentation: donnees-test/segmentation/SENTINEL2
       #change-detection: donnees-test/SENTINEL/change_detection
       #classification: donnees-test/SENTINEL/classification
-    SENTINEL1-2: 
-      segmentation: donnees-test/SENTINEL1-2/segmentation
+    SENTINEL1-2:
+      segmentation: donnees-test/segmentation/SENTINEL1-2
       #change-detection: donnees-test/SENTINEL/change_detection
       #classification: donnees-test/SENTINEL/classification
-    SENTINEL2-RVB: 
-      segmentation: donnees-test/SENTINEL2-RVB/segmentation
+    SENTINEL2-RVB:
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2-RVB
       #change-detection: donnees-test/SENTINEL/change_detection
       #classification: donnees-test/SENTINEL/classification
-    SENTINEL1-2-RVB: 
-      segmentation: donnees-test/SENTINEL1-2-RVB/segmentation
+    SENTINEL1-2-RVB:
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL1-2-RVB
       #change-detection: donnees-test/SENTINEL/change_detection
       #classification: donnees-test/SENTINEL/classification
 
