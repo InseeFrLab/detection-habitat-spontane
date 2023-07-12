@@ -7,6 +7,7 @@ import matplotlib
 
 import matplotlib.pyplot as plt
 from sklearn.metrics import (
+    confusion_matrix,
     roc_curve,
     auc,
     accuracy_score,
@@ -401,6 +402,25 @@ def metrics_classification_pleiade3(
             # Ajouter la précision à la liste
             accuracies.append(accuracy)
 
+        fnr_list = []
+
+        # Calculer le taux de faux négatifs pour chaque seuil de classification
+        for threshold in thresholds:
+            # Convertir les probabilités en prédictions binaires en utilisant le seuil
+            y_pred = (y_prob >= threshold).astype(int)
+
+            # Calculer la matrice de confusion
+            confusion = confusion_matrix(y_true, y_pred)
+
+            # Extraire les valeurs de la matrice de confusion
+            tn, fp, fn, tp = confusion.ravel()
+
+            # Calculer le taux de faux négatifs (FNR)
+            fnr = fn / (fn + tp)
+
+            # Ajouter le taux de faux négatifs à la liste
+            fnr_list.append(fnr)
+
         if not os.path.exists("img/"):
             os.makedirs("img/")
 
@@ -413,6 +433,98 @@ def metrics_classification_pleiade3(
         plot_file = "img/AccuracyonThreshold.png"
         plt.savefig(plot_file)
         plt.close()
+
+        plt.plot(thresholds, fnr_list)
+        plt.xlabel('Seuil de classification')
+        plt.ylabel('Taux de faux négatifs (FNR)')
+        plt.title('Taux de faux négatifs en fonction du seuil de classification')
+        plt.show()
+        plot_file = "img/FalseNegativeRateonThreshold.png"
+        plt.savefig(plot_file)
+        plt.close()
+
+
+def metrics_classification_pleiade4(
+    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+):
+    """
+    Evaluates the model on the Pleiade test dataset for image classification.
+
+    Args:
+        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        dataset.
+        model (torchvision.models): The classification model to evaluate.
+        tile_size (int): The size of each tile in pixels.
+        batch_size (int): The batch size.
+        use_mlflow (bool, optional): Whether to use MLflow for logging
+        artifacts. Defaults to False.
+
+    Returns:
+        None
+    """
+
+    model.eval()
+    bande_gradients = []
+
+    for band in range(n_bands):
+        one_bande_gradients = []
+        for idx, batch in enumerate(test_dl):
+            images, __, __ = batch
+
+            model = model.to("cuda:0")
+            images = images.to("cpu")
+            print(images.shape)
+            images = images.tolist()
+            print(np.array(images).shape)
+            images_oneband = []
+            for image in images:
+                array = np.array(image)
+                print(array.shape)
+                bande_1 = array.copy()
+                bande_1 = bande_1[band, :, :]
+                # Étendre les dimensions de la première bande pour correspondre au format [1, 250, 250]
+                bande_1 = np.expand_dims(bande_1, axis=0)
+
+                # Répéter la première bande pour créer les deux autres bandes
+                bande_2 = np.repeat(bande_1, 1, axis=0)
+                bande_3 = np.repeat(bande_1, 1, axis=0)
+
+                # Concaténer les trois bandes pour avoir une image qui passe dans le modele
+                array = np.concatenate((bande_1, bande_2, bande_3), axis=0)
+                print(array.shape)
+                images_oneband.append(array)
+
+            images_oneband = torch.tensor(images_oneband)
+            images_oneband = images_oneband.type(torch.float)
+            images_oneband.requires_grad_(True)
+            images_oneband = images_oneband.to("cuda:0")
+            output_model = model(images_oneband)
+            images_oneband = images_oneband.to("cpu")
+            output_model = output_model.to("cpu")
+
+            loss = torch.mean(output_model)
+            print("gradient1")
+            gradient = torch.autograd.grad(loss, images_oneband, allow_unused=True)
+            one_bande_gradients.append(gradient)
+
+        gradient_tensor = torch.stack(one_bande_gradients)
+
+        # Calculer le gradient moyen
+        gradient_moyen = torch.mean(gradient_tensor, dim=0)
+        print("gradient2")
+        gradient_moyen = torch.autograd.grad(gradient_moyen, gradient_tensor, allow_unused=True)
+        bande_gradients.append(gradient_moyen)
+
+        del images
+
+    importances = np.mean(np.abs(np.array(bande_gradients)), axis=(1, 2, 3))  # Moyenne des gradients sur les dimensions (13, height, width)
+
+    # Trier les bandes par importance décroissante
+    indices_tries = np.argsort(importances)[::-1]
+
+    # Afficher les bandes d'image par ordre d'importance
+    for i, bande in enumerate(indices_tries):
+        print(f"Bande {bande}: Importance {importances[indices_tries[i]]}")
 
 
 def evaluer_modele_sur_jeu_de_test_classification_pleiade(

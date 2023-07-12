@@ -705,7 +705,7 @@ def instantiate_model(config):
     if module_type not in module_dict:
         raise ValueError("Invalid module type")
 
-    if module_type == "deeplabv3":
+    if module_type in ["deeplabv3", "resnet50"]:
         return module_dict[module_type](nchannel)
     else:
         return module_dict[module_type]()
@@ -941,7 +941,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         model = light_module.model
 
         from classes.optim.evaluation_model import metrics_classification_pleiade3
-        metrics_classification_pleiade3(
+        metrics_classification_pleiade4(
             test_dl,
             model,
             tile_size,
