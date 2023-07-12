@@ -496,6 +496,7 @@ def instantiate_dataloader(config, list_output_dir, output_test):
         "SENTINEL2",
         "SENTINEL1-2",
         "SENTINEL2-RVB",
+        "SENTINEL1-2-RVB"
     ]:
         list_labels = []
         list_images = []

@@ -29,9 +29,9 @@ labeler_dict = {
 }
 
 dataset_dict = {
-    "PLEIADE": SegmentationDataset,
+    "PLEIADE": PleiadesDataset,
     "CLASSIFICATION": PatchClassification,
-    "SENTINEL": SegmentationDataset,
+    "SENTINEL": SentinelDataset,
     "CHANGEISEVERYWHERE": ChangeIsEverywhereDataset,
     "CHANGEDETECTIONDATASET": ChangeDetectionDataset,
 }
