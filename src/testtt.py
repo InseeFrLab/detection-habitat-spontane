@@ -488,3 +488,281 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
                     mlflow.log_artifact(plot_file, artifact_path="plots")
 
         del images, __, dic
+
+import os
+from pathlib import Path
+from typing import Dict, List, Literal, Tuple
+
+import geopandas as gpd
+import hvac
+import pyarrow.parquet as pq
+import rasterio
+import yaml
+from affine import Affine
+from s3fs import S3FileSystem
+
+from .mappings import dep_to_crs
+
+import os
+
+import numpy as np
+import s3fs
+from osgeo import gdal
+
+from classes.data.satellite_image import SatelliteImage
+from utils.utils import get_environment, get_root_path, update_storage_access
+import glob
+import boto3
+from tqdm import tqdm
+
+
+def load_only_tif(year: int, dep: str, src: str):
+    """
+    Load satellite data for a given year and territory \
+        and a given source of satellite images.
+
+    This function downloads satellite data from an S3 bucket, \
+    updates storage access, and saves the data locally. \
+    The downloaded data is specific to the given year and territory.
+
+    Args:
+        year (int): Year of the satellite data.
+        territory (str): Territory for which the satellite \
+        data is being loaded.
+        source (str): Source of the satellite images.
+
+    Returns:
+        str: The local path where the data is downloaded.
+    """
+    print("Entre dans la fonction load_satellite_data")
+
+    update_storage_access()
+    root_path = get_root_path()
+    environment = get_environment()
+
+    bucket = environment["bucket"]
+    path_s3 = environment["sources"][src][year][dep]
+    path_local = os.path.join(root_path, environment["local-path"][src][year][dep])
+    
+    os.makedirs(path_local)
+
+    fs = s3fs.S3FileSystem(
+        client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"}
+    )
+
+    list_sous_doss = fs.ls(bucket+ "/" + path_s3)
+
+    for sous_doss in tqdm(list_sous_doss):
+        liste_fichiers = fs.ls(sous_doss)
+        
+        for fichier in liste_fichiers:
+            # Vérification si l'élément se termine par ".tif"
+            if fichier.endswith(".tif"):
+                fs.download(
+                    rpath=f"{fichier}",
+                    lpath=f"{path_local}",
+                    recursive=True,
+                )
+
+    return path_local
+
+load_only_tif(2020, "971", "PLEIADES")
+
+import imageio.v2 as imageio
+import numpy as np
+
+from PIL import Image
+
+def tif_to_jp2(path_tif, year):
+    path_jp2 = path_tif + "/../" + "JP2"
+
+    os.makedirs(path_jp2)
+    date = date.fromisoformat(str(year) + '-01-01')
+
+    for tif in tqdm(os.listdir(path_tif)):
+        chemin_fichier_tiff = path_tif + "/" + tif
+        name_fichier_jp2 = tif.split(".")[0] + ".jp2"
+        try:
+            img = SatelliteImage.from_raster(
+                chemin_fichier_tiff,
+                "971",
+                date,
+                3
+            )
+        except:
+            print("Writing error", chemin_fichier_tiff)
+            continue
+
+        img.to_raster(
+                path_jp2,
+                name_fichier_jp2,
+                "jp2",
+                "GTiff"
+            )
+        
+        os.remove(chemin_fichier_tiff)
+
+
+from classes.data.satellite_image import SatelliteImage
+
+
+from datetime import date
+
+date = date.fromisoformat('2020-01-01')
+
+filename ="../data/PLEIADES/2020/GUADELOUPE/ORT_2020012753796177_0638_1767_U20N_8Bits.tif"
+
+img = SatelliteImage.from_raster(
+    filename,
+        "971",
+        date,
+        3)
+fig1 = img.plot([0,1,2])
+fig1.savefig("imagetest.png")
+
+
+img.to_raster(
+        "../data/JP",
+        "ORT_2020012753796177_0638_1767_U20N_8Bits.jp2",
+        "jp2",
+        "GTiff"
+    )
+
+    
+filename2 = "../data/PLEIADES/2020/JP2/ORT_2020012753796177_0633_1770_U20N_8Bits.jp2"
+
+img2 = SatelliteImage.from_raster(
+    filename2,
+        "971",
+        date,
+        3)
+fig2 = img2.plot([0,1,2])
+fig2.savefig("imagetest2.png")
+
+def load_bdtopo(
+    millesime: Literal[
+        "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"
+    ],
+    dep: Literal["971", "972", "973", "974", "976", "977", "978"],
+) -> gpd.GeoDataFrame:
+    """
+    Load BDTOPO for a given datetime.
+
+    Args:
+        millesime (Literal): Year.
+        dep (Literal): Departement.
+
+    Returns:
+        gpd.GeoDataFrame: BDTOPO GeoDataFrame.
+    """
+    root_path = get_root_path()
+    environment = get_environment()
+
+    if int(millesime) >= 2019:
+        couche = "BATIMENT.shp"
+    elif int(millesime) < 2019:
+        couche = "BATI_INDIFFERENCIE.SHP"
+
+    bucket = environment["bucket"]
+    path_s3 = environment["sources"]["BDTOPO"][int(millesime)][dep]
+    dir_path = os.path.join(
+        root_path,
+        environment["local-path"]["BDTOPO"][int(millesime)][dep],
+    )
+
+    if os.path.exists(dir_path):
+        print(
+            "Le téléchargement de cette version de la \
+            BDTOPO a déjà été effectué"
+        )
+
+    else:
+        os.makedirs(dir_path)
+
+        update_storage_access()
+        fs = S3FileSystem(
+            client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"}
+        )
+        print("download " + dep + " " + str(millesime) + " in " + dir_path)
+        if int(millesime) >= 2019:
+            extensions = ["cpg", "dbf", "prj", "shp", "shx"]
+        elif int(millesime) < 2019:
+            extensions = ['CPG', 'DBF', 'PRJ', 'SHP', 'SHX']
+
+        couche_split = couche.split(".")[0]
+        for ext in extensions:
+            fs.download(
+                rpath=f"{bucket}/{path_s3}/{couche_split}.{ext}",
+                lpath=f"{dir_path}",
+                recursive=True,
+            )
+
+    file_path = None
+
+    for root, dirs, files in os.walk(dir_path):
+        if couche in files:
+            file_path = os.path.join(root, couche)
+    if not file_path:
+        raise ValueError(f"No valid {couche} file found.")
+
+    df = gpd.read_file(file_path)
+
+    return df
+
+
+import os
+
+import numpy as np
+import rasterio
+from tqdm import tqdm
+from rasterio.errors import RasterioIOError
+
+import sys
+sys.path.append('../src')
+from classes.data.satellite_image import SatelliteImage
+from classes.labelers.labeler import Labeler
+from utils.filter import (
+    has_cloud, is_too_black2, mask_full_cloud, patch_nocloud
+)
+
+
+from train_pipeline_utils.download_data import load_satellite_data
+from classes.data.satellite_image import SatelliteImage
+
+load_satellite_data(2020, "971", "PLEIADES")
+
+def create_doss_cloud(year, dep):
+    file_path = '../data/PLEIADES/' + year + "/" + dep
+    output_masks_path = '../data/nuagespleiades/' + year + "/" + dep
+
+    if os.path.exists(output_masks_path):
+        print("fichiers déjà écrits")
+    
+    if not os.path.exists(output_masks_path):
+        os.makedirs(output_masks_path)
+    
+    
+    list_name = os.listdir(file_path)
+    list_path = [file_path + "/" + name for name in list_name]
+    
+    
+    for path, file_name in tqdm(zip(list_path, list_name), total=len(list_path), desc='Processing'):
+        try:
+            big_satellite_image = SatelliteImage.from_raster(
+                file_path=path, dep=None, date=None, n_bands=3
+            )
+            
+        except RasterioIOError:
+            continue
+    
+        else:
+            boolean = has_cloud(big_satellite_image)
+    
+            if boolean:
+                mask_full = mask_full_cloud(big_satellite_image)
+                file_name = file_name.split(".")[0]
+                np.save(output_masks_path + "/" + file_name + ".npy", mask_full)
+
+    return(output_masks_path)
+
+output_directory_name = create_doss_cloud("2020", "GUADELOUPE")

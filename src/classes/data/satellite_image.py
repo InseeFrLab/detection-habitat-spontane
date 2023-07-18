@@ -131,7 +131,20 @@ class SatelliteImage:
             array = self.array[i, :, :]
             if i != 12:
                 array = np.clip(array, np.min(array), np.quantile(array, quantile))
-            normalized_bands.append((array-np.min(array))/(np.max(array)-np.min(array)))
+
+            if np.max(array) == np.min(array):
+                mean = np.mean(array)
+                std = np.std(array)
+
+                if std == 0:
+                    normalized_bands.append(np.full_like(array, mean))
+                else:
+                    # Normalisation z-score
+                    normalized_bands.append((array - mean)/std)
+
+            elif np.max(array) != np.min(array):
+                normalized_bands.append((array-np.min(array))/(np.max(array)-np.min(array)))
+
         self.array = np.stack(normalized_bands)
         self.normalized = True
 
@@ -239,9 +252,9 @@ class SatelliteImage:
             raise ValueError('`format` must be either "jp2" or "tif"')
 
 
-def to_raster_jp2(self, directory_name: str, file_name: str):
+def to_raster_jp2(self, directory_name: str, file_name: str, driver="JP2OpenJPEG"):
     """
-    save a SatelliteImage Object into a raster file (.tif)
+    save a SatelliteImage Object into a raster file (.jp2)
 
     Args:
         directory_name: a string representing the name of the directory \
@@ -255,13 +268,13 @@ def to_raster_jp2(self, directory_name: str, file_name: str):
     n_bands = self.n_bands
 
     metadata = {
-        "dtype": "uint16",
+        "dtype": str(data.dtype),
         "count": n_bands,
         "width": data.shape[2],
         "height": data.shape[1],
         "crs": crs,
         "transform": transform,
-        "driver": "JP2OpenJPEG",
+        "driver": driver,
         "compress": "jp2k",
         "interleave": "pixel",
     }

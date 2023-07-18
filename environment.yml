@@ -34,19 +34,19 @@ sources:
           "976": Donnees/PLEIADES/MAYOTTE/2022/MOSA
 
       2020:
-          #"971": NA
+          "971": Donnees/PLEIADES/GUADELOUPE/2020/JP2
           #"972": NA
           #"973": NA
           #"974": NA
           "976": Donnees/PLEIADES/MAYOTTE/2020/MOSA
       2019:
-          #"971": NA
+          "971": Donnees/PLEIADES/GUADELOUPE/2019/JP2
           #"972": NA
           #"973": NA
           #"974": NA
           "976": Donnees/PLEIADES/MAYOTTE/2019/MOSA
       2018:
-          "971": Donnees/PLEIADES/GUADELOUPE/2018-2019
+          "971": Donnees/PLEIADES/GUADELOUPE/2018/JP2
           #"972": NA
           #"973": NA
           "974": Donnees/PLEIADES/REUNION/2018/MOSA
@@ -66,19 +66,19 @@ sources:
           "976": Donnees/NUAGESPLEIADES/2022/MAYOTTE
 
       2020:
-          #"971": NA
+          "971": Donnees/NUAGESPLEIADES/2020/GUADELOUPE
           #"972": NA
           #"973": NA
           #"974": NA
           "976": Donnees/NUAGESPLEIADES/2020/MAYOTTE
       2019:
-          #"971": NA
+          "971": Donnees/NUAGESPLEIADES/2019/GUADELOUPE
           #"972": NA
           #"973": NA
           #"974": NA
           "976": Donnees/NUAGESPLEIADES/2019/MAYOTTE
       2018:
-          #"971": NA
+          "971": Donnees/NUAGESPLEIADES/2018/GUADELOUPE
           #"972": NA
           #"973": NA
           "974": Donnees/NUAGESPLEIADES/2018/REUNION
@@ -224,13 +224,13 @@ local-path:
           "976": data/PLEIADES/2022/MAYOTTE
 
       2020:
-          #"971": NA
+          "971": data/PLEIADES/2020/GUADELOUPE
           #"972": NA
           #"973": NA
           #"974": NA
           "976": data/PLEIADES/2020/MAYOTTE
       2019:
-          #"971": NA
+          "971": data/PLEIADES/2019/GUADELOUPE
           #"972": NA
           #"973": NA
           #"974": NA
@@ -257,13 +257,13 @@ local-path:
           "976": data/NUAGESPLEIADES/2022/MAYOTTE
 
       2020:
-          #"971": NA
+          "971": data/NUAGESPLEIADES/2020/GUADELOUPE
           #"972": NA
           #"973": NA
           #"974": NA
           "976": data/NUAGESPLEIADES/2020/MAYOTTE
       2019:
-          #"971": NA
+          "971": data/NUAGESPLEIADES/2019/GUADELOUPE
           #"972": NA
           #"973": NA
           #"974": NA

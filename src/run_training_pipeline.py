@@ -344,10 +344,15 @@ def prepare_test_data(config, test_dir):
 
             for i, lsi in enumerate(list_lsi):
                 file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
-
-                lsi.satellite_image.to_raster(
-                    output_images_path, file_name_i, "tif", proj
-                    )
+                
+                if config["donnees"]["source train"] == "PLEIADES":
+                    lsi.satellite_image.to_raster(
+                        output_images_path, file_name_i + ".jp2"
+                        )
+                else:
+                    lsi.satellite_image.to_raster(
+                        output_images_path, file_name_i, "tif", proj
+                        )
 
                 if np.sum(lsi.label) != 0:
                     label = 1
@@ -879,7 +884,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             )
             trainer.fit(light_module, train_dl, valid_dl)
 
-            light_module_checkpoint = light_module.load_from_checkpoint(
+            light_module = light_module.load_from_checkpoint(
                 loss=instantiate_loss(config),
                 checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
                 # checkpoint_path='',
@@ -891,8 +896,10 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 scheduler_interval=light_module.scheduler_interval
 
             )
+            torch.cuda.empty_cache()
+            gc.collect()
 
-            model = light_module_checkpoint.model
+            model = light_module.model
 
             if src_task not in task_to_evaluation:
                 raise ValueError("Invalid task type")
@@ -925,7 +932,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         light_module = light_module.load_from_checkpoint(
             loss=instantiate_loss(config),
-            checkpoint_path="epoch=18-step=7581.ckpt",  # je créé un module qui charge
+            checkpoint_path=trainer.checkpoint_callback.best_model_path,  # je créé un module qui charge
             # checkpoint_path='',
             model=light_module.model,
             optimizer=light_module.optimizer,
@@ -940,15 +947,15 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         model = light_module.model
 
-        from classes.optim.evaluation_model import metrics_classification_pleiade3
-        metrics_classification_pleiade4(
-            test_dl,
-            model,
-            tile_size,
-            batch_size_test,
-            config["donnees"]["n bands"],
-            False,
-        )
+        # from classes.optim.evaluation_model import metrics_classification_pleiade3
+        # metrics_classification_pleiade4(
+        #     test_dl,
+        #     model,
+        #     tile_size,
+        #     batch_size_test,
+        #     config["donnees"]["n bands"],
+        #     False,
+        # )
 
         # from classes.optim.evaluation_model import metrics_classification_pleiade2, evaluer_modele_sur_jeu_de_test_classification_pleiade2
         # trshld = metrics_classification_pleiade2(
@@ -982,7 +989,6 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             config["donnees"]["n bands"],
             config["mlflow"],
         )
-
 
 
 if __name__ == "__main__":
