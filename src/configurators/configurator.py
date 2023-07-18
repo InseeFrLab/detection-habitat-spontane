@@ -69,8 +69,8 @@ class Configurator:
         self.path_s3_cloud = self.get_cloud_s3_path(env)
 
         self.path_prepro_data = [
-            f"../train_data-{self.task}-{self.source_train}-{self.type_labeler}"
-            "-{millesime['dep']}-{millesime['year']}/"
+            f"data/preprocessed/{self.task}/{self.source_train}/{self.type_labeler}"
+            f"/{millesime['dep']}/{millesime['year']}"
             for millesime in self.millesime
         ]
 

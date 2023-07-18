@@ -314,3 +314,18 @@ def update_storage_access():
         del os.environ["AWS_SESSION_TOKEN"]
     except KeyError:
         pass
+
+
+def get_path_by_millesime(paths, millesime):
+    dep_dict = {
+        "971": "GUADELOUPE",
+        "972": "MARTINIQUE",
+        "973": "GUYANE",
+        "974": "REUNION",
+        "976": "MAYOTTE",
+    }
+
+    idx = [path.endswith(f"{millesime['year']}/{dep_dict[millesime['dep']]}") for path in paths]
+
+    path = paths[idx.index(True)] if any(idx) and True in idx else []
+    return path

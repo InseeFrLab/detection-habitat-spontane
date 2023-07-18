@@ -28,7 +28,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         device = "cpu"
 
     # Open the file and load the file
-    configurator = Configurator(get_root_path() / "config.yml")
+    configurator = Configurator(get_root_path() / "config.yml", get_root_path() / "environment.yml")
 
     instantiator = Instantiator(configurator)
     preprocessor = Preprocessor(configurator)
