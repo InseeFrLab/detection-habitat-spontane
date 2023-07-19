@@ -131,6 +131,9 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     config_task = config_data["task"]
     tile_size = config_data["tile size"]
 
+    # Define the total of ones we want in each dossier
+    max_echant_ones = 15000/len(years)
+
     list_output_dir = []
 
     for i, (year, dep) in enumerate(zip(years, deps)):
@@ -176,10 +179,9 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
 
             full_balancing_dict = {}
             cpt_ones = 0
-            max_echant = 15000
 
             for path in tqdm(list_path):
-                if cpt_ones >= max_echant:
+                if cpt_ones >= max_echant_ones:
                     break
 
                 try:
@@ -619,18 +621,14 @@ def instantiate_dataloader(config, list_output_dir, output_test):
     #     train_sampler, valid_sampler = None, None
     #     shuffle_bool = [True, False]
 
-    train_sampler, valid_sampler = None, None
     shuffle_bool = [True, False]
+    num_workers = config["donnees"]["num_workers"]
 
     train_dataloader, valid_dataloader = [
         DataLoader(
-            ds,
-            batch_size=batch_size,
-            shuffle=boolean,
-            sampler=smpl,
-            num_workers=0,
+            ds, batch_size=batch_size, shuffle=boolean, num_workers=num_workers, drop_last=True
         )
-        for ds, boolean, smpl in zip([train_dataset, valid_dataset], shuffle_bool, [train_sampler, valid_sampler])
+        for ds, boolean in zip([train_dataset, valid_dataset], shuffle_bool)
     ]
 
     # Gestion datset test
@@ -683,11 +681,12 @@ def instantiate_dataloader(config, list_output_dir, output_test):
         dataset_test.transforms = t_preproc
 
     batch_size_test = config["optim"]["batch size test"]
+    num_workers = config["donnees"]["num_workers"]
     test_dataloader = DataLoader(
         dataset_test,
         batch_size=batch_size_test,
         shuffle=False,
-        num_workers=0,
+        num_workers=num_workers,
     )
 
     return train_dataloader, valid_dataloader, test_dataloader

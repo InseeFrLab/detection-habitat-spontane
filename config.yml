@@ -2,8 +2,8 @@ donnees:
   source train: "PLEIADES"
   dataset: "CLASSIFICATION"
   dataset-test: "CLASSIFICATION"
-  year: [2022]
-  dep: ["974"]
+  year: [2022, 2018]
+  dep: ["971", "971"]
   type labeler: "BDTOPO"
   buffer size: 10
   n channels train: 3
@@ -13,14 +13,15 @@ donnees:
   augmentation: False
   task: "classification"
   prop: 1
+  num_workers: 56
 
 optim:
   loss: "lossbinaire"
   lr: 0.0001
   momentum: 0.9
   module: "resnet50"
-  batch size: 2
-  batch size test: 2
+  batch size: 4
+  batch size test: 4
   max epochs: 15
   val prop: 0.2
   accumulate batch : 3
