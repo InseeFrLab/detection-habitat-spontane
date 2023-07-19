@@ -221,6 +221,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                     list_filtered_splitted_images,
                     labels,
                     output_dir,
+                    src,
                     direc=dir,
                     task=config_task,
                 )
@@ -306,17 +307,21 @@ def prepare_test_data(config, test_dir):
             list_lsi = lsi.split(tile_size)
 
             for i, lsi in enumerate(list_lsi):
-                if np.isnan(lsi.satellite_image.array).any():
+                array = lsi.satellite_image.array
+                if np.isnan(array).any():
                     continue
                 file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
-                in_ds = gdal.Open(image_path)
-                proj = in_ds.GetProjection()
-                lsi.satellite_image.to_raster(
-                    output_images_path, file_name_i, "tif", proj
-                    )
-                # lsi.satellite_image.to_raster(
-                #     output_images_path, file_name_i + ".jp2"
-                #     )
+
+                if src == "PLEIADES":
+                    lsi.satellite_image.to_raster(
+                        output_images_path, file_name_i + ".jp2"
+                        )
+                elif 'SENTINEL' in src:
+                    in_ds = gdal.Open(image_path)
+                    proj = in_ds.GetProjection()
+                    lsi.satellite_image.to_raster(
+                        output_images_path, file_name_i, "tif", proj
+                        )
                 np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
 
     elif config["donnees"]["task"] == "classification":
@@ -325,7 +330,9 @@ def prepare_test_data(config, test_dir):
         list_name_image = os.listdir(images_path)
         list_name_image = np.sort(remove_dot_file(list_name_image))
         list_images_path = [images_path + "/" + name for name in list_name_image]
-        output_images_path = output_test + "/images"
+        output_images_path = output_test + "images"
+        if not os.path.exists(output_images_path):
+            os.makedirs(output_images_path)
 
         for image_path, label_path, name in zip(
             list_images_path,
@@ -343,13 +350,19 @@ def prepare_test_data(config, test_dir):
             csv_file_path = output_labels_path + "/" + "fichierlabeler.csv"
 
             for i, lsi in enumerate(list_lsi):
+                array = lsi.satellite_image.array
+                if np.isnan(array).any():
+                    continue
                 file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
-                
-                if config["donnees"]["source train"] == "PLEIADES":
+
+                if src == "PLEIADES":
                     lsi.satellite_image.to_raster(
                         output_images_path, file_name_i + ".jp2"
                         )
-                else:
+                elif 'SENTINEL' in src:
+                    in_ds = gdal.Open(image_path)
+                    proj = in_ds.GetProjection()
+
                     lsi.satellite_image.to_raster(
                         output_images_path, file_name_i, "tif", proj
                         )
@@ -508,8 +521,8 @@ def instantiate_dataloader(config, list_output_dir, output_test):
         full_balancing_dict = {}
         for directory in list_output_dir:
             # directory = list_output_dir[0]
-            labels = os.listdir(directory + "/labels")
-            images = os.listdir(directory + "/images")
+            labels = os.listdir(directory + "labels")
+            images = os.listdir(directory + "images")
             labels = remove_dot_file(labels)
 
             if config_task != "classification":
@@ -556,7 +569,7 @@ def instantiate_dataloader(config, list_output_dir, output_test):
             list_images = np.concatenate(
                 (
                     list_images,
-                    np.sort([directory + "/images/" + name for name in images]),
+                    np.sort([directory + "images/" + name for name in images]),
                 )
             )
 
@@ -645,7 +658,7 @@ def instantiate_dataloader(config, list_output_dir, output_test):
     list_path_labels_test = np.sort([output_labels_path + name_label for name_label in list_name_label_test])
 
     if config_task != "change-detection":
-        output_images_path = output_test + "/images/"
+        output_images_path = output_test + "images/"
         list_name_image_test = os.listdir(output_images_path)
         list_path_images_test = np.sort([output_images_path + name_image for name_image in list_name_image_test])
 

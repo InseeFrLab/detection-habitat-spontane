@@ -171,6 +171,7 @@ def save_images_and_masks(
     list_images,
     list_masks,
     output_directory_name,
+    src,
     direc=None,
     task="segmentation",
 ):
@@ -226,7 +227,13 @@ def save_images_and_masks(
                     )
             if task == "classification":
                 # if i in selected_indices:
-                image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
+                if src == 'PLEIADES':
+                    image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
+                elif 'SENTINEL' in src:
+                    in_ds = gdal.Open(direc+'/'+image.filename)
+                    proj = in_ds.GetProjection()
+
+                    image.to_raster(output_images_path, filename, "tif", proj)
                 csv_file_path = output_masks_path + "/" + "fichierlabeler.csv"
 
                 # Create the csv file if it does not exist
@@ -327,12 +334,17 @@ def filter_images_by_path(
     # Extract the "path_image" column as a list
     list_name = df[path_column].tolist()
 
-    list_name_jp2 = [name + ".jp2" for name in list_name]
+    if 'PLEIADES' in csv_file:
+        ext = ".jp2"
+    elif 'SENTINEL' in csv_file:
+        ext = ".tif"
+
+    list_name_ext = [name + ext for name in list_name]
 
     # Iterate over the files in the image folder
     for filename in tqdm(os.listdir(image_folder)):
         # Check if the image path is not in the list of paths from the CSV file
-        if filename not in list_name_jp2:
+        if filename not in list_name_ext:
             image_path = os.path.join(image_folder, filename)
             # Remove the image from the folder
             os.remove(image_path)
