@@ -19,6 +19,13 @@ class Configurator:
         with open(environment_path) as f:
             env = yaml.load(f, Loader=yaml.SafeLoader)
 
+        dep_dict = {
+            "971": "GUADELOUPE",
+            "972": "MARTINIQUE",
+            "973": "GUYANE",
+            "974": "REUNION",
+            "976": "MAYOTTE",
+        }
         self.millesime = config["data"]["millesime"]
         self.type_labeler = config["data"]["type_labeler"]
         self.buffer_size = config["data"]["buffer_size"]
@@ -70,7 +77,7 @@ class Configurator:
 
         self.path_prepro_data = [
             f"data/preprocessed/{self.task}/{self.source_train}/{self.type_labeler}"
-            f"/{millesime['dep']}/{millesime['year']}"
+            f"/{millesime['year']}/{dep_dict[millesime['dep']]}"
             for millesime in self.millesime
         ]
 

@@ -13,7 +13,6 @@ import numpy as np
 import rasterio
 import s3fs
 from rasterio.errors import RasterioIOError
-from tqdm import tqdm
 
 from classes.data.labeled_satellite_image import (  # noqa: E501
     SegmentationLabeledSatelliteImage,
@@ -26,6 +25,8 @@ from train_pipeline_utils.prepare_data import (
     filter_images_sentinel,
 )
 from utils.utils import get_path_by_millesime, remove_dot_file, split_array
+
+# from tqdm import tqdm
 
 
 class Preprocessor:
@@ -52,21 +53,35 @@ class Preprocessor:
         """
 
         print("\n*** Téléchargement des données...\n")
-        fs = s3fs.S3FileSystem(client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"})
 
-        [
-            fs.download(rpath=path_s3, lpath=f"../{path_local}", recursive=True)
-            for path_local, path_s3 in zip(
-                self.config.path_local_test + self.config.path_local + self.config.path_local_cloud,
-                self.config.path_s3_test + self.config.path_s3 + self.config.path_s3_cloud,
-            )
-            if not os.path.exists(path_local)
-        ]
+        all_exist = all(
+            os.path.exists(f"../{directory}")
+            for directory in self.config.path_local_test
+            + self.config.path_local
+            + self.config.path_local_cloud
+        )
+
+        if all_exist:
+            pass
+        else:
+            fs = s3fs.S3FileSystem(client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"})
+
+            [
+                fs.download(rpath=path_s3, lpath=f"../{path_local}", recursive=True)
+                for path_local, path_s3 in zip(
+                    self.config.path_local_test
+                    + self.config.path_local
+                    + self.config.path_local_cloud,
+                    self.config.path_s3_test + self.config.path_s3 + self.config.path_s3_cloud,
+                )
+                if not os.path.exists(path_local)
+            ]
+
         print("\n*** Téléchargement terminé !\n")
 
         return None
 
-    def prepare_train_data(self, list_data_dir, list_masks_cloud_dir):
+    def prepare_train_data(self):
         """
         Preprocesses and splits the raw input images
         into tiles and corresponding masks,
@@ -92,7 +107,7 @@ class Preprocessor:
                 full_balancing_dict = {}
 
                 for root, dirs, files in os.walk(f"../{self.config.path_local[i]}"):
-                    for filename in tqdm(files):
+                    for filename in files:
                         try:
                             si = SatelliteImage.from_raster(
                                 file_path=os.path.join(root, filename),
@@ -221,17 +236,17 @@ class Preprocessor:
         """
 
         print("Entre dans la fonction check_labelled_images")
-        path_prepro = get_path_by_millesime(f"../{self.config.path_prepro_data}", millesime)
+        path_prepro = get_path_by_millesime(self.config.path_prepro_data, millesime)
 
-        if (os.path.exists(path_prepro)) and (len(os.listdir(path_prepro)) != 0):
+        if (os.path.exists(f"../{path_prepro}")) and (len(os.listdir(f"../{path_prepro}")) != 0):
             print("The directory already exists and is not empty.")
             return True
-        elif (os.path.exists(path_prepro)) and (len(os.listdir(path_prepro)) == 0):
+        elif (os.path.exists(f"../{path_prepro}")) and (len(os.listdir(f"../{path_prepro}")) == 0):
             print("The directory exists but is empty.")
             return False
         else:
-            os.makedirs(f"{path_prepro}/images")
-            os.makedirs(f"{path_prepro}/labels")
+            os.makedirs(f"../{path_prepro}/images")
+            os.makedirs(f"../{path_prepro}/labels")
             print("Directory created")
             return False
 
@@ -346,11 +361,9 @@ class Preprocessor:
         Returns:
             str: The name of the output directory.
         """
-        # print("Entre dans la fonction save_images_and_masks")
-
-        path_prepro = get_path_by_millesime(f"../{self.config.path_prepro_data}", millesime)
-        output_images_path = f"{path_prepro}/images"
-        output_masks_path = f"{path_prepro}/labels"
+        path_prepro = get_path_by_millesime(self.config.path_prepro_data, millesime)
+        output_images_path = f"../{path_prepro}/images"
+        output_masks_path = f"../{path_prepro}/labels"
 
         for i, (image, mask) in enumerate(zip(list_images, list_masks)):
             # TODO : Make it more readable
@@ -394,7 +407,6 @@ class Preprocessor:
         date = datetime.strptime(f"{millesime['year']}0101", "%Y%m%d")
 
         labeler = None
-
         match self.config.type_labeler:
             case "RIL":
                 labeler = RILLabeler(
@@ -404,14 +416,16 @@ class Preprocessor:
                 labeler = BDTOPOLabeler(date, dep=millesime["dep"])
             case _:
                 pass
-
+        print(labeler)
         return labeler
 
     def prepare_yearly_data(self, satellite_image, labeler, filename, millesime):
         path_clouds = get_path_by_millesime(self.config.path_local_cloud, millesime)
-        list_clouds = [
-            os.path.splitext(filename)[0] for filename in os.listdir(f"../{path_clouds}")
-        ]
+        list_clouds = (
+            [os.path.splitext(filename)[0] for filename in os.listdir(f"../{path_clouds}")]
+            if path_clouds
+            else []
+        )
 
         if os.path.splitext(filename)[0] in list_clouds:
             mask_full_cloud = np.load(f"{path_clouds}/{os.path.splitext(filename)[0]}.npy")
@@ -428,8 +442,6 @@ class Preprocessor:
 
         labels, balancing_dict = self.label_images(list_filtered_splitted_images, labeler)
 
-        path_prepro = get_path_by_millesime(self.config.path_prepro_data, millesime)
-
-        self.save_images_and_masks(list_filtered_splitted_images, labels, f"../{path_prepro}")
+        self.save_images_and_masks(list_filtered_splitted_images, labels, millesime)
 
         return balancing_dict

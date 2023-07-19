@@ -35,8 +35,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     # TODO :  Download data devrait rien retourner donc à améliorer
     preprocessor.download_data()
-    preprocessor.prepare_train_data(configurator)
-    preprocessor.prepare_test_data(configurator)
+    preprocessor.prepare_train_data()
+    preprocessor.prepare_test_data()
 
     train_dl, valid_dl, test_dl = instantiator.dataloader(configurator)
     trainer = instantiator.trainer()
