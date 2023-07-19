@@ -179,188 +179,9 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
                 pass
 
 
-def metrics_classification_pleiade(
+def reality_prediction_classification_pleiades(
     test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
 ):
-    """
-    Evaluates the model on the Pleiade test dataset for image classification.
-
-    Args:
-        test_dl (torch.utils.data.DataLoader): The data loader for the test
-        dataset.
-        model (torchvision.models): The classification model to evaluate.
-        tile_size (int): The size of each tile in pixels.
-        batch_size (int): The batch size.
-        use_mlflow (bool, optional): Whether to use MLflow for logging
-        artifacts. Defaults to False.
-
-    Returns:
-        None
-    """
-    with torch.no_grad():
-        model.eval()
-        y_true = []
-        y_pred = []
-
-        for idx, batch in enumerate(test_dl):
-
-            images, labels, __ = batch
-
-            model = model.to("cuda:0")
-            images = images.to("cuda:0")
-
-            output_model = model(images)
-            output_model = output_model.to("cpu")
-            y_pred_idx = output_model[:, 1].tolist()
-            y_pred.append(y_pred_idx)
-
-            y_true.append(labels.tolist())
-
-            del images, labels
-
-        y_true = np.array(y_true).flatten().tolist()
-        y_pred = np.array(y_pred).flatten().tolist()
-
-        fpr, tpr, thresholds = roc_curve(y_true, y_pred)
-        roc_auc = auc(fpr, tpr)
-
-        best_threshold_idx = np.argmax(tpr - fpr)  # Index of the best threshold
-        best_threshold = thresholds[best_threshold_idx]
-        best_tpr = tpr[best_threshold_idx]
-        best_fpr = fpr[best_threshold_idx]
-
-        display = RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc)
-        display.plot()
-
-        if not os.path.exists("img/"):
-            os.makedirs("img/")
-
-        plot_file_roc = "img/ROC.png"
-        plt.savefig(plot_file_roc)
-
-        class_names = ["Bâti", "Non bâti"]
-
-        predictions_best = np.where(
-            y_pred > best_threshold,
-            np.array([1.0]),
-            np.array([0.0]),
-        )
-        predicted_classes_best = predictions_best.tolist()
-        accuracy_best = accuracy_score(y_true, predicted_classes_best)
-
-        predictions = np.where(
-            y_pred > 0.5,
-            np.array([1.0]),
-            np.array([0.0]),
-        )
-        predicted_classes = predictions.tolist()
-        accuracy = accuracy_score(y_true, predicted_classes)
-
-        disp = ConfusionMatrixDisplay.from_predictions(y_true, predicted_classes,
-                                                       display_labels=class_names,
-                                                       cmap="Pastel1",
-                                                       normalize="true")
-        disp.plot()
-        plot_file_cm = "img/confusion_matrix.png"
-        plt.savefig(plot_file_cm)
-
-        if use_mlflow:
-            mlflow.log_artifact(plot_file_roc, artifact_path="plots")
-            mlflow.log_artifact(plot_file_cm, artifact_path="plots")
-            mlflow.log_metric("test best accuracy", accuracy_best)
-            mlflow.log_metric("test 0.5 accuracy", accuracy)
-            mlflow.log_metric("best true positif rate", best_tpr)
-            mlflow.log_metric("best false positif rate", best_fpr)
-            mlflow.log_metric("best threshold", best_threshold)
-            mlflow.log_metric("auc", roc_auc)
-
-        return best_threshold
-
-
-def metrics_classification_pleiade2(
-    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
-):
-    """
-    Evaluates the model on the Pleiade test dataset for image classification.
-
-    Args:
-        test_dl (torch.utils.data.DataLoader): The data loader for the test
-        dataset.
-        model (torchvision.models): The classification model to evaluate.
-        tile_size (int): The size of each tile in pixels.
-        batch_size (int): The batch size.
-        use_mlflow (bool, optional): Whether to use MLflow for logging
-        artifacts. Defaults to False.
-
-    Returns:
-        None
-    """
-    with torch.no_grad():
-        model.eval()
-        best_threshold = []
-        npatch = int((2000 / tile_size) ** 2)
-        count_patch = 0
-        y_pred = []
-        y_true = []
-
-        for idx, batch in enumerate(test_dl):
-
-            images, labels, __ = batch
-
-            model = model.to("cuda:0")
-            images = images.to("cuda:0")
-
-            output_model = model(images)
-            output_model = output_model.to("cpu")
-            y_pred_idx = output_model[:, 1].tolist()
-            labels2 = labels.tolist()
-
-            if batch_size > len(images):
-                batch_size_current = len(images)
-
-            elif batch_size <= len(images):
-                batch_size_current = batch_size
-
-            for i in range(batch_size_current):
-                y_pred.append(y_pred_idx[i])
-
-                y_true.append(labels2[i])
-                count_patch += 1
-
-                if ((count_patch) % npatch) == 0:
-                    y_true = np.array(y_true).flatten().tolist()
-                    y_pred = np.array(y_pred).flatten().tolist()
-
-                    fpr, tpr, thresholds = roc_curve(y_true, y_pred)
-
-                    best_threshold_idx = np.argmax(tpr - fpr)  # Index of the best threshold
-                    best_threshold.append(thresholds[best_threshold_idx])
-                    y_true = []
-                    y_pred = []
-
-        del images, labels
-
-        return best_threshold
-
-
-def metrics_classification_pleiade3(
-    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
-):
-    """
-    Evaluates the model on the Pleiade test dataset for image classification.
-
-    Args:
-        test_dl (torch.utils.data.DataLoader): The data loader for the test
-        dataset.
-        model (torchvision.models): The classification model to evaluate.
-        tile_size (int): The size of each tile in pixels.
-        batch_size (int): The batch size.
-        use_mlflow (bool, optional): Whether to use MLflow for logging
-        artifacts. Defaults to False.
-
-    Returns:
-        None
-    """
     with torch.no_grad():
         model.eval()
         y_true = []
@@ -385,66 +206,137 @@ def metrics_classification_pleiade3(
         y_true = np.array(y_true).flatten().tolist()
         y_prob = np.array(y_prob).flatten().tolist()
 
-        # Définir les seuils de classification à tester
-        thresholds = np.linspace(0, 1, num=100)  # De 0 à 1 avec 100 valeurs
-
-        # Initialiser la liste pour stocker les précisions
-        accuracies = []
-
-        # Calculer la précision pour chaque seuil de classification
-        for threshold in thresholds:
-            # Convertir les probabilités en prédictions binaires en utilisant le seuil
-            y_pred = (y_prob >= threshold).astype(int)
-
-            # Calculer la précision
-            accuracy = accuracy_score(y_true, y_pred)
-
-            # Ajouter la précision à la liste
-            accuracies.append(accuracy)
-
-        fnr_list = []
-
-        # Calculer le taux de faux négatifs pour chaque seuil de classification
-        for threshold in thresholds:
-            # Convertir les probabilités en prédictions binaires en utilisant le seuil
-            y_pred = (y_prob >= threshold).astype(int)
-
-            # Calculer la matrice de confusion
-            confusion = confusion_matrix(y_true, y_pred)
-
-            # Extraire les valeurs de la matrice de confusion
-            tn, fp, fn, tp = confusion.ravel()
-
-            # Calculer le taux de faux négatifs (FNR)
-            fnr = fn / (fn + tp)
-
-            # Ajouter le taux de faux négatifs à la liste
-            fnr_list.append(fnr)
-
-        if not os.path.exists("img/"):
-            os.makedirs("img/")
-
-        plt.plot(thresholds, accuracies)
-        plt.plot(thresholds, accuracies)
-        plt.xlabel('Seuil de classification')
-        plt.ylabel('Précision (Accuracy)')
-        plt.title('Précision en fonction du seuil de classification')
-        plt.show()
-        plot_file = "img/AccuracyonThreshold.png"
-        plt.savefig(plot_file)
-        plt.close()
-
-        plt.plot(thresholds, fnr_list)
-        plt.xlabel('Seuil de classification')
-        plt.ylabel('Taux de faux négatifs (FNR)')
-        plt.title('Taux de faux négatifs en fonction du seuil de classification')
-        plt.show()
-        plot_file = "img/FalseNegativeRateonThreshold.png"
-        plt.savefig(plot_file)
-        plt.close()
+        return y_true, y_prob
 
 
-def metrics_classification_pleiade4(
+def variation_threshold_classification_pleiades(
+    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+):
+    y_true, y_prob = reality_prediction_classification_pleiades(
+        test_dl, model, tile_size, batch_size, n_bands, use_mlflow
+        )
+
+    thresholds = np.linspace(0, 1, num=100)
+    accuracies = []
+
+    for threshold in thresholds:
+        y_pred = (y_prob >= threshold).astype(int)
+        accuracy = accuracy_score(y_true, y_pred)
+        accuracies.append(accuracy)
+
+    fnr_list = []
+
+    for threshold in thresholds:
+
+        y_pred = (y_prob >= threshold).astype(int)
+        confusion = confusion_matrix(y_true, y_pred)
+        tn, fp, fn, tp = confusion.ravel()
+        fnr = fn / (fn + tp)
+        fnr_list.append(fnr)
+
+    if not os.path.exists("img/"):
+        os.makedirs("img/")
+
+    plt.plot(thresholds, accuracies)
+    plt.plot(thresholds, accuracies)
+    plt.xlabel('Seuil de classification')
+    plt.ylabel('Précision (Accuracy)')
+    plt.title('Précision en fonction du seuil de classification')
+    plt.show()
+    plot_file_AccuracyonThreshold = "img/AccuracyonThreshold.png"
+    plt.savefig(plot_file_AccuracyonThreshold)
+    plt.close()
+
+    plt.plot(thresholds, fnr_list)
+    plt.xlabel('Seuil de classification')
+    plt.ylabel('Taux de faux négatifs (FNR)')
+    plt.title('Taux de faux négatifs en fonction du seuil de classification')
+    plt.show()
+    plot_file_FalseNegativeRateonThreshold = "img/FalseNegativeRateonThreshold.png"
+    plt.savefig(plot_file_FalseNegativeRateonThreshold)
+    plt.close()
+
+    if use_mlflow:
+        mlflow.log_artifact(plot_file_AccuracyonThreshold, artifact_path="plots")
+        mlflow.log_artifact(plot_file_FalseNegativeRateonThreshold, artifact_path="plots")
+
+
+def ROC_confusion_matrix_classification_pleiades(
+    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+):
+
+    y_true, y_prob = reality_prediction_classification_pleiades(
+        test_dl, model, tile_size, batch_size, n_bands, use_mlflow
+        )
+
+    fpr, tpr, thresholds = roc_curve(y_true, y_prob)
+    roc_auc = auc(fpr, tpr)
+
+    best_threshold_idx = np.argmax(tpr - fpr)  # Index of the best threshold
+    best_threshold = thresholds[best_threshold_idx]
+    best_tpr = tpr[best_threshold_idx]
+    best_fpr = fpr[best_threshold_idx]
+
+    display = RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc)
+    display.plot()
+
+    if not os.path.exists("img/"):
+        os.makedirs("img/")
+
+    plot_file_roc = "img/ROC.png"
+    plt.savefig(plot_file_roc)
+
+    class_names = ["Bâti", "Non bâti"]
+
+    predictions_best = np.where(
+        y_prob > best_threshold,
+        np.array([1.0]),
+        np.array([0.0]),
+    )
+    predicted_classes_best = predictions_best.tolist()
+    accuracy_best = accuracy_score(y_true, predicted_classes_best)
+
+    predictions = np.where(
+        y_prob > 0.5,
+        np.array([1.0]),
+        np.array([0.0]),
+    )
+    predicted_classes = predictions.tolist()
+    accuracy = accuracy_score(y_true, predicted_classes)
+
+    disp = ConfusionMatrixDisplay.from_predictions(y_true, predicted_classes,
+                                                display_labels=class_names,
+                                                cmap="Pastel1",
+                                                normalize="true")
+    disp.plot()
+    plot_file_cm = "img/confusion_matrix_05.png"
+    plt.savefig(plot_file_cm)
+    plt.close()
+
+    disp_best = ConfusionMatrixDisplay.from_predictions(y_true, predicted_classes_best,
+                                                        display_labels=class_names,
+                                                        cmap="Pastel1",
+                                                        normalize="true")
+    disp_best.plot()
+    plot_file_cm_best = "img/confusion_matrix_best.png"
+    plt.savefig(plot_file_cm_best)
+    plt.close()
+
+    if use_mlflow:
+        mlflow.log_artifact(plot_file_roc, artifact_path="plots")
+        mlflow.log_artifact(plot_file_cm, artifact_path="plots")
+        mlflow.log_artifact(plot_file_cm_best, artifact_path="plots")
+        mlflow.log_metric("test best accuracy", accuracy_best)
+        mlflow.log_metric("test 0.5 accuracy", accuracy)
+        mlflow.log_metric("best true positif rate", best_tpr)
+        mlflow.log_metric("best false positif rate", best_fpr)
+        mlflow.log_metric("best threshold", best_threshold)
+        mlflow.log_metric("auc", roc_auc)
+
+    return best_threshold
+
+
+def metrics_classification_pleiade(
     test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
 ):
     """
@@ -462,69 +354,80 @@ def metrics_classification_pleiade4(
     Returns:
         None
     """
+    best_threshold = ROC_confusion_matrix_classification_pleiades(
+        test_dl, model, tile_size, batch_size, n_bands, use_mlflow
+        )
+    variation_threshold_classification_pleiades(
+        test_dl, model, tile_size, batch_size, n_bands, use_mlflow
+        )
 
-    model.eval()
-    bande_gradients = []
+    return best_threshold
 
-    for band in range(n_bands):
-        one_bande_gradients = []
-        for idx, batch in enumerate(test_dl):
-            images, __, __ = batch
 
-            model = model.to("cuda:0")
-            images = images.to("cpu")
-            print(images.shape)
-            images = images.tolist()
-            print(np.array(images).shape)
-            images_oneband = []
-            for image in images:
-                array = np.array(image)
-                print(array.shape)
-                bande_1 = array.copy()
-                bande_1 = bande_1[band, :, :]
-                # Étendre les dimensions de la première bande pour correspondre au format [1, 250, 250]
-                bande_1 = np.expand_dims(bande_1, axis=0)
+# def all_thresholds(
+#     test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+# ):
+#     """
+#     Evaluates the model on the Pleiade test dataset for image classification.
 
-                # Répéter la première bande pour créer les deux autres bandes
-                bande_2 = np.repeat(bande_1, 1, axis=0)
-                bande_3 = np.repeat(bande_1, 1, axis=0)
+#     Args:
+#         test_dl (torch.utils.data.DataLoader): The data loader for the test
+#         dataset.
+#         model (torchvision.models): The classification model to evaluate.
+#         tile_size (int): The size of each tile in pixels.
+#         batch_size (int): The batch size.
+#         use_mlflow (bool, optional): Whether to use MLflow for logging
+#         artifacts. Defaults to False.
 
-                # Concaténer les trois bandes pour avoir une image qui passe dans le modele
-                array = np.concatenate((bande_1, bande_2, bande_3), axis=0)
-                print(array.shape)
-                images_oneband.append(array)
+#     Returns:
+#         None
+#     """
+#     with torch.no_grad():
+#         model.eval()
+#         best_threshold = []
+#         npatch = int((2000 / tile_size) ** 2)
+#         count_patch = 0
+#         y_pred = []
+#         y_true = []
 
-            images_oneband = torch.tensor(images_oneband)
-            images_oneband = images_oneband.type(torch.float)
-            images_oneband.requires_grad_(True)
-            images_oneband = images_oneband.to("cuda:0")
-            output_model = model(images_oneband)
-            images_oneband = images_oneband.to("cpu")
-            output_model = output_model.to("cpu")
+#         for idx, batch in enumerate(test_dl):
 
-            loss = torch.mean(output_model)
-            print("gradient1")
-            gradient = torch.autograd.grad(loss, images_oneband, allow_unused=True)
-            one_bande_gradients.append(gradient)
+#             images, labels, __ = batch
 
-        gradient_tensor = torch.stack(one_bande_gradients)
+#             model = model.to("cuda:0")
+#             images = images.to("cuda:0")
 
-        # Calculer le gradient moyen
-        gradient_moyen = torch.mean(gradient_tensor, dim=0)
-        print("gradient2")
-        gradient_moyen = torch.autograd.grad(gradient_moyen, gradient_tensor, allow_unused=True)
-        bande_gradients.append(gradient_moyen)
+#             output_model = model(images)
+#             output_model = output_model.to("cpu")
+#             y_pred_idx = output_model[:, 1].tolist()
+#             labels2 = labels.tolist()
 
-        del images
+#             if batch_size > len(images):
+#                 batch_size_current = len(images)
 
-    importances = np.mean(np.abs(np.array(bande_gradients)), axis=(1, 2, 3))  # Moyenne des gradients sur les dimensions (13, height, width)
+#             elif batch_size <= len(images):
+#                 batch_size_current = batch_size
 
-    # Trier les bandes par importance décroissante
-    indices_tries = np.argsort(importances)[::-1]
+#             for i in range(batch_size_current):
+#                 y_pred.append(y_pred_idx[i])
 
-    # Afficher les bandes d'image par ordre d'importance
-    for i, bande in enumerate(indices_tries):
-        print(f"Bande {bande}: Importance {importances[indices_tries[i]]}")
+#                 y_true.append(labels2[i])
+#                 count_patch += 1
+
+#                 if ((count_patch) % npatch) == 0:
+#                     y_true = np.array(y_true).flatten().tolist()
+#                     y_pred = np.array(y_pred).flatten().tolist()
+
+#                     fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+
+#                     best_threshold_idx = np.argmax(tpr - fpr)  # Index of the best threshold
+#                     best_threshold.append(thresholds[best_threshold_idx])
+#                     y_true = []
+#                     y_pred = []
+
+#         del images, labels
+
+#         return best_threshold
 
 
 def evaluer_modele_sur_jeu_de_test_classification_pleiade(
@@ -668,7 +571,7 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
         del images, labels, dic
 
 
-def evaluer_modele_sur_jeu_de_test_classification_pleiade2(
+def evaluer_modele_sur_jeu_de_test_classification_pleiade_without_borders(
     test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
 ):
     """
