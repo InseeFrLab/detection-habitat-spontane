@@ -57,9 +57,9 @@ class ChangeDetectionDataset(Dataset):
 
         pathim1 = self.list_paths_images_1[idx]
         pathim2 = self.list_paths_images_2[idx]
-        
+    
         pathlabel = self.list_paths_labels[idx]
-        
+
         img1 = SatelliteImage.from_raster(
             file_path=pathim1, dep=None, date=None, n_bands=self.n_bands
         ).array
@@ -69,7 +69,7 @@ class ChangeDetectionDataset(Dataset):
         ).array
 
         label = torch.tensor(np.load(pathlabel))   
-        
+
         if self.transforms:
             # transfo séparée ne marche que pour les transfos non aléatoires
             img1 = np.transpose(img1.astype(float), [1, 2, 0]) 

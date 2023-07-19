@@ -766,3 +766,21 @@ def create_doss_cloud(year, dep):
     return(output_masks_path)
 
 output_directory_name = create_doss_cloud("2020", "GUADELOUPE")
+
+
+import zipfile
+import os
+
+chemin_dossier_zip = "../s2looking/S2Looking.zip"
+dossier_destination = "../s2looking_unzip"
+
+# Vérifier si le dossier de destination existe, sinon le créer
+if not os.path.exists(dossier_destination):
+    os.makedirs(dossier_destination)
+
+# Ouvrir le dossier ZIP
+with zipfile.ZipFile(chemin_dossier_zip, 'r') as zip_ref:
+    # Extraire tout le contenu du dossier ZIP vers le dossier de destination
+    zip_ref.extractall(dossier_destination)
+
+print("Dossier ZIP extrait avec succès.")

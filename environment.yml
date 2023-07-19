@@ -214,7 +214,9 @@ local-path:
       #change-detection: donnees-test/SENTINEL/change_detection
       #classification: donnees-test/SENTINEL/classification
 
-  PAPERS: data/paper_dataset
+  PAPERS:
+    S2Looking: data/PAPERS/S2Looking
+    LEVIR_CD: data/PAPERS/LEVIR_CD
   PLEIADES:
       2022:
           "971": data/PLEIADES/2022/GUADELOUPE

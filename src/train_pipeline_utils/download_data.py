@@ -1,8 +1,8 @@
 import os
-
 import numpy as np
 import s3fs
 from osgeo import gdal
+import zipfile
 
 from classes.data.satellite_image import SatelliteImage
 from utils.utils import get_environment, get_root_path, update_storage_access
@@ -173,3 +173,49 @@ def load_2satellites_data(year: int, dep: str, src: str):
             list_paths_s2.remove(path_s2)
 
     return path_local
+
+
+def load_s2_looking():
+    """
+    Load test data (images,masks) for a given task\
+         (segmentation or change detection).
+
+    This function downloads satellite data from an S3 bucket,  \
+        updates storage access, and saves the data locally.
+    The downloaded data is specific to the given task type.
+
+    Args:
+        type (str, optional): The type of task-data to load.\
+             Defaults to "segmentation".
+
+    Returns:
+        str: The local path where the data is downloaded.
+    """
+    update_storage_access()
+    root_path = get_root_path()
+    environment = get_environment()
+
+    bucket = environment["bucket"]
+    path_s3 = environment["sources"]["PAPERS"]["S2Looking"]
+    path_local = os.path.join(root_path, environment["local-path"]["PAPERS"]["S2Looking"])
+
+    if os.path.exists(path_local):
+        print("Le dossier S2Looking existe déjà.")
+        return path_local + "/S2Looking"
+    else:
+        os.makedirs(path_local)
+
+        fs = s3fs.S3FileSystem(
+            client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"}
+        )
+        fs.download(rpath=f"{bucket}/{path_s3}", lpath=f"{path_local}", recursive=True)
+
+        chemin_dossier_zip = path_local + "/S2Looking.zip"
+
+        with zipfile.ZipFile(chemin_dossier_zip, 'r') as zip_ref:
+            zip_ref.extractall(path_local)
+
+        os.remove(chemin_dossier_zip)
+        print("Dossier ZIP extrait avec succès.")
+
+        return path_local + "/S2Looking"

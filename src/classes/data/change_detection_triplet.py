@@ -45,7 +45,7 @@ class ChangedetectionTripletS2Looking:
             ax.set_axis_off()
 
         # Show the plot
-        plt.show()
+        return plt.gcf()
 
     def random_crop(self, tile_size):
         width = self.image1.width
