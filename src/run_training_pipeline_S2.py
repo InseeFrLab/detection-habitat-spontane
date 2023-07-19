@@ -63,7 +63,7 @@ from train_pipeline_utils.prepare_data import (
 )
 from utils.utils import remove_dot_file, split_array, update_storage_access
 
-from data.components.change_detection_dataset import ChangeDetectionDataset
+from data.components.change_detection_dataset import ChangeDetectionS2LookingDataset
 
 # with open("../config.yml") as f:
 #     config = yaml.load(f, Loader=SafeLoader)
@@ -103,7 +103,7 @@ def instantiate_dataset(list_images, list_labels, list_images_2):
         A dataset object of the specified type.
     """
 
-    full_dataset = ChangeDetectionDataset(
+    full_dataset = ChangeDetectionS2LookingDataset(
         list_images, list_labels, list_images_2
     )
 
@@ -148,9 +148,9 @@ def instantiate_dataloader(output_dir):
 
     print("Entre dans la fonction instantiate_dataloader")
 
-    dir_train = output_dir + "/train/"
-    dir_val = output_dir + "/val/"
-    dir_test = output_dir + "/test/"
+    dir_train = output_dir + "/S2Looking" + "/train/"
+    dir_val = output_dir + "/S2Looking" + "/val/"
+    dir_test = output_dir + "/S2Looking" + "/test/"
 
     train_list_images1 = [dir_train + "Image1/" + filename for filename in os.listdir(dir_train + "Image1/")]
     train_list_images2 = [dir_train + "Image2/" + filename for filename in os.listdir(dir_train + "Image2/")]
@@ -432,9 +432,9 @@ if __name__ == "__main__":
     run_pipeline(remote_server_uri, experiment_name, run_name)
 
 
-# nohup python run_training_pipeline.py
+# nohup python run_training_pipeline_S2.py
 # https://projet-slums-detection-128833.user.lab.sspcloud.fr
-# classification 2022_2018_974 > out3.txt &
+# change-detection essai_s2 > out3.txt &
 # https://www.howtogeek.com/804823/nohup-command-linux/
 # TO DO :
 # test routine sur S2Looking dataset

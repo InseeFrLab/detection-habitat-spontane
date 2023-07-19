@@ -8,7 +8,7 @@ donnees:
   buffer size: 10
   n channels train: 6
   n bands: 3
-  tile size: 1024
+  tile size: 256
   augmentation: True
   task: "change-detection"
 
