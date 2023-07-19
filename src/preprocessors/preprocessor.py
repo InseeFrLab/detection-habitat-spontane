@@ -8,6 +8,7 @@ import json
 import os
 import random
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 import rasterio
@@ -24,7 +25,7 @@ from train_pipeline_utils.prepare_data import (
     filter_images_pleiades,
     filter_images_sentinel,
 )
-from utils.utils import get_path_by_millesime, remove_dot_file, split_array
+from utils.utils import get_path_by_millesime, split_array
 
 # from tqdm import tqdm
 
@@ -142,84 +143,79 @@ class Preprocessor:
 
         return None
 
-    def prepare_test_data(self, test_dir):
+    def prepare_test_data(self):
         print("Entre dans la fonction prepare_test_data")
+        match self.config.task:
+            case "change-detection":
+                for root, dirs, files in os.walk(f"../{self.config.path_local_test[0]}/masks"):
+                    for filename in files:
+                        mask = np.load(os.path.join(root, filename))
 
-        output_test = "../test-data"
-        output_labels_path = f"{output_test}/labels"
+                        filename_im = filename.replace("_0000", "")
+                        dict_lsi = {}
+                        for i in range(1, 3):
+                            root_im = root.replace("/masks", f"/images_{i}")
 
-        if not os.path.exists(output_labels_path):
-            os.makedirs(output_labels_path)
-        else:
-            return None
+                            si = SatelliteImage.from_raster(
+                                file_path=Path(os.path.join(root_im, filename_im)).with_suffix(
+                                    ".tif"
+                                ),
+                                dep=None,
+                                date=None,
+                                n_bands=self.config.n_bands,
+                            )
 
-        labels_path = f"{test_dir}/masks"
-        list_name_label = os.listdir(labels_path)
-        list_name_label = np.sort(remove_dot_file(list_name_label))
-        list_labels_path = [f"{labels_path}/{name}" for name in list_name_label]
+                            dict_lsi[i] = SegmentationLabeledSatelliteImage(si, mask, "", "").split(
+                                self.config.tile_size
+                            )
 
-        if self.config.task != "change-detection":
-            images_path = f"{test_dir}/images"
-            list_name_image = os.listdir(images_path)
-            list_name_image = np.sort(remove_dot_file(list_name_image))
-            list_images_path = [f"{images_path}/{name}" for name in list_name_image]
-            output_images_path = f"{output_test}/images"
+                        for j in range(len(dict_lsi[1])):
+                            mask_path = (
+                                f"../{self.config.path_prepro_test_data[0]}/"
+                                f"masks/{filename.replace('_0000', f'_{j:04d}')}"
+                            )
+                            np.save(mask_path, dict_lsi[1].label)
 
-            for image_path, label_path, name in zip(
-                list_images_path, list_labels_path, list_name_image
-            ):
-                si = SatelliteImage.from_raster(
-                    file_path=image_path, dep=None, date=None, n_bands=self.config.n_bands
-                )
-                mask = np.load(label_path)
+                            for i in range(1, len(dict_lsi) + 1):
+                                im_path = Path(
+                                    mask_path.replace("/masks", f"/images_{i}")
+                                ).with_suffix(".jp2")
+                                dict_lsi[i].satellite_image.to_raster(
+                                    os.path.dirname(im_path), os.path.basename(im_path)
+                                )
 
-                lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
-                list_lsi = lsi.split(self.config.tile_size)
+            case _:
+                for root, dirs, files in os.walk(f"../{self.config.path_local_test[0]}/masks"):
+                    for filename in files:
+                        filename_im = filename.replace("_0000", "")
+                        root_im = root.replace("/masks", "/images")
 
-                for i, lsi in enumerate(list_lsi):
-                    file_name_i = f"{name.split('.')[0]}_{i:03d}"
+                        mask = np.load(os.path.join(root, filename))
 
-                    lsi.satellite_image.to_raster(output_images_path, f"{file_name_i}.jp2")
-                    np.save(f"{output_labels_path}/{file_name_i}.npy", lsi.label)
-        else:
-            images_path_1 = f"{test_dir}/images_1"
-            list_name_image_1 = os.listdir(images_path_1)
-            list_name_image_1 = np.sort(remove_dot_file(list_name_image_1))
-            list_images_path_1 = [f"{images_path_1}/{name}" for name in list_name_image_1]
-            output_images_path_1 = f"{output_test}/images_1"
+                        si = SatelliteImage.from_raster(
+                            file_path=Path(os.path.join(root_im, filename_im)).with_suffix(".tif"),
+                            dep=None,
+                            date=None,
+                            n_bands=self.config.n_bands,
+                        )
 
-            images_path_2 = f"{test_dir}/images_2"
-            list_name_image_2 = os.listdir(images_path_2)
-            list_name_image_2 = np.sort(remove_dot_file(list_name_image_2))
-            list_images_path_2 = [f"{images_path_2}/{name}" for name in list_name_image_2]
-            output_images_path_2 = f"{output_test}/images_2"
+                        lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
+                        list_lsi = lsi.split(self.config.tile_size)
 
-            for image_path_1, image_path_2, label_path, name in zip(
-                list_images_path_1,
-                list_images_path_2,
-                list_labels_path,
-                list_name_image_1,
-            ):
-                si1 = SatelliteImage.from_raster(
-                    file_path=image_path_1, dep=None, date=None, n_bands=self.config.n_bands
-                )
-                si2 = SatelliteImage.from_raster(
-                    file_path=image_path_2, dep=None, date=None, n_bands=self.config.n_bands
-                )
-                mask = np.load(label_path)
+                        for i, splitted_image in enumerate(list_lsi):
+                            mask_path = (
+                                f"../{self.config.path_prepro_test_data[0]}/"
+                                f"masks/{filename.replace('_0000', f'_{i:04d}')}"
+                            )
+                            im_path = Path(mask_path.replace("/masks", "/images")).with_suffix(
+                                ".jp2"
+                            )
 
-                lsi1 = SegmentationLabeledSatelliteImage(si1, mask, "", "")
-                lsi2 = SegmentationLabeledSatelliteImage(si2, mask, "", "")
+                            splitted_image.satellite_image.to_raster(
+                                os.path.dirname(im_path), os.path.basename(im_path)
+                            )
 
-                list_lsi1 = lsi1.split(self.config.tile_size)
-                list_lsi2 = lsi2.split(self.config.tile_size)
-
-                for i, (lsi1, lsi2) in enumerate(zip(list_lsi1, list_lsi2)):
-                    file_name_i = f"{name.split('.')[0]}_{i:03d}"
-
-                    lsi1.satellite_image.to_raster(output_images_path_1, f"{file_name_i}.jp2")
-                    lsi2.satellite_image.to_raster(output_images_path_2, f"{file_name_i}.jp2")
-                    np.save(f"{output_labels_path}/{file_name_i}.npy", lsi1.label)
+                            np.save(mask_path, splitted_image.label)
 
     def check_labelled_images(self, millesime):
         """

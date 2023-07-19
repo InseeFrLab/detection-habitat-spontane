@@ -33,7 +33,6 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     instantiator = Instantiator(configurator)
     preprocessor = Preprocessor(configurator)
 
-    # TODO :  Download data devrait rien retourner donc à améliorer
     preprocessor.download_data()
     preprocessor.prepare_train_data()
     preprocessor.prepare_test_data()

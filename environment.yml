@@ -192,7 +192,7 @@ local-path:
       change-detection: donnees-test/change_detection
       classification: donnees-test/classification
     SENTINEL2:
-      segmentation: donnees-test/SENTINEL2/segmentation
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2
       #change-detection: donnees-test/SENTINEL/change_detection
       #classification: donnees-test/SENTINEL/classification
     SENTINEL1-2:

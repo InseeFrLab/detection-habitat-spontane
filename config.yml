@@ -11,7 +11,7 @@ data:
       year: "2022"
   type_labeler: "BDTOPO"
   buffer_size: 10
-  n_channels_train: 13
+  n_channels_train: 12
   n_bands: 12
   tile_size: 125
   augmentation: True

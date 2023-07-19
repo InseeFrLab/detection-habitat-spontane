@@ -81,6 +81,8 @@ class Configurator:
             for millesime in self.millesime
         ]
 
+        self.path_prepro_test_data = [f"data/preprocessed/{self.task}/{self.source_train}/test"]
+
     def get_cloud_local_path(self, env: dict):
         if self.source_train == "PLEIADES":
             path = [
