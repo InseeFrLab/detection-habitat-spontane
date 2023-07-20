@@ -290,17 +290,10 @@ class ChangeDetectionS2LookingDataset(Dataset):
         pathim2 = self.list_paths_image2[idx]
         pathlabel = self.list_paths_labels[idx]
 
-        label = 0
-        compteur = 0
-        while np.max(label) == 0 and compteur < 15:
-            cdtriplet = ChangedetectionTripletS2Looking(pathim1, pathim2, pathlabel)
-            cdtriplet.random_crop(256)
-            label = np.array(cdtriplet.label)
-            label[label != 0] = 1
-            compteur += 1
-
-        img1 = np.array(cdtriplet.image1)
-        img2 = np.array(cdtriplet.image2)
+        cdtriplet = ChangedetectionTripletS2Looking(pathim1, pathim2, pathlabel)
+        label = np.asarray(cdtriplet.label)
+        img1 = np.asarray(cdtriplet.image1)
+        img2 = np.asarray(cdtriplet.image2)
 
         if self.transforms:
             sample = self.transforms(image=img1, image2=img2, mask=label)

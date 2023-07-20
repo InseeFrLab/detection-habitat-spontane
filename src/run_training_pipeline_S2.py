@@ -63,7 +63,8 @@ from train_pipeline_utils.prepare_data import (
 )
 from utils.utils import remove_dot_file, split_array, update_storage_access
 
-from data.components.change_detection_dataset import ChangeDetectionS2LookingDataset
+from data.components.change_detection_dataset import ChangeDetectionS2LookingDataset 
+from classes.data.change_detection_triplet import ChangedetectionTripletS2Looking
 
 # with open("../config.yml") as f:
 #     config = yaml.load(f, Loader=SafeLoader)
@@ -86,8 +87,111 @@ def download_data(config):
 
     return output_dir
 
+def prepare_data(config, output_dir):
+    """
+    Preprocesses and splits the raw input images
+    into tiles and corresponding masks,
+    and saves them in the specified output directories.
 
-def instantiate_dataset(list_images, list_labels, list_images_2):
+    Args:
+        config: A dictionary representing the configuration settings.
+        list_data_dir: A list of strings representing the paths
+        to the directories containing the raw input image files.
+
+    Returns:
+        A list of strings representing the paths to
+        the output directories containing the
+        preprocessed tile and mask image files.
+    """
+
+    print("Entre dans la fonction prepare_data")
+    tile_size = config["donnees"]["tile size"]
+
+    output_dir_train = (
+            "../train_data-S2Looking-"
+            + str(tile_size)
+            + "/"
+        )
+    output_dir_valid = (
+            "../valid_data-S2Looking-"
+            + str(tile_size)
+            + "/"
+        )
+    output_dir_test = (
+            "../test_data-S2Looking-"
+            + str(tile_size)
+            + "/"
+        )
+
+    if not os.path.exists(output_dir_train):
+        os.makedirs(output_dir_train)
+        os.makedirs(output_dir_train+"Image1/")
+        os.makedirs(output_dir_train+"Image2/")
+        os.makedirs(output_dir_train+"label/")
+        
+        os.makedirs(output_dir_valid)
+        os.makedirs(output_dir_valid+"Image1/")
+        os.makedirs(output_dir_valid+"Image2/")
+        os.makedirs(output_dir_valid+"label/")
+
+        os.makedirs(output_dir_test)
+        os.makedirs(output_dir_test+"Image1/")
+        os.makedirs(output_dir_test+"Image2/")
+        os.makedirs(output_dir_test+"label/")
+
+    else:
+        return output_dir_train, output_dir_valid, output_dir_test
+
+    dir_train = output_dir + "/S2Looking" + "/train/"
+    dir_val = output_dir + "/S2Looking" + "/val/"
+    dir_test = output_dir + "/S2Looking" + "/test/"
+
+    train_list_images1 = [dir_train + "Image1/" + filename for filename in np.sort(os.listdir(dir_train + "Image1/"))]
+    train_list_images2 = [dir_train + "Image2/" + filename for filename in np.sort(os.listdir(dir_train + "Image2/"))]
+    train_list_labels = [dir_train + "label/" + filename for filename in np.sort(os.listdir(dir_train + "label/"))]
+
+    val_list_images1 = [dir_val + "Image1/" + filename for filename in np.sort(os.listdir(dir_val + "Image1/"))]
+    val_list_images2 = [dir_val + "Image2/" + filename for filename in np.sort(os.listdir(dir_val + "Image2/"))]
+    val_list_labels = [dir_val + "label/" + filename for filename in np.sort(os.listdir(dir_val + "label/"))]
+
+    test_list_images1 = [dir_test + "Image1/" + filename for filename in np.sort(os.listdir(dir_test + "Image1/"))]
+    test_list_images2 = [dir_test + "Image2/" + filename for filename in np.sort(os.listdir(dir_test + "Image2/"))]
+    test_list_labels = [dir_test + "label/" + filename for filename in np.sort(os.listdir(dir_test + "label/"))]
+
+    for img1, img2, lab in zip(train_list_images1, train_list_images2, train_list_labels):
+        triplet = ChangedetectionTripletS2Looking(img1, img2, lab)
+        list_split_im1, list_split_im2, list_split_lab = triplet.split(tile_size)
+
+        for small_img1, small_img2, small_lab, i in zip(list_split_im1, list_split_im2, list_split_lab, range(tile_size)):
+            path = img1.split("/")[-1].split(".")[0] + "_" + "{:04d}".format(i)+".png"
+            small_img1.save(output_dir_train + "Image1/" + path)
+            small_img2.save(output_dir_train + "Image2/" + path)
+            small_lab.save(output_dir_train + "label/" + path)
+
+    for img1, img2, lab in zip(val_list_images1, val_list_images2, val_list_labels):
+        triplet = ChangedetectionTripletS2Looking(img1, img2, lab)
+        list_split_im1, list_split_im2, list_split_lab = triplet.split(tile_size)
+
+        for small_img1, small_img2, small_lab, i in zip(list_split_im1, list_split_im2, list_split_lab, range(tile_size)):
+            path = img1.split("/")[-1].split(".")[0] + "_" + "{:04d}".format(i)+".png"
+            small_img1.save(output_dir_valid + "Image1/" + path)
+            small_img2.save(output_dir_valid + "Image2/" + path)
+            small_lab.save(output_dir_valid + "label/" + path)
+
+    for img1, img2, lab in zip(test_list_images1, test_list_images2, test_list_labels):
+        triplet = ChangedetectionTripletS2Looking(img1, img2, lab)
+        list_split_im1, list_split_im2, list_split_lab = triplet.split(tile_size)
+
+        for small_img1, small_img2, small_lab, i in zip(list_split_im1, list_split_im2, list_split_lab, range(tile_size)):
+            path = img1.split("/")[-1].split(".")[0] + "_" + "{:04d}".format(i)+".png"
+            small_img1.save(output_dir_test + "Image1/" + path)
+            small_img2.save(output_dir_test + "Image2/" + path)
+            small_lab.save(output_dir_test + "label/" + path)
+
+    return output_dir_train, output_dir_valid, output_dir_test
+
+
+def instantiate_dataset(list_images, list_images_2, list_labels):
     """
     Instantiates the appropriate dataset object
     based on the configuration settings.
@@ -104,13 +208,13 @@ def instantiate_dataset(list_images, list_labels, list_images_2):
     """
 
     full_dataset = ChangeDetectionS2LookingDataset(
-        list_images, list_labels, list_images_2
+        list_images, list_images_2, list_labels
     )
 
     return full_dataset
 
 
-def instantiate_dataloader(output_dir):
+def instantiate_dataloader(config, output_dir_train, output_dir_valid, output_dir_test):
     """
     Instantiates and returns the data loaders for
     training, validation, and testing datasets.
@@ -148,21 +252,17 @@ def instantiate_dataloader(output_dir):
 
     print("Entre dans la fonction instantiate_dataloader")
 
-    dir_train = output_dir + "/S2Looking" + "/train/"
-    dir_val = output_dir + "/S2Looking" + "/val/"
-    dir_test = output_dir + "/S2Looking" + "/test/"
+    train_list_images1 = [output_dir_train + "Image1/" + filename for filename in np.sort(os.listdir(output_dir_train + "Image1/"))]
+    train_list_images2 = [output_dir_train + "Image2/" + filename for filename in np.sort(os.listdir(output_dir_train + "Image2/"))]
+    train_list_labels = [output_dir_train + "label/" + filename for filename in np.sort(os.listdir(output_dir_train + "label/"))]
 
-    train_list_images1 = [dir_train + "Image1/" + filename for filename in os.listdir(dir_train + "Image1/")]
-    train_list_images2 = [dir_train + "Image2/" + filename for filename in os.listdir(dir_train + "Image2/")]
-    train_list_labels = [dir_train + "label/" + filename for filename in os.listdir(dir_train + "label/")]
+    val_list_images1 = [output_dir_valid + "Image1/" + filename for filename in np.sort(os.listdir(output_dir_valid + "Image1/"))]
+    val_list_images2 = [output_dir_valid + "Image2/" + filename for filename in np.sort(os.listdir(output_dir_valid + "Image2/"))]
+    val_list_labels = [output_dir_valid + "label/" + filename for filename in np.sort(os.listdir(output_dir_valid + "label/"))]
 
-    val_list_images1 = [dir_val + "Image1/" + filename for filename in os.listdir(dir_val + "Image1/")]
-    val_list_images2 = [dir_val + "Image2/" + filename for filename in os.listdir(dir_val + "Image2/")]
-    val_list_labels = [dir_val + "label/" + filename for filename in os.listdir(dir_val + "label/")]
-
-    test_list_images1 = [dir_test + "Image1/" + filename for filename in os.listdir(dir_test + "Image1/")]
-    test_list_images2 = [dir_test + "Image2/" + filename for filename in os.listdir(dir_test + "Image2/")]
-    test_list_labels = [dir_test + "label/" + filename for filename in os.listdir(dir_test + "label/")]
+    test_list_images1 = [output_dir_test + "Image1/" + filename for filename in np.sort(os.listdir(output_dir_test + "Image1/"))]
+    test_list_images2 = [output_dir_test + "Image2/" + filename for filename in np.sort(os.listdir(output_dir_test + "Image2/"))]
+    test_list_labels = [output_dir_test + "label/" + filename for filename in np.sort(os.listdir(output_dir_test + "label/"))]
 
     # Retrieving the desired Dataset class
     train_dataset = instantiate_dataset(
@@ -177,8 +277,11 @@ def instantiate_dataloader(output_dir):
         test_list_images1, test_list_images2, test_list_labels
     )
 
+    tile_size = config["donnees"]["tile size"]
+    batch_size = config["optim"]["batch size"]
+
     t_aug, t_preproc = generate_transform_pleiades(
-        1024,
+        tile_size,
         True,
     )
 
@@ -343,8 +446,9 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     src_task = source_data + task_type
 
     output_dir = download_data(config)
+    output_dir_train, output_dir_valid, output_dir_test = prepare_data(config, output_dir)
 
-    train_dl, valid_dl, test_dl = instantiate_dataloader(output_dir)
+    train_dl, valid_dl, test_dl = instantiate_dataloader(config, output_dir_train, output_dir_valid, output_dir_test)
 
     # train_dl.dataset[0][0].shape
     light_module = instantiate_lightning_module(config)
@@ -434,7 +538,7 @@ if __name__ == "__main__":
 
 # nohup python run_training_pipeline_S2.py
 # https://projet-slums-detection-128833.user.lab.sspcloud.fr
-# change-detection essai_s2 > out3.txt &
+# change_detection essai_s2 > out3.txt &
 # https://www.howtogeek.com/804823/nohup-command-linux/
 # TO DO :
 # test routine sur S2Looking dataset

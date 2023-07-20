@@ -26,6 +26,10 @@ class ChangedetectionTripletS2Looking:
             pathimage1 (str): Path to the first image.
             pathimage2 (str): Path to the second image.
             pathlabel (str): Path to the label image.
+        
+        # pathimage1 = "../data/PAPERS/S2Looking/S2Looking/S2Looking/train/Image1/10.png"
+        # pathimage2 = "../data/PAPERS/S2Looking/S2Looking/S2Looking/train/Image2/10.png"
+        # pathlabel = "../data/PAPERS/S2Looking/S2Looking/S2Looking/train/label/10.png"
 
         """
         self.image1 = Image.open(pathimage1)
@@ -66,6 +70,24 @@ class ChangedetectionTripletS2Looking:
         self.image1 = self.image1.crop((left, top, right, bottom))
         self.image2 = self.image2.crop((left, top, right, bottom))
         self.label = self.label.crop((left, top, right, bottom))
+    
+    def split(self, tile_size):
+        indices = get_indices_from_tile_length(1024,1024,tile_size)
+        list_splited_image1 = []
+        list_splited_image2 = []
+        list_splited_label = []
+
+        for rows, cols in indices:
+            (left, upper, right, lower) = (cols[0], rows[0], cols[1], rows[1])
+
+            im1_crop = self.image1.crop((left, upper, right, lower))
+            list_splited_image1.append(im1_crop)
+            im2_crop = self.image2.crop((left, upper, right, lower))
+            list_splited_image2.append(im2_crop)
+            lab_crop = self.label.crop((left, upper, right, lower))
+            list_splited_label.append(lab_crop)
+
+        return list_splited_image1, list_splited_image2, list_splited_label
 
 
 class ChangeDetectionTriplet:

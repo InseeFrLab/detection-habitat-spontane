@@ -856,6 +856,9 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     train_dl, valid_dl, test_dl = instantiate_dataloader(config, list_output_dir, output_test)
 
+    torch.cuda.empty_cache()
+    gc.collect()
+
     # train_dl.dataset[0][0].shape
     light_module = instantiate_lightning_module(config)
     trainer = instantiate_trainer(config, light_module)
