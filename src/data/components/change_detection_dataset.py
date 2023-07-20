@@ -296,10 +296,12 @@ class ChangeDetectionS2LookingDataset(Dataset):
         img2 = np.asarray(cdtriplet.image2)
 
         if self.transforms:
-            sample = self.transforms(image=img1, image2=img2, mask=label)
-            img1 = sample["image"]
-            img2 = sample["image2"]
-            label = sample["mask"]
+            sample_1 = self.transforms(image=img1)
+            sample_2 = self.transforms(image=img2)
+            sample_l = self.transforms(mask=label)
+            img1 = sample_1["image"]
+            img2 = sample_2["image"]
+            label = sample_l["mask"]
         else:
             img1 = torch.tensor(np.transpose(img1, (2, 0, 1)))
             img2 = torch.tensor(np.transpose(img2, (2, 0, 1)))

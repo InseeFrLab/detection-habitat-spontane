@@ -210,7 +210,7 @@ def load_s2_looking():
         )
         fs.download(rpath=f"{bucket}/{path_s3}", lpath=f"{path_local}", recursive=True)
 
-        chemin_dossier_zip = path_local + "/S2Looking.zip"
+        chemin_dossier_zip = path_local + "/S2Looking/" + "/S2Looking.zip"
 
         with zipfile.ZipFile(chemin_dossier_zip, 'r') as zip_ref:
             zip_ref.extractall(path_local)

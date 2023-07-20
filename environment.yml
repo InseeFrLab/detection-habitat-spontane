@@ -215,7 +215,7 @@ local-path:
       #classification: donnees-test/SENTINEL/classification
 
   PAPERS:
-    S2Looking: data/PAPERS/S2Looking
+    S2Looking: data/PAPERS
     LEVIR_CD: data/PAPERS/LEVIR_CD
   PLEIADES:
       2022:
