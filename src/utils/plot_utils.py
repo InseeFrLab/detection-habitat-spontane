@@ -520,13 +520,14 @@ def creer_array_to_plot(pth_image):
 def represent_image_label(
     list_array_to_plot,
     list_label,
+    creer_array=True,
 ):
     """
     Plot a square grid of images and their masks from their paths.
 
     Args:
         list_array_to_plot (list[str]): paths to the images to plot.
-        list_label (list[str]): paths to the masks to plot.
+        list_label (list[np]): the masks to plot.
 
     Returns:
         Calls a function that plots the images and their masks.
@@ -537,7 +538,10 @@ def represent_image_label(
 
     # Iterate over the RGB arrays and plot them in the left grid
     for i, ax in enumerate(axes[:, :nrow].flat):
-        array_to_plot = creer_array_to_plot(list_array_to_plot[i])
+        if creer_array:
+            array_to_plot = creer_array_to_plot(list_array_to_plot[i])
+        else:
+            array_to_plot = list_array_to_plot[i]
         ax.imshow(array_to_plot)
         ax.axis("off")
 
@@ -551,12 +555,14 @@ def represent_image_label(
 
     # Show the plot
     plt.show()
-    plt.gcf()
-    plt.savefig("test.png")
+    if creer_array:
+        plt.savefig("test.png")
+    else:
+        return plt.gcf()
 
 
 def plot_list_images_and_masks_square(
-    train_dataset,
+    dataloader,
     size_of_grid,
 ):
     """
@@ -572,22 +578,64 @@ def plot_list_images_and_masks_square(
     Returns:
         Calls a function that plots the images and their masks.
     """
-    dataset_train = train_dataset.dataset
+    dataset = dataloader.dataset
 
     list_array_to_plot = []
-    for i in range(size_of_grid):
-        input, label, dic = dataset_train[i]
+    for i in range(size_of_grid**2):
+        input, label, dic = dataset[i]
         pth_image = dic["pathimage"]
         list_array_to_plot.append(pth_image)
 
     list_label = []
-    list_path = []
 
-    for i in range(size_of_grid):
-        list_label.append(np.array(dataset_train[i][1]))
-        list_path.append(dataset_train[i][2]["pathimage"])
+    for i in range(size_of_grid**2):
+        if 'classification' in pth_image:
+            size = input.shape[1]
+            if np.array(dataset[i][1]) == 1:
+                label = np.full((size, size, 3), 0, dtype=np.uint8)
+            elif np.array(dataset[i][1]) == 0:
+                label = np.full((size, size, 3), 255, dtype=np.uint8)
+            list_label.append(label)
+                
+        elif 'segmentation' in pth_image:
+            list_label.append(np.array(dataset[i][1]))
 
-    return represent_image_label(list_array_to_plot, list_label)
+    return represent_image_label(list_array_to_plot, list_label, True)
+
+
+def plot_image_and_mask(
+    labeled_satellite_image,
+    bands_indices,
+):
+    """
+    Calls a function that plot a square grid of images and their masks\
+        from their folder. You must specify the size of the grid.
+
+    Args:
+        dataloader: the dataloader from which\
+            the dataset should be extracted.
+        size_of_the_grid (int): the number of images you want on a line\
+            (the grid is a square so the number on a column will be the same).
+
+    Returns:
+        Calls a function that plots the images and their masks.
+    """
+    image = labeled_satellite_image.satellite_image.array[bands_indices, :, :]
+    label = labeled_satellite_image.label
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(25, 25))
+    ax1.imshow(image.transpose(1,2,0))
+    ax1.set_title("image")
+    ax1.axis('off')
+    ax2.imshow(label)
+    ax2.set_title("mask")
+    ax2.axis('off')
+    return plt.gcf()
+
+    # Show the plot
+    # plt.show()
+    # plt.gcf()
+    # plt.savefig("test.png")
 
 
 def draw_change_is_everywhere_exemples(changeiseverywheredataset, n_exemples):

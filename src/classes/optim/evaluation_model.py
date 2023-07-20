@@ -4,6 +4,7 @@ import mlflow
 import numpy as np
 import torch
 import matplotlib
+from math import sqrt
 
 import matplotlib.pyplot as plt
 from sklearn.metrics import (
@@ -20,6 +21,8 @@ from classes.data.satellite_image import SatelliteImage
 from utils.plot_utils import (
     plot_list_labeled_sat_images,
     plot_list_segmentation_labeled_satellite_image,
+    plot_image_and_mask,
+    represent_image_label,
 )
 
 # with open("../config.yml") as f:
@@ -186,7 +189,7 @@ def evaluer_modele_sur_jeu_de_test_classification_sentinel(
     Evaluates the model on the Pleiade test dataset for image classification.
 
     Args:
-        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        test_dl (torch.utils.data.DataLoader): The dataloader for the test
         dataset.
         model (torchvision.models): The classification model to evaluate.
         tile_size (int): The size of each tile in pixels.
@@ -205,9 +208,9 @@ def evaluer_modele_sur_jeu_de_test_classification_sentinel(
 
     model.eval()
 
-    count_patch = 0
-    list_labeled_satellite_image = []
-
+    list_labels = []
+    list_array = []
+    
     for idx, batch in enumerate(test_dl):
 
         images, labels, dic = batch
@@ -237,8 +240,10 @@ def evaluer_modele_sur_jeu_de_test_classification_sentinel(
 
         elif batch_size <= len(images):
             batch_size_current = batch_size
-
+        
         for i in range(batch_size_current):
+            if len(dic["pathimage"]) != batch_size_current:
+                continue
             pthimg = dic["pathimage"][i]
             src = pthimg.split('/')[1].split('classification-')[1].split('-BDTOPO')[0]
             si = SatelliteImage.from_raster(
@@ -247,89 +252,98 @@ def evaluer_modele_sur_jeu_de_test_classification_sentinel(
             si.normalize()
 
             if src == 'SENTINEL1-2' or src == 'SENTINEL2':
-                bands = (3, 2, 1)
+                bands_list = (3, 2, 1)
+                bands_idx = 3, 2, 1
             elif src == 'SENTINEL2-RVB' or src == 'SENTINEL1-2-RVB' or src == 'PLEIADES':
-                bands = (0, 1, 2)
+                bands_list = (0, 1, 2)
+                bands_idx = 0, 1, 2
 
-            if int(predicted_classes[i]) == 0:
-                mask_pred = np.full((tile_size, tile_size, 1), 255, dtype=np.uint8)
+            try:
+                if int(predicted_classes[i]) == 0:
+                    mask_pred = np.full((tile_size, tile_size, 3), 255, dtype=np.uint8)
 
-                # if int(predicted_classes[i]) != int(labels[i]):
-                #     # Contours de l'image en rouge
-                #     array_red_borders = si.array.copy()
-                #     array_red_borders = array_red_borders.transpose(1, 2, 0)
-                #     red_color = [1.0, 0.0, 0.0]
-                #     array_red_borders[:, :7, bands] = red_color
-                #     array_red_borders[:, -7:-1, bands] = red_color
-                #     array_red_borders[:7, :, bands] = red_color
-                #     array_red_borders[-7:-1, :, bands] = red_color
-                #     array_red_borders = array_red_borders.transpose(2, 1, 0)
-                #     si.array = array_red_borders
+                    if int(predicted_classes[i]) != int(labels[i]):
+                        # Contours de l'image en rouge
+                        array_red_borders = si.array.copy()
+                        array_red_borders = array_red_borders.transpose(1, 2, 0)
+                        red_color = [1.0, 0.0, 0.0]
+                        array_red_borders[:, :2, bands_list] = red_color
+                        array_red_borders[:, -2:, bands_list] = red_color
+                        array_red_borders[:2, :, bands_list] = red_color
+                        array_red_borders[-2:, :, bands_list] = red_color
+                        array_red_borders = array_red_borders.transpose(2, 1, 0)
+                        si.array = array_red_borders
 
-            elif int(predicted_classes[i]) == 1:
-                mask_pred = np.full((tile_size, tile_size, 1), 0, dtype=np.uint8)
+                elif int(predicted_classes[i]) == 1:
+                    mask_pred = np.full((tile_size, tile_size, 3), 0, dtype=np.uint8)
 
-                # if int(predicted_classes[i]) != int(labels[i]):
-                #     # Contours de l'image en rouge
-                #     array_red_borders = si.array.copy()
-                #     array_red_borders = array_red_borders.transpose(1, 2, 0)
-                #     red_color = [1.0, 0.0, 0.0]
-                #     array_red_borders[:, :7, :] = red_color
-                #     array_red_borders[:, -7:-1, :] = red_color
-                #     array_red_borders[:7, :, :] = red_color
-                #     array_red_borders[-7:-1, :, :] = red_color
-                #     array_red_borders = array_red_borders.transpose(2, 1, 0)
-                #     si.array = array_red_borders
+                    if int(predicted_classes[i]) != int(labels[i]):
+                        # Contours de l'image en rouge
+                        array_red_borders = si.array.copy()
+                        array_red_borders = array_red_borders.transpose(1, 2, 0)
+                        red_color = [1.0, 0.0, 0.0]
+                        array_red_borders[:, :2, :] = red_color
+                        array_red_borders[:, -2:, :] = red_color
+                        array_red_borders[:2, :, :] = red_color
+                        array_red_borders[-2:, :, :] = red_color
+                        array_red_borders = array_red_borders.transpose(2, 1, 0)
+                        si.array = array_red_borders
 
-                # elif int(predicted_classes[i]) == int(labels[i]):
-                #     # Contours de l'image en rouge
-                #     array_green_borders = si.array.copy()
-                #     array_green_borders = array_green_borders.transpose(1, 2, 0)
-                #     green_color = [0.0, 1.0, 0.0]
-                #     array_green_borders[:, :7, bands] = green_color
-                #     array_green_borders[:, -7:-1, bands] = green_color
-                #     array_green_borders[:7, :, bands] = green_color
-                #     array_green_borders[-7:-1, :, bands] = green_color
-                #     array_green_borders = array_green_borders.transpose(2, 1, 0)
-                #     si.array = array_green_borders
+                    elif int(predicted_classes[i]) == int(labels[i]):
+                        # Contours de l'image en rouge
+                        array_green_borders = si.array.copy()
+                        array_green_borders = array_green_borders.transpose(1, 2, 0)
+                        green_color = [0.0, 1.0, 0.0]
+                        array_green_borders[:, :2, bands_list] = green_color
+                        array_green_borders[:, -2:, bands_list] = green_color
+                        array_green_borders[:2, :, bands_list] = green_color
+                        array_green_borders[-2:, :, bands_list] = green_color
+                        array_green_borders = array_green_borders.transpose(2, 1, 0)
+                        si.array = array_green_borders
+                list_labels.append(mask_pred)
+                list_array.append(np.transpose(si.array,(1,2,0))[:, :, bands_idx])
 
-            list_labeled_satellite_image.append(
-                SegmentationLabeledSatelliteImage(
-                    satellite_image=si,
-                    label=mask_pred,
-                    source="",
-                    labeling_date="",
+                labeled_satellite_image = SegmentationLabeledSatelliteImage(
+                        satellite_image=si,
+                        label=mask_pred,
+                        source="src",
+                        labeling_date="",
+                    )
+
+                print("ecriture image")
+                if not os.path.exists("img/"):
+                    os.makedirs("img/")
+
+                fig1 = plot_image_and_mask(
+                    labeled_satellite_image,
+                    bands_idx,
                 )
-            )
-            count_patch += 1
+                
+                filename = pthimg.split("/")[-1]
+                filename = filename.split(".")[0]
+                filename = "_".join(filename.split("_")[0:6])
+                plot_file = "img/" + filename + ".png"
 
-            print("ecriture image")
-            if not os.path.exists("img/"):
-                os.makedirs("img/")
+                fig1.savefig(plot_file)
 
-            if src == 'SENTINEL1-2' or src == 'SENTINEL2':
-                fig1 = plot_list_segmentation_labeled_satellite_image(
-                    list_labeled_satellite_image, [0, 1, 2]
-                )
-            elif src == 'SENTINEL2-RVB' or src == 'SENTINEL1-2-RVB':
-                fig1 = plot_list_segmentation_labeled_satellite_image(
-                    list_labeled_satellite_image, [0, 1, 2]
-                )
-
-            filename = pthimg.split("/")[-1]
-            filename = filename.split(".")[0]
-            filename = "_".join(filename.split("_")[0:6])
-            plot_file = "img/" + filename + ".png"
-
-            fig1.savefig(plot_file)
-            list_labeled_satellite_image = []
-
-            if use_mlflow:
-                mlflow.log_artifact(plot_file, artifact_path="plots")
-
-            plt.close()
+                if use_mlflow:
+                    mlflow.log_artifact(plot_file, artifact_path="plots")
+                plt.close()
+            except ValueError:
+                print("ValueError sur l'image ", si.filename)
 
         del images, labels, dic
+    size = int(sqrt(len(list_array)))**2
+    list_array = list_array[:size]
+    list_labels = list_labels[:size]
+
+    grid = represent_image_label(list_array, list_labels, False)
+    grid_name = "img/grid.png"
+    grid.savefig(grid_name)
+
+    if use_mlflow:
+        mlflow.log_artifact(grid_name, artifact_path="plots")
+
 
 
 def metrics_classification_pleiade(
