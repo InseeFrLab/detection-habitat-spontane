@@ -158,35 +158,38 @@ def prepare_data(config, output_dir):
     test_list_images2 = [dir_test + "Image2/" + filename for filename in np.sort(os.listdir(dir_test + "Image2/"))]
     test_list_labels = [dir_test + "label/" + filename for filename in np.sort(os.listdir(dir_test + "label/"))]
 
-    for img1, img2, lab in zip(train_list_images1, train_list_images2, train_list_labels):
+    for img1, img2, lab in tqdm(zip(train_list_images1, train_list_images2, train_list_labels), total = len(train_list_images1)):
         triplet = ChangedetectionTripletS2Looking(img1, img2, lab)
         list_split_im1, list_split_im2, list_split_lab = triplet.split(tile_size)
 
         for small_img1, small_img2, small_lab, i in zip(list_split_im1, list_split_im2, list_split_lab, range(tile_size)):
-            path = img1.split("/")[-1].split(".")[0] + "_" + "{:04d}".format(i)+".png"
-            small_img1.save(output_dir_train + "Image1/" + path)
-            small_img2.save(output_dir_train + "Image2/" + path)
-            small_lab.save(output_dir_train + "label/" + path)
+            if np.sum(np.asarray(small_lab))>0: # filtre les images sans changement
+                path = img1.split("/")[-1].split(".")[0] + "_" + "{:04d}".format(i)+".png"
+                small_img1.save(output_dir_train + "Image1/" + path)
+                small_img2.save(output_dir_train + "Image2/" + path)
+                small_lab.save(output_dir_train + "label/" + path)
 
-    for img1, img2, lab in zip(val_list_images1, val_list_images2, val_list_labels):
+    for img1, img2, lab in tqdm(zip(val_list_images1, val_list_images2, val_list_labels), total = len(val_list_images1)):
         triplet = ChangedetectionTripletS2Looking(img1, img2, lab)
         list_split_im1, list_split_im2, list_split_lab = triplet.split(tile_size)
 
         for small_img1, small_img2, small_lab, i in zip(list_split_im1, list_split_im2, list_split_lab, range(tile_size)):
-            path = img1.split("/")[-1].split(".")[0] + "_" + "{:04d}".format(i)+".png"
-            small_img1.save(output_dir_valid + "Image1/" + path)
-            small_img2.save(output_dir_valid + "Image2/" + path)
-            small_lab.save(output_dir_valid + "label/" + path)
+            if np.sum(np.asarray(small_lab))>0: # filtre les images sans changement
+                path = img1.split("/")[-1].split(".")[0] + "_" + "{:04d}".format(i)+".png"
+                small_img1.save(output_dir_valid + "Image1/" + path)
+                small_img2.save(output_dir_valid + "Image2/" + path)
+                small_lab.save(output_dir_valid + "label/" + path)
 
-    for img1, img2, lab in zip(test_list_images1, test_list_images2, test_list_labels):
+    for img1, img2, lab in tqdm(zip(test_list_images1, test_list_images2, test_list_labels), total = len(test_list_images1)):
         triplet = ChangedetectionTripletS2Looking(img1, img2, lab)
         list_split_im1, list_split_im2, list_split_lab = triplet.split(tile_size)
 
         for small_img1, small_img2, small_lab, i in zip(list_split_im1, list_split_im2, list_split_lab, range(tile_size)):
-            path = img1.split("/")[-1].split(".")[0] + "_" + "{:04d}".format(i)+".png"
-            small_img1.save(output_dir_test + "Image1/" + path)
-            small_img2.save(output_dir_test + "Image2/" + path)
-            small_lab.save(output_dir_test + "label/" + path)
+            if np.sum(np.asarray(small_lab))>0: # filtre les images sans changement
+                path = img1.split("/")[-1].split(".")[0] + "_" + "{:04d}".format(i)+".png"
+                small_img1.save(output_dir_test + "Image1/" + path)
+                small_img2.save(output_dir_test + "Image2/" + path)
+                small_lab.save(output_dir_test + "label/" + path)
 
     return output_dir_train, output_dir_valid, output_dir_test
 
