@@ -3,25 +3,25 @@ bucket: "projet-slums-detection"
 sources:
   TEST:
     PLEIADES:
-      segmentation: donnees-test/segmentation
-      change-detection: donnees-test/change_detection
-      classification: donnees-test/classification
+      segmentation: donnees-test/segmentation/PLEIADES
+      change-detection: donnees-test/change_detection/PLEIADES
+      classification: donnees-test/classification/PLEIADES
     SENTINEL2:
-      segmentation: donnees-test/SENTINEL2/segmentation
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2
       #change-detection: donnees-test/SENTINEL/change_detection
-      #classification: donnees-test/SENTINEL/classification
+      classification: donnees-test/classification/SENTINEL/SENTINEL2
     SENTINEL1-2:
-      segmentation: donnees-test/SENTINEL1-2/segmentation
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL1-2
       #change-detection: donnees-test/SENTINEL/change_detection
-      #classification: donnees-test/SENTINEL/classification
+      classification: donnees-test/classification/SENTINEL/SENTINEL1-2
     SENTINEL1-2-RVB:
-      segmentation: donnees-test/SENTINEL1-2-RVB/segmentation
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL1-2-RVB
       #change-detection: donnees-test/SENTINEL/change_detection
-      #classification: donnees-test/SENTINEL/classification
+      classification: donnees-test/classification/SENTINEL/SENTINEL1-2-RVB
     SENTINEL2-RVB:
-      segmentation: donnees-test/SENTINEL2-RVB/segmentation
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2-RVB
       #change-detection: donnees-test/SENTINEL/change_detection
-      #classification: donnees-test/SENTINEL/classification
+      classification: donnees-test/classification/SENTINEL/SENTINEL2-RVB
   PAPERS:
     S2Looking: Donnees/PAPERS/S2Looking
     LEVIR_CD: Donnees/PAPERS/LEVIR_CD
@@ -197,22 +197,22 @@ local-path:
       segmentation: donnees-test/segmentation
       change-detection: donnees-test/change_detection
       classification: donnees-test/classification
-    SENTINEL2: 
-      segmentation: donnees-test/SENTINEL2/segmentation
+    SENTINEL2:
+      segmentation: donnees-test/segmentation/SENTINEL2
       #change-detection: donnees-test/SENTINEL/change_detection
-      #classification: donnees-test/SENTINEL/classification
-    SENTINEL1-2: 
-      segmentation: donnees-test/SENTINEL1-2/segmentation
+      classification: donnees-test/classification/SENTINEL2
+    SENTINEL1-2:
+      segmentation: donnees-test/segmentation/SENTINEL1-2
       #change-detection: donnees-test/SENTINEL/change_detection
-      #classification: donnees-test/SENTINEL/classification
-    SENTINEL2-RVB: 
-      segmentation: donnees-test/SENTINEL2-RVB/segmentation
+      classification: donnees-test/classification/SENTINEL1-2
+    SENTINEL2-RVB:
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2-RVB
       #change-detection: donnees-test/SENTINEL/change_detection
-      #classification: donnees-test/SENTINEL/classification
-    SENTINEL1-2-RVB: 
-      segmentation: donnees-test/SENTINEL1-2-RVB/segmentation
+      classification: donnees-test/classification/SENTINEL/SENTINEL2-RVB
+    SENTINEL1-2-RVB:
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL1-2-RVB
       #change-detection: donnees-test/SENTINEL/change_detection
-      #classification: donnees-test/SENTINEL/classification
+      classification: donnees-test/classification/SENTINEL/SENTINEL1-2-RVB
 
   PAPERS: data/paper_dataset
   PLEIADES:
