@@ -297,7 +297,7 @@ def ROC_confusion_matrix_classification_pleiades(
     accuracy_best = accuracy_score(y_true, predicted_classes_best)
 
     predictions = np.where(
-        y_prob > 0.5,
+        y_prob > np.array([0.5]),
         np.array([1.0]),
         np.array([0.0]),
     )

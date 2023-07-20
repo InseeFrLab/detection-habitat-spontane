@@ -1000,7 +1000,7 @@ if __name__ == "__main__":
 
 # nohup python run_training_pipeline.py
 # https://projet-slums-detection-128833.user.lab.sspcloud.fr
-# classification 2022_2018_974 > out3.txt &
+# classification 2022_2018_971 > out.txt &
 # https://www.howtogeek.com/804823/nohup-command-linux/
 # TO DO :
 # test routine sur S2Looking dataset

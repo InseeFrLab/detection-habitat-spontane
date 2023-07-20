@@ -1,26 +1,29 @@
 donnees:
   source train: "PLEIADES"
-  dataset: "CHANGEISEVERYWHERE" 
-  dataset-test: "CHANGEDETECTIONDATASET"
-  year: [2022]
-  dep: ["972"]
+  dataset: "CLASSIFICATION"
+  dataset-test: "CLASSIFICATION"
+  year: [2022, 2018]
+  dep: ["971", "971"]
   type labeler: "BDTOPO"
   buffer size: 10
-  n channels train: 6
+  n channels train: 3
+  n bands entry: 3
   n bands: 3
-  tile size: 256
-  augmentation: True
-  task: "change-detection"
+  tile size: 250
+  augmentation: False
+  task: "classification"
+  prop: 1
+  num_workers: 0
 
 optim:
-  loss: "crossentropy"
+  loss: "lossbinaire"
   lr: 0.0001
   momentum: 0.9
-  module: "deeplabv3"
-  batch size: 5
-  batch size test: 4
-  max epochs: 100
+  module: "resnet50"
+  batch size: 8
+  batch size test: 8
+  max epochs: 15
   val prop: 0.2
-  accumulate batch : 8
+  accumulate batch : 3
 
 mlflow: True
