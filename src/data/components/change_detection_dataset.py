@@ -298,10 +298,10 @@ class ChangeDetectionS2LookingDataset(Dataset):
         if self.transforms:
             sample_1 = self.transforms(image=img1)
             sample_2 = self.transforms(image=img2)
-            sample_l = self.transforms(mask=label)
+            sample_l = self.transforms(image=label)
             img1 = sample_1["image"]
             img2 = sample_2["image"]
-            label = sample_l["mask"]
+            label = sample_l["image"]
         else:
             img1 = torch.tensor(np.transpose(img1, (2, 0, 1)))
             img2 = torch.tensor(np.transpose(img2, (2, 0, 1)))

@@ -85,13 +85,13 @@ class ChangedetectionTripletS2Looking:
                 im2_crop = self.image2.crop((left, upper, right, lower))
                 lab_crop = self.label.crop((left, upper, right, lower))
             except:
-                return None, None, None
+                im1_crop, im2_crop, lab_crop = None, None, None
             else:
                 list_splited_image1.append(im1_crop)
                 list_splited_image2.append(im2_crop)
                 list_splited_label.append(lab_crop)
 
-                return list_splited_image1, list_splited_image2, list_splited_label
+        return list_splited_image1, list_splited_image2, list_splited_label
 
 
 class ChangeDetectionTriplet:

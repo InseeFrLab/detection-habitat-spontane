@@ -87,6 +87,14 @@ def download_data(config):
 
     return output_dir
 
+def list_sorted_filenames(dir_path):
+    filenames = os.listdir(dir_path)
+    sorted_filenames = sorted(filenames, key=lambda x: int(x.split('.')[0]))
+
+    list_images = [dir_path + filename for filename in sorted_filenames]
+
+    return list_images
+
 def prepare_data_per_doss(directory_path, tile_size, type_data):
 
     output_dir = (
@@ -104,24 +112,20 @@ def prepare_data_per_doss(directory_path, tile_size, type_data):
     else:
         return output_dir
 
-    list_images1 = [directory_path + "Image1/" + filename for filename in np.sort(os.listdir(directory_path + "Image1/"))]
-    list_images2 = [directory_path + "Image2/" + filename for filename in np.sort(os.listdir(directory_path + "Image2/"))]
-    list_labels = [directory_path + "label/" + filename for filename in np.sort(os.listdir(directory_path + "label/"))]
-
+    list_images1 = list_sorted_filenames(directory_path + "Image1/")
+    list_images2 = list_sorted_filenames(directory_path + "Image2/")
+    list_labels = list_sorted_filenames(directory_path + "label/")
 
     for img1, img2, lab in tqdm(zip(list_images1, list_images2, list_labels), total = len(list_images1)):
         triplet = ChangedetectionTripletS2Looking(img1, img2, lab)
         list_split_im1, list_split_im2, list_split_lab = triplet.split(tile_size)
-        if list_split_im1: # Verification si ce n'est pas None
 
-            for small_img1, small_img2, small_lab, i in zip(list_split_im1, list_split_im2, list_split_lab, range(tile_size)):
-                if np.sum(np.asarray(small_lab))>0: # filtre les images sans changement
-                    path = img1.split("/")[-1].split(".")[0] + "_" + "{:04d}".format(i)+".png"
-                    small_img1.save(output_dir + "Image1/" + path)
-                    small_img2.save(output_dir + "Image2/" + path)
-                    small_lab.save(output_dir + "label/" + path)
-        else:
-            continue
+        for small_img1, small_img2, small_lab, i in zip(list_split_im1, list_split_im2, list_split_lab, range(tile_size)):
+            if np.sum(np.asarray(small_lab))>0 and small_img1: # filtre les images sans changement
+                path = img1.split("/")[-1].split(".")[0] + "_" + "{:03d}".format(i)+".png"
+                small_img1.save(output_dir + "Image1/" + path)
+                small_img2.save(output_dir + "Image2/" + path)
+                small_lab.save(output_dir + "label/" + path)
 
     return output_dir
 
@@ -226,17 +230,17 @@ def instantiate_dataloader(config, output_dir_train, output_dir_valid, output_di
 
     print("Entre dans la fonction instantiate_dataloader")
 
-    train_list_images1 = [output_dir_train + "Image1/" + filename for filename in np.sort(os.listdir(output_dir_train + "Image1/"))]
-    train_list_images2 = [output_dir_train + "Image2/" + filename for filename in np.sort(os.listdir(output_dir_train + "Image2/"))]
-    train_list_labels = [output_dir_train + "label/" + filename for filename in np.sort(os.listdir(output_dir_train + "label/"))]
+    train_list_images1 = list_sorted_filenames(output_dir_train + "Image1/")
+    train_list_images2 = list_sorted_filenames(output_dir_train + "Image2/")
+    train_list_labels = list_sorted_filenames(output_dir_train + "label/")
 
-    val_list_images1 = [output_dir_valid + "Image1/" + filename for filename in np.sort(os.listdir(output_dir_valid + "Image1/"))]
-    val_list_images2 = [output_dir_valid + "Image2/" + filename for filename in np.sort(os.listdir(output_dir_valid + "Image2/"))]
-    val_list_labels = [output_dir_valid + "label/" + filename for filename in np.sort(os.listdir(output_dir_valid + "label/"))]
+    val_list_images1 = list_sorted_filenames(output_dir_valid + "Image1/")
+    val_list_images2 = list_sorted_filenames(output_dir_valid + "Image2/")
+    val_list_labels = list_sorted_filenames(output_dir_valid + "label/")
 
-    test_list_images1 = [output_dir_test + "Image1/" + filename for filename in np.sort(os.listdir(output_dir_test + "Image1/"))]
-    test_list_images2 = [output_dir_test + "Image2/" + filename for filename in np.sort(os.listdir(output_dir_test + "Image2/"))]
-    test_list_labels = [output_dir_test + "label/" + filename for filename in np.sort(os.listdir(output_dir_test + "label/"))]
+    test_list_images1 = list_sorted_filenames(output_dir_test + "Image1/")
+    test_list_images2 = list_sorted_filenames(output_dir_test + "Image2/")
+    test_list_labels = list_sorted_filenames(output_dir_test + "label/")
 
     # Retrieving the desired Dataset class
     train_dataset = instantiate_dataset(
