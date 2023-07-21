@@ -108,7 +108,7 @@ class SegmentationModule(pl.LightningModule):
         IOU = calculate_IOU(output, labels)
         self.log("test IOU", IOU, on_epoch=True)
 
-        return loss
+        return IOU
 
     def configure_optimizers(self):
         """
