@@ -27,10 +27,10 @@ class ChangedetectionTripletS2Looking:
             pathimage2 (str): Path to the second image.
             pathlabel (str): Path to the label image.
         
-        # pathimage1 = "../data/PAPERS/S2Looking/S2Looking/S2Looking/train/Image1/10.png"
-        # pathimage2 = "../data/PAPERS/S2Looking/S2Looking/S2Looking/train/Image2/10.png"
-        # pathlabel = "../data/PAPERS/S2Looking/S2Looking/S2Looking/train/label/10.png"
-        # triplet = ChangedetectionTripletS2Looking(pathimage1, pathimage2, pathlabel)
+        pathimage1 = "../train_data-S2Looking-250/Image1/1_003.png"
+        pathimage2 = "../train_data-S2Looking-250/Image2/1_003.png"
+        pathlabel = "../train_data-S2Looking-250/label/1_003.png"
+        triplet = ChangedetectionTripletS2Looking(pathimage1, pathimage2, pathlabel)
 
         """
         self.image1 = Image.open(pathimage1)

@@ -295,6 +295,10 @@ class ChangeDetectionS2LookingDataset(Dataset):
         img1 = np.asarray(cdtriplet.image1)
         img2 = np.asarray(cdtriplet.image2)
 
+        label = np.transpose(label.astype(float), [1, 2, 0])
+        img1 = np.transpose(img1.astype(float), [1, 2, 0])
+        img2 = np.transpose(img2.astype(float), [1, 2, 0])
+
         if self.transforms:
             sample_1 = self.transforms(image=img1)
             sample_2 = self.transforms(image=img2)
@@ -303,14 +307,20 @@ class ChangeDetectionS2LookingDataset(Dataset):
             img2 = sample_2["image"]
             label = sample_l["image"]
         else:
-            img1 = torch.tensor(np.transpose(img1, (2, 0, 1)))
-            img2 = torch.tensor(np.transpose(img2, (2, 0, 1)))
+            img1 = torch.tensor(img.astype(float))
+            img1 = img1.permute([2, 0, 1])
+            img2 = torch.tensor(img2.astype(float))
+            img2 = img2.permute([2, 0, 1])
+            label = torch.tensor(img.astype(float))
+            label = label.permute([2, 0, 1])
+
+        img1 = img1.type(torch.float)
+        img2 = img2.type(torch.float)
+        label = label.type(torch.float)
 
         img_double = torch.concatenate([img1, img2], axis=0).squeeze()
-
         img_double = img_double.type(torch.float)
 
-        label = torch.tensor(label)
         label = label.type(torch.LongTensor)
 
         meta_data = {
