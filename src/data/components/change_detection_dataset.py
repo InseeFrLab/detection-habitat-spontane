@@ -295,28 +295,28 @@ class ChangeDetectionS2LookingDataset(Dataset):
         img1 = np.asarray(cdtriplet.image1)
         img2 = np.asarray(cdtriplet.image2)
 
-        label = np.transpose(label.astype(float), [1, 2, 0])
-        img1 = np.transpose(img1.astype(float), [1, 2, 0])
-        img2 = np.transpose(img2.astype(float), [1, 2, 0])
+        img1 = img1.astype(float)
+        img2 = img2.astype(float)
+
+        label = torch.tensor(label)
 
         if self.transforms:
-            sample_1 = self.transforms(image=img1)
+            sample_1 = self.transforms(image=img1, label=label)
             sample_2 = self.transforms(image=img2)
-            sample_l = self.transforms(image=label)
+
             img1 = sample_1["image"]
             img2 = sample_2["image"]
-            label = sample_l["image"]
+            label = sample_1["label"]
         else:
-            img1 = torch.tensor(img.astype(float))
+            img1 = torch.tensor(img1)
             img1 = img1.permute([2, 0, 1])
-            img2 = torch.tensor(img2.astype(float))
+            img2 = torch.tensor(img2)
             img2 = img2.permute([2, 0, 1])
-            label = torch.tensor(img.astype(float))
-            label = label.permute([2, 0, 1])
+            label = torch.tensor(label)
 
         img1 = img1.type(torch.float)
         img2 = img2.type(torch.float)
-        label = label.type(torch.float)
+        label = label.type(torch.LongTensor)
 
         img_double = torch.concatenate([img1, img2], axis=0).squeeze()
         img_double = img_double.type(torch.float)

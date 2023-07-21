@@ -417,6 +417,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     with open("../config.yml") as f:
         config = yaml.load(f, Loader=SafeLoader)
 
+    os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+
     tile_size = config["donnees"]["tile size"]
     batch_size_test = config["optim"]["batch size test"]
     task_type = config["donnees"]["task"]
