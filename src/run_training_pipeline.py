@@ -228,16 +228,33 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
 
 def prepare_test_data(config, test_dir):
     print("Entre dans la fonction prepare_test_data")
-    n_bands = config["donnees"]["n bands"]
-    tile_size = config["donnees"]["tile size"]
 
-    output_test = "../test-data"
+    config_data = config["donnees"]
+
+    src = config_data["source train"]
+    config_task = config_data["task"]
+    type_labeler = config_data["type labeler"]
+    tile_size = config_data["tile size"]
+    n_bands = config_data["n bands"]
+
+    output_test = (
+        "../test_data"
+        + "-"
+        + config_task
+        + "-"
+        + src
+        + "-"
+        + type_labeler
+        + "-"
+        + str(tile_size)
+        + "/"
+    )
     output_labels_path = output_test + "/labels"
 
     if not os.path.exists(output_labels_path):
         os.makedirs(output_labels_path)
     else:
-        return None
+        return output_test
 
     labels_path = test_dir + "/masks"
     list_name_label = os.listdir(labels_path)
@@ -331,6 +348,7 @@ def prepare_test_data(config, test_dir):
                     output_images_path_2, file_name_i + ".jp2"
                     )
                 np.save(output_labels_path + "/" + file_name_i + ".npy", lsi1.label)
+    return output_test        
 
 
 def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, test = False):
@@ -371,7 +389,7 @@ def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, 
     return full_dataset
 
 
-def instantiate_dataloader(config, list_output_dir):
+def instantiate_dataloader(config, list_output_dir, output_test):
     """
     Instantiates and returns the data loaders for
     training, validation, and testing datasets.
@@ -521,10 +539,16 @@ def instantiate_dataloader(config, list_output_dir):
     # output_images_path = output_test_task + "/images/"
     # output_labels_path = output_test_task + "/masks/"
 
-    output_test = "../test-data"
-    output_labels_path = output_test + "/labels/"
+    # output_test = "../test-data"
+    # output_labels_path = output_test + "/labels/"
+    # list_name_label_test = os.listdir(output_labels_path)
+    # list_path_labels_test = np.sort([output_labels_path + name_label for name_label in list_name_label_test])
+    
+    output_labels_path = output_test + "labels/"
     list_name_label_test = os.listdir(output_labels_path)
+    list_name_label_test = remove_dot_file(list_name_label_test)
     list_path_labels_test = np.sort([output_labels_path + name_label for name_label in list_name_label_test])
+
 
     if config_task != "change-detection":
         output_images_path = output_test + "/images/"
@@ -721,9 +745,9 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
 
     list_output_dir = prepare_train_data(config, list_data_dir, list_masks_cloud_dir)
-    prepare_test_data(config, test_dir)
+    output_test = prepare_test_data(config, test_dir)
 
-    train_dl, valid_dl, test_dl = instantiate_dataloader(config, list_output_dir)
+    train_dl, valid_dl, test_dl = instantiate_dataloader(config, list_output_dir, output_test)
     # train_dl.dataset[0][0].shape
     light_module = instantiate_lightning_module(config)
     trainer = instantiate_trainer(config, light_module)
@@ -759,7 +783,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             light_module_checkpoint = light_module.load_from_checkpoint(
                 loss=instantiate_loss(config),
                 checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
-                # checkpoint_path='',
+                # checkpoint_path='/home/onyxia/work/detection-habitat-spontane/src/lightning_logs/version_0/checkpoints/epoch=148-step=1043.ckpt',
                 model=light_module.model,
                 optimizer=light_module.optimizer,
                 optimizer_params=light_module.optimizer_params,

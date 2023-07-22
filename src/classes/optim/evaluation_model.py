@@ -128,6 +128,8 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
         mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
 
         for i in range(batch_size):
+            if len(dic["pathimage"]) != batch_size:
+                continue
             try:
                 pthimg = dic["pathimage"][i]
                 src = pthimg.split('/')[1].split('segmentation-')[1].split('-BDTOPO')[0]
@@ -166,6 +168,7 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
                 if use_mlflow:
                     mlflow.log_artifact(plot_file, artifact_path="plots")
             except IndexError:
+                print('IndexError')
                 pass
 
 

@@ -18,7 +18,7 @@ def generate_optimization_elements(config):
     task = config["donnees"]["task"]
 
     if task in task_liste:
-        if task == "segmentation":
+        if task == "classification":
             optimizer = torch.optim.SGD
             optimizer_params = {
                 "lr": config["optim"]["lr"],
@@ -28,14 +28,18 @@ def generate_optimization_elements(config):
             scheduler_params = {}
             scheduler_interval = "epoch"
 
-        elif task == "classification":
+        elif task == "segmentation":
             optimizer = torch.optim.SGD
             optimizer_params = {
                 "lr": config["optim"]["lr"],
                 "momentum": config["optim"]["momentum"],
             }
-            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
-            scheduler_params = {}
+            # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
+            scheduler = torch.optim.lr_scheduler.OneCycleLR
+            scheduler_params = {
+                "max_lr": 0.005,
+                "epochs": 150,
+                "steps_per_epoch": 27}
             scheduler_interval = "epoch"
         
         elif task == "change-detection":
