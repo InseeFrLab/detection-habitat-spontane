@@ -291,7 +291,7 @@ class ChangeDetectionS2LookingDataset(Dataset):
         pathlabel = self.list_paths_labels[idx]
 
         cdtriplet = ChangedetectionTripletS2Looking(pathim1, pathim2, pathlabel)
-        label = np.asarray(cdtriplet.label)
+        label = np.asarray(cdtriplet.label)/255
         img1 = np.asarray(cdtriplet.image1)
         img2 = np.asarray(cdtriplet.image2)
 

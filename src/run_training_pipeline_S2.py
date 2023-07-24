@@ -308,8 +308,12 @@ def instantiate_loss(config):
     """
 
     print("Entre dans la fonction instantiate_loss")
-    return CrossEntropyLoss()
-
+    loss_type = config["optim"]["loss"]
+    print(loss_type)
+    if loss_type not in loss_dict:
+        raise ValueError("Invalid loss type")
+    else:
+        return loss_dict[loss_type]()
 
 def instantiate_lightning_module(config):
     """

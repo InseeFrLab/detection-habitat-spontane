@@ -14,7 +14,7 @@ from classes.optim.evaluation_model import (
     evaluer_modele_sur_jeu_de_test_change_detection_pleiade
 )
 from classes.optim.losses import CrossEntropySelfmade, SoftIoULoss
-from data.components.change_detection_dataset import ChangeIsEverywhereDataset, ChangeDetectionDataset
+from data.components.change_detection_dataset import ChangeIsEverywhereDataset, ChangeDetectionDataset, ChangeDetectionS2LookingDataset
 from data.components.classification_patch import PatchClassification
 from data.components.dataset import PleiadesDataset, SentinelDataset
 from models.classification_module import ClassificationModule
@@ -34,6 +34,7 @@ dataset_dict = {
     "SENTINEL": SentinelDataset,
     "CHANGEISEVERYWHERE": ChangeIsEverywhereDataset,
     "CHANGEDETECTIONDATASET": ChangeDetectionDataset,
+    "CHANGEDETECTIONDATASETS2": ChangeDetectionS2LookingDataset,
 }
 
 module_dict = {"deeplabv3": DeepLabv3Module, "resnet50": ResNet50Module}
