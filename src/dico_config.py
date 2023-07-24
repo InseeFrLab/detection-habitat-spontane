@@ -23,7 +23,10 @@ dataset_dict = {
     "CHANGEDETECTIONDATASET": ChangeDetectionDataset,
 }
 
-module_dict = {"deeplabv3": DeepLabv3Module, "resnet50": ResNet50Module}
+module_dict = {
+    "deeplabv3": DeepLabv3Module,
+    "deeplabv3_RGB_MOCO": DeepLabv3Module,
+    "resnet50": ResNet50Module}
 
 loss_dict = {
     "softiou": SoftIoULoss,

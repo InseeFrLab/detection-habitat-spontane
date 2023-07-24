@@ -604,6 +604,8 @@ def instantiate_model(config):
 
     if module_type == "deeplabv3":
         return module_dict[module_type](nchannel)
+    if module_type == "deeplabv3_RGB_MOCO":
+        return module_dict[module_type](nchannel, True)
     else:
         return module_dict[module_type]()
 
