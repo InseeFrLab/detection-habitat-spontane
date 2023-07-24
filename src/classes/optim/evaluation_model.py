@@ -10,6 +10,7 @@ from classes.data.satellite_image import SatelliteImage
 from utils.plot_utils import (
     plot_list_labeled_sat_images,
     plot_list_segmentation_labeled_satellite_image,
+    plot_image_mask_label
 )
 
 # with open("../config.yml") as f:
@@ -132,13 +133,22 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
                 continue
             try:
                 pthimg = dic["pathimage"][i]
+                label = np.load(dic["pathlabel"][i])
                 src = pthimg.split('/')[1].split('segmentation-')[1].split('-BDTOPO')[0]
                 si = SatelliteImage.from_raster(
                     file_path=pthimg, dep=None, date=None, n_bands=n_bands
                 )
                 si.normalize()
 
-                labeled_satellite_image = SegmentationLabeledSatelliteImage(
+                
+                labeled_satellite_image_label = SegmentationLabeledSatelliteImage(
+                    satellite_image=si,
+                    label=label,
+                    source="",
+                    labeling_date="",
+                )
+
+                labeled_satellite_image_mask = SegmentationLabeledSatelliteImage(
                     satellite_image=si,
                     label=mask_pred[i],
                     source="",
@@ -146,21 +156,22 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
                 )
 
                 print("ecriture image")
-                if not os.path.exists("img/"):
-                    os.makedirs("img/")
+                if not os.path.exists("outputs_evaluation_model/"):
+                    os.makedirs("outputs_evaluation_model/")
+
                 if src == 'SENTINEL1-2' or src == 'SENTINEL2':
-                    fig1 = plot_list_segmentation_labeled_satellite_image(
-                        [labeled_satellite_image], [3, 2, 1]
-                    )
-                elif src == 'SENTINEL2-RVB' or src == 'SENTINEL1-2-RVB':
-                    fig1 = plot_list_segmentation_labeled_satellite_image(
-                        [labeled_satellite_image], [0, 1, 2]
-                    )
+                    bands_list = (3, 2, 1)
+                    bands_idx = 3, 2, 1
+                elif src == 'SENTINEL2-RVB' or src == 'SENTINEL1-2-RVB' or src == 'PLEIADES':
+                    bands_list = (0, 1, 2)
+                    bands_idx = 0, 1, 2
+
+                fig1 = plot_image_mask_label(labeled_satellite_image_label.satellite_image, labeled_satellite_image_label.label, labeled_satellite_image_mask.label, bands_idx)
 
                 filename = pthimg.split("/")[-1]
                 filename = filename.split(".")[0]
                 filename = "_".join(filename.split("_")[0:6])
-                plot_file = "img/" + filename + ".png"
+                plot_file = "outputs_evaluation_model/" + filename + ".png"
 
                 fig1.savefig(plot_file)
                 matplotlib.pyplot.close()
