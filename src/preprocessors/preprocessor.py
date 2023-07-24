@@ -428,7 +428,7 @@ class Preprocessor:
         )
 
         if os.path.splitext(filename)[0] in list_clouds:
-            mask_full_cloud = np.load(f"{path_clouds}/{os.path.splitext(filename)[0]}.npy")
+            mask_full_cloud = np.load(f"../{path_clouds}/{os.path.splitext(filename)[0]}.npy")
             list_splitted_mask_cloud = split_array(mask_full_cloud, self.config.tile_size)
         else:
             list_splitted_mask_cloud = None
