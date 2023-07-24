@@ -201,10 +201,21 @@ def plot_list_labeled_sat_images(
     list_labeled_image: List,
     bands_indices: List,
 ):
-    list_images = [iml.satellite_image for iml in list_labeled_image]
-    list_labels = [iml.label for iml in list_labeled_image]
+    list_images1 = [iml.satellite_image for iml in list_labeled_image]
+    list_labels1 = [iml.label for iml in list_labeled_image]
 
-    size = int(math.sqrt(len(list_images)))
+    list_bounding_box = [[im.bounds[3], im.bounds[0]] for im in list_images1]
+
+    # Utiliser zip pour combiner les trois listes
+    combined = zip(list_bounding_box, list_images1, list_labels1)
+
+    # Trier les éléments combinés en fonction de la troisième liste
+    sorted_combined = sorted(combined, key=lambda x: (-x[0][0], x[0][1]))
+
+    # Diviser les listes triées en fonction de l'ordre des éléments
+    __, list_images, list_labels = zip(*sorted_combined)
+
+    size = int(math.sqrt(len(list_images1)))
 
     # Create a figure and axes
     fig, axs = plt.subplots(nrows=size, ncols=2 * size, figsize=(20, 10))
@@ -213,7 +224,7 @@ def plot_list_labeled_sat_images(
     for i in range(size):
         for j in range(size):
             axs[i, j].imshow(
-                list_images[i * size + j].array.transpose(1, 2, 0)[
+                list_images1[i * size + j].array.transpose(1, 2, 0)[
                     :, :, bands_indices
                 ]
             )
@@ -505,10 +516,11 @@ def creer_array_to_plot(pth_image):
     return array_to_plot
 
 
-def represent_image_label(
+def represent_grid_images_and_labels(
     list_array_to_plot,
     list_label,
     creer_array=True,
+    list_names = None
 ):
     """
     Plot a square grid of images and their masks from their paths.
@@ -530,6 +542,13 @@ def represent_image_label(
             array_to_plot = creer_array_to_plot(list_array_to_plot[i])
         else:
             array_to_plot = list_array_to_plot[i]
+        x = int(i/nrow) + 1
+        y = (i+1)%nrow
+        if y == 0:
+            y = nrow
+        file = open("img/Noms_vignette", "a")
+        file.write("\n" + "(" + str(x) + "," + str(y) + ")" + "   " + list_names[i])
+        file.close()
         ax.imshow(array_to_plot)
         ax.axis("off")
 
@@ -588,10 +607,10 @@ def plot_list_images_and_masks_square(
         elif 'segmentation' in pth_image:
             list_label.append(np.array(dataset[i][1]))
 
-    return represent_image_label(list_array_to_plot, list_label, True)
+    return represent_grid_images_and_labels(list_array_to_plot, list_label, True)
 
 
-def plot_image_and_mask(
+def plot_satellite_image_and_mask(
     labeled_satellite_image,
     bands_indices,
 ):
@@ -624,7 +643,6 @@ def plot_image_and_mask(
     # plt.show()
     # plt.gcf()
     # plt.savefig("test.png")
-
 
 
 def draw_change_is_everywhere_exemples(changeiseverywheredataset, n_exemples):
@@ -693,3 +711,23 @@ def draw_change_is_everywhere_exemples(changeiseverywheredataset, n_exemples):
     plt.show()
     res = plt.gcf()
     res.savefig("triplet_train.png")
+
+
+def plot_image_mask_label(
+    satellite_image,
+    label,
+    mask,
+    bands_idx
+):
+    image = satellite_image.array[bands_idx, :, :].transpose(1,2,0)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(25, 25))
+    ax1.imshow(image)
+    ax1.imshow(label, alpha=0.5, cmap='OrRd')
+    ax1.set_title("image et label")
+    ax1.axis('off')
+    ax2.imshow(image)
+    ax2.imshow(mask, alpha=0.3)
+    ax2.set_title("image et masque")
+    ax2.axis('off')
+    return plt.gcf()
