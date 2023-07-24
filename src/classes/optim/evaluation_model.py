@@ -21,8 +21,8 @@ from classes.data.satellite_image import SatelliteImage
 from utils.plot_utils import (
     plot_list_labeled_sat_images,
     plot_list_segmentation_labeled_satellite_image,
-    plot_image_and_mask,
-    represent_image_label,
+    plot_satellite_image_and_mask,
+    represent_grid_images_and_labels,
 )
 
 # with open("../config.yml") as f:
@@ -209,7 +209,8 @@ def evaluer_modele_sur_jeu_de_test_classification_sentinel(
     model.eval()
 
     list_labels = []
-    list_array = []
+    list_arrays = []
+    list_names = []
     
     for idx, batch in enumerate(test_dl):
 
@@ -301,7 +302,8 @@ def evaluer_modele_sur_jeu_de_test_classification_sentinel(
                         array_green_borders = array_green_borders.transpose(2, 1, 0)
                         si.array = array_green_borders
                 list_labels.append(mask_pred)
-                list_array.append(np.transpose(si.array,(1,2,0))[:, :, bands_idx])
+                list_arrays.append(np.transpose(si.array,(1,2,0))[:, :, bands_idx])
+                list_names.append(si.filename)
 
                 labeled_satellite_image = SegmentationLabeledSatelliteImage(
                         satellite_image=si,
@@ -311,10 +313,10 @@ def evaluer_modele_sur_jeu_de_test_classification_sentinel(
                     )
 
                 print("ecriture image")
-                if not os.path.exists("img/"):
-                    os.makedirs("img/")
+                if not os.path.exists("outputs_evaluation_model/"):
+                    os.makedirs("outputs_evaluation_model/")
 
-                fig1 = plot_image_and_mask(
+                fig1 = plot_satellite_image_and_mask(
                     labeled_satellite_image,
                     bands_idx,
                 )
@@ -322,7 +324,7 @@ def evaluer_modele_sur_jeu_de_test_classification_sentinel(
                 filename = pthimg.split("/")[-1]
                 filename = filename.split(".")[0]
                 filename = "_".join(filename.split("_")[0:6])
-                plot_file = "img/" + filename + ".png"
+                plot_file = "outputs_evaluation_model/" + filename + ".png"
 
                 fig1.savefig(plot_file)
 
@@ -333,12 +335,12 @@ def evaluer_modele_sur_jeu_de_test_classification_sentinel(
                 print("ValueError sur l'image ", si.filename)
 
         del images, labels, dic
-    size = int(sqrt(len(list_array)))**2
-    list_array = list_array[:size]
+    size = int(sqrt(len(list_arrays)))**2
+    list_arrays = list_arrays[:size]
     list_labels = list_labels[:size]
 
-    grid = represent_image_label(list_array, list_labels, False)
-    grid_name = "img/grid.png"
+    grid = represent_grid_images_and_labels(list_arrays, list_labels, False, list_names)
+    grid_name = "outputs_evaluation_model/grid.png"
     grid.savefig(grid_name)
 
     if use_mlflow:
