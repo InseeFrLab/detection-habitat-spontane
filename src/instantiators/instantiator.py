@@ -70,7 +70,7 @@ class Instantiator:
 
         return full_dataset
 
-    def dataloader(self, list_output_dir):
+    def dataloader(self):
         """
         Instantiates and returns the data loaders for
         training, validation, and testing datasets.
@@ -106,7 +106,6 @@ class Instantiator:
         # génération des paths en fonction du type de Données
         # (Sentinel, PLEIADES) VS Dataset préannotés
 
-        print("Entre dans la fonction instantiate_dataloader")
         if self.config.source_train in [
             "PLEIADES",
             "SENTINEL2",
@@ -115,21 +114,21 @@ class Instantiator:
             list_labels = []
             list_images = []
             full_balancing_dict = {}
-            for directory in list_output_dir:
-                # dir = list_output_dir[0]
-                labels = os.listdir(f"{directory}/labels")
-                images = os.listdir(f"{directory}/images")
-                if labels[0][0] == ".":
-                    del labels[0]
+            for directory in self.config.path_prepro_data:
+                labels = os.listdir(f"../{directory}/labels")
+                images = os.listdir(f"../{directory}/images")
+
+                # if labels[0][0] == ".":
+                #     del labels[0]
 
                 if self.config.task != "classification":
-                    with open(f"{directory}/balancing_dict.json") as json_file:
+                    with open(f"../{directory}/balancing_dict.json") as json_file:
                         balancing_dict = json.load(json_file)
 
                     list_labels = np.concatenate(
                         (
                             list_labels,
-                            np.sort([f"{directory}/labels/{name}" for name in labels]),
+                            np.sort([f"../{directory}/labels/{name}" for name in labels]),
                         )
                     )
 
@@ -140,7 +139,7 @@ class Instantiator:
                     list_labels_dir = []
 
                     # Load the initial CSV file
-                    df = pd.read_csv(f"{directory}/labels/{labels[0]}")
+                    df = pd.read_csv(f"../{directory}/labels/{labels[0]}")
 
                     list_labels_dir = df[["Path_image", "Classification"]].values.tolist()
 
@@ -152,7 +151,7 @@ class Instantiator:
                 list_images = np.concatenate(
                     (
                         list_images,
-                        np.sort([f"{directory}/images/{name}" for name in images]),
+                        np.sort([f"../{directory}/images/{name}" for name in images]),
                     )
                 )
 
@@ -176,6 +175,8 @@ class Instantiator:
 
         # Applying the respective transforms
 
+        # TODO : A CHANGER, ce doit etre une fonction dans instantiator qui connait
+        # deja config avec moins d'arguments
         if self.config.source_train == "PLEIADES":
             t_aug, t_preproc = generate_transform_pleiades(
                 self.config.tile_size,
@@ -185,8 +186,8 @@ class Instantiator:
         else:
             t_aug, t_preproc = generate_transform_sentinel(
                 self.config.source_train,
-                self.config.year[0],
-                self.config.dep[0],
+                self.config.millesime[0]["year"],
+                self.config.millesime[0]["dep"],
                 self.config.tile_size,
                 self.config.augmentation,
                 self.config.task,
@@ -203,15 +204,14 @@ class Instantiator:
             for ds, boolean in zip([train_dataset, valid_dataset], [True, False])
         ]
 
-        output_test = "../test-data"
-        output_labels_path = f"{output_test}/labels/"
+        output_labels_path = f"../{self.config.path_prepro_test_data[0]}/masks/"
         list_name_label_test = os.listdir(output_labels_path)
         list_path_labels_test = np.sort(
             [f"{output_labels_path}{name_label}" for name_label in list_name_label_test]
         )
 
         if self.config.task != "change-detection":
-            output_images_path = f"{output_test}/images/"
+            output_images_path = f"../{self.config.path_prepro_test_data[0]}/images/"
             list_name_image_test = os.listdir(output_images_path)
             list_path_images_test = np.sort(
                 [f"{output_images_path}{name_image}" for name_image in list_name_image_test]
@@ -220,13 +220,13 @@ class Instantiator:
             dataset_test = self.dataset(list_path_images_test, list_path_labels_test, test=True)
             dataset_test.transforms = t_preproc
         else:
-            output_images_path_1 = f"{output_test}/images_1/"
+            output_images_path_1 = f"../{self.config.path_prepro_test_data[0]}/images_1/"
             list_name_image_1 = os.listdir(output_images_path_1)
             list_path_images_1 = np.sort(
                 [f"{output_images_path_1}{name_image}" for name_image in list_name_image_1]
             )
 
-            output_images_path_2 = f"{output_test}/images_2/"
+            output_images_path_2 = f"../{self.config.path_prepro_test_data[0]}/images_2/"
             list_name_image_2 = os.listdir(output_images_path_2)
             list_path_images_2 = np.sort(
                 [f"{output_images_path_2}{name_image}" for name_image in list_name_image_2]
@@ -282,7 +282,6 @@ class Instantiator:
         Returns:
             An optimizer object from the `torch.optim` module.
         """
-        print("Entre dans la fonction instantiate_loss")
 
         if self.config.loss not in loss_dict:
             raise ValueError("Invalid loss type")

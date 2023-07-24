@@ -25,19 +25,18 @@ def check_labelled_images(output_directory_name):
             False if the directory doesn't exist or is empty.
     """
 
-    print("Entre dans la fonction check_labelled_images")
     output_images_path = f"{output_directory_name}/images"
     output_masks_path = f"{output_directory_name}/labels"
     if (os.path.exists(output_masks_path)) and (len(os.listdir(output_masks_path)) != 0):
-        print("The directory already exists and is not empty.")
+        print("\t** The directory already exists and is not empty.")
         return True
     elif (os.path.exists(output_masks_path)) and (len(os.listdir(output_masks_path)) == 0):
-        print("The directory exists but is empty.")
+        print("\t** The directory exists but is empty.")
         return False
     else:
         os.makedirs(output_images_path)
         os.makedirs(output_masks_path)
-        print("Directory created")
+        print("\t** Directory created !")
         return False
 
 
@@ -54,7 +53,6 @@ def filter_images(src, list_images, list_array_cloud=None):
             the data type.
     """
 
-    # print("Entre dans la fonction filter_images")
     if src == "PLEIADES":
         return filter_images_pleiades(list_images, list_array_cloud)
     else:
@@ -72,7 +70,6 @@ def filter_images_pleiades(list_images, list_array_cloud):
         list[SatelliteImage] : the list containing the splitted \
             and filtered data.
     """
-    # print("Entre dans la fonction filter_images_pleiades")
     list_filtered_splitted_images = []
 
     if list_array_cloud:
@@ -101,7 +98,6 @@ def filter_images_sentinel(list_images):
             filtered data.
     """
 
-    # print("Entre dans la fonction filter_images_sentinel")
     list_filtered_splitted_images = []
     for splitted_image in list_images:
         if not is_too_water(splitted_image, 0.95):
@@ -261,18 +257,8 @@ def save_images_and_masks(list_images, list_masks, output_directory_name, task="
     Returns:
         str: The name of the output directory.
     """
-    # print("Entre dans la fonction save_images_and_masks")
     output_images_path = f"{output_directory_name}/images"
     output_masks_path = f"{output_directory_name}/labels"
-
-    # if task == "classification":
-    #     count_ones = list_masks.count(1)
-    #     count_zeros_sampled = int(count_ones*prop)
-    #     indices_1 = [i for i, lab in enumerate(list_masks) if lab == 1]
-    #     indices_0 = [i for i, lab in enumerate(list_masks) if lab == 0]
-    #     random.shuffle(indices_0)
-    #     selected_indices_0 = indices_0[:count_zeros_sampled]
-    #     selected_indices = indices_1 + selected_indices_0
 
     for i, (image, mask) in enumerate(zip(list_images, list_masks)):
         filename = f"{image.filename.split('.')[0]}_{i:04d}"

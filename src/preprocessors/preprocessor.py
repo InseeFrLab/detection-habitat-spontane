@@ -139,13 +139,18 @@ class Preprocessor:
                     json.dump(full_balancing_dict, fp)
 
                 nb = len(os.listdir(f"../{self.config.path_prepro_data[i]}/images"))
-                print(f"\t{nb} couples images/masques ont été retenus")
+                print(f"\t** {nb} couples images/masques ont été retenus")
 
         print("\n*** Données d'entrainement prêtes !\n")
         return None
 
     def prepare_test_data(self):
         print("\n*** 3- Préparation des données de test...\n")
+
+        mask_folder = f"../{self.config.path_prepro_test_data[0]}/masks/"
+        if not os.path.exists(mask_folder):
+            os.makedirs(mask_folder)
+
         match self.config.task:
             case "change-detection":
                 # Cas change-detection : On a 2 images et 1 masque
@@ -175,10 +180,7 @@ class Preprocessor:
 
                         # On loop sur toutes les images et masques divisés pour les sauvegarder
                         for j in range(len(dict_lsi[1])):
-                            mask_path = (
-                                f"../{self.config.path_prepro_test_data[0]}/"
-                                f"masks/{filename.replace('_0000', f'_{j:04d}')}"
-                            )
+                            mask_path = f"{mask_folder}{filename.replace('_0000', f'_{j:04d}')}"
                             np.save(mask_path, dict_lsi[1].label)
 
                             for i in range(1, len(dict_lsi) + 1):
@@ -210,10 +212,7 @@ class Preprocessor:
 
                         # On loop sur toutes les images et masques divisés pour les sauvegarder
                         for i, splitted_image in enumerate(list_lsi):
-                            mask_path = (
-                                f"../{self.config.path_prepro_test_data[0]}/"
-                                f"masks/{filename.replace('_0000', f'_{i:04d}')}"
-                            )
+                            mask_path = f"{mask_folder}{filename.replace('_0000', f'_{i:04d}')}"
                             im_path = Path(mask_path.replace("/masks", "/images")).with_suffix(
                                 ".jp2"
                             )
@@ -239,19 +238,18 @@ class Preprocessor:
                 False if the directory doesn't exist or is empty.
         """
 
-        print("Entre dans la fonction check_labelled_images")
         path_prepro = get_path_by_millesime(self.config.path_prepro_data, millesime)
 
         if (os.path.exists(f"../{path_prepro}")) and (len(os.listdir(f"../{path_prepro}")) != 0):
-            print("The directory already exists and is not empty.")
+            print("\t** The directory already exists and is not empty.")
             return True
         elif (os.path.exists(f"../{path_prepro}")) and (len(os.listdir(f"../{path_prepro}")) == 0):
-            print("The directory exists but is empty.")
+            print("\t** The directory exists but is empty.")
             return False
         else:
             os.makedirs(f"../{path_prepro}/images")
             os.makedirs(f"../{path_prepro}/labels")
-            print("Directory created")
+            print("\t** Directory created !")
             return False
 
     def filter_images(self, list_images, list_array_cloud=None):
@@ -267,7 +265,6 @@ class Preprocessor:
                 the data type.
         """
 
-        # print("Entre dans la fonction filter_images")
         if self.config.source_train == "PLEIADES":
             return filter_images_pleiades(list_images, list_array_cloud)
         else:

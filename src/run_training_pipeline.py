@@ -37,7 +37,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     preprocessor.prepare_train_data()
     preprocessor.prepare_test_data()
 
-    train_dl, valid_dl, test_dl = instantiator.dataloader(configurator)
+    train_dl, valid_dl, test_dl = instantiator.dataloader()
     trainer = instantiator.trainer()
 
     light_module = instantiator.lightning_module()

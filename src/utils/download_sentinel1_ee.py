@@ -90,9 +90,6 @@ def export_s1_grd_first(start_date, AOI, s1_grd, DOM):
         start_date: date from which the images can be downloaded.
         end_date: date after which the images can no longer be downloaded.
     """
-
-    print("Entre dans la fonction s1_grd_first")
-
     update_storage_access()
     root_path = get_root_path()
     environment = get_environment()
@@ -129,8 +126,6 @@ def export_s1_grd_first(start_date, AOI, s1_grd, DOM):
 
 
 def export_s1_grd_mean(start_date, AOI, s1_grd, DOM):
-    print("Entre dans la fonction s1_grd_mean")
-
     update_storage_access()
     root_path = get_root_path()
     environment = get_environment()

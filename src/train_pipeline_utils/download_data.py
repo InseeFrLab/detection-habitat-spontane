@@ -26,8 +26,6 @@ def load_satellite_data(year: int, dep: str, src: str):
     Returns:
         str: The local path where the data is downloaded.
     """
-    print("Entre dans la fonction load_satellite_data")
-
     update_storage_access()
     root_path = get_root_path()
     environment = get_environment()
