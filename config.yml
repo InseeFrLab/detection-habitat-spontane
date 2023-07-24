@@ -7,8 +7,8 @@ data:
   millesime:
     - dep: "976"
       year: "2022"
-    - dep: "974"
-      year: "2022"
+    - dep: "976"
+      year: "2021"
   type_labeler: "BDTOPO"
   buffer_size: 10
   n_channels_train: 12

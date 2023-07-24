@@ -53,7 +53,7 @@ class Preprocessor:
             A list of output directories for each downloaded dataset.
         """
 
-        print("\n*** Téléchargement des données...\n")
+        print("\n*** 1- Téléchargement des données...\n")
 
         all_exist = all(
             os.path.exists(f"../{directory}")
@@ -99,7 +99,7 @@ class Preprocessor:
             preprocessed tile and mask image files.
         """
 
-        print("Entre dans la fonction prepare_data")
+        print("\n*** 2- Préparation des données d'entrainement...\n")
 
         for i, millesime in enumerate(self.config.millesime):
             labeler = self.get_labeller(millesime)
@@ -139,19 +139,23 @@ class Preprocessor:
                     json.dump(full_balancing_dict, fp)
 
                 nb = len(os.listdir(f"../{self.config.path_prepro_data[i]}/images"))
-                print(f"{str(nb)} couples images/masques retenus")
+                print(f"\t{nb} couples images/masques ont été retenus")
 
+        print("\n*** Données d'entrainement prêtes !\n")
         return None
 
     def prepare_test_data(self):
-        print("Entre dans la fonction prepare_test_data")
+        print("\n*** 3- Préparation des données de test...\n")
         match self.config.task:
             case "change-detection":
+                # Cas change-detection : On a 2 images et 1 masque
                 for root, dirs, files in os.walk(f"../{self.config.path_local_test[0]}/masks"):
                     for filename in files:
                         mask = np.load(os.path.join(root, filename))
-
+                        # Les fichiers d'images n'ont pas de suffix
                         filename_im = filename.replace("_0000", "")
+
+                        # On loop sur les 2 images
                         dict_lsi = {}
                         for i in range(1, 3):
                             root_im = root.replace("/masks", f"/images_{i}")
@@ -169,6 +173,7 @@ class Preprocessor:
                                 self.config.tile_size
                             )
 
+                        # On loop sur toutes les images et masques divisés pour les sauvegarder
                         for j in range(len(dict_lsi[1])):
                             mask_path = (
                                 f"../{self.config.path_prepro_test_data[0]}/"
@@ -185,6 +190,7 @@ class Preprocessor:
                                 )
 
             case _:
+                # Autres cas : On a 1 image et 1 masque
                 for root, dirs, files in os.walk(f"../{self.config.path_local_test[0]}/masks"):
                     for filename in files:
                         filename_im = filename.replace("_0000", "")
@@ -202,6 +208,7 @@ class Preprocessor:
                         lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
                         list_lsi = lsi.split(self.config.tile_size)
 
+                        # On loop sur toutes les images et masques divisés pour les sauvegarder
                         for i, splitted_image in enumerate(list_lsi):
                             mask_path = (
                                 f"../{self.config.path_prepro_test_data[0]}/"
@@ -216,6 +223,7 @@ class Preprocessor:
                             )
 
                             np.save(mask_path, splitted_image.label)
+        print("\n*** Données de test prêtes !\n")
 
     def check_labelled_images(self, millesime):
         """
@@ -412,7 +420,6 @@ class Preprocessor:
                 labeler = BDTOPOLabeler(date, dep=millesime["dep"])
             case _:
                 pass
-        print(labeler)
         return labeler
 
     def prepare_yearly_data(self, satellite_image, labeler, filename, millesime):

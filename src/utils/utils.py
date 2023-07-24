@@ -256,7 +256,6 @@ def load_bdtopo(
 
         update_storage_access()
         fs = S3FileSystem(client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"})
-        print(f"download {dep} {millesime} in {dir_path}")
         extensions = ["cpg", "dbf", "prj", "shp", "shx"]
         couche_split = couche.split(".")[0]
         for ext in extensions:

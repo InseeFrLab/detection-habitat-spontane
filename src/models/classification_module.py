@@ -151,39 +151,3 @@ class ClassificationModule(pl.LightningModule):
         }
 
         return [optimizer], [scheduler]
-
-
-# lang = input("What's the programming language you want to learn? ")
-
-# images, labels, dic = batch
-# output = self.forward(images)
-
-# output = output.to(device)
-# labels = labels.to(device)
-
-# target = labels.long()
-
-# targets_one_hot = torch.zeros(target.shape[0], 2)
-# targets_one_hot = targets_one_hot.scatter_(1, target.unsqueeze(1), 1)
-
-# loss = self.loss(output, targets_one_hot)
-
-# match step:
-#     case "training":
-#         prop_ones = proportion_ones(labels)
-
-#         self.log("train_loss", loss, on_epoch=True)
-#         print(prop_ones)
-
-#     case "validation":
-#         prop_ones = proportion_ones(labels)
-#         loss_pourcentage = calculate_pourcentage_loss(output, labels)
-
-#         self.log("validation_loss", loss, on_epoch=True)
-#         self.log("validation_missclassed", loss_pourcentage, on_epoch=True)
-#         print(prop_ones)
-
-#     case "test":
-#         self.log("test_loss", loss, on_epoch=True)
-
-#     case _:
