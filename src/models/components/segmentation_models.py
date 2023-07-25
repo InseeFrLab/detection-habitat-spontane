@@ -1,7 +1,6 @@
 import torchvision
 from torch import nn
 from torchvision.models._api import Weights
-from torchgeo.models import ResNet50_Weights
 
 
 class DeepLabv3Module(nn.Module):

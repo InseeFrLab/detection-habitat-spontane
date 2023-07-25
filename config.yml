@@ -16,12 +16,14 @@ donnees:
 
 optim:
   loss: "crossentropy"
-  lr: 0.001
+  lr: 0.0015
   momentum: 0.9
   module: "deeplabv3"
+  optimizer: "SGD"
+  scheduler: "ReduceLROnPlateau"
   batch size: 50
   batch size test: 16
-  max epochs: 50
+  max epochs: 150
   val prop: 0.2
   accumulate batch : 4
 
