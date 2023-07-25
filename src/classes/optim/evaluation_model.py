@@ -21,6 +21,7 @@ from classes.data.satellite_image import SatelliteImage
 from utils.plot_utils import (
     plot_list_labeled_sat_images,
     plot_list_segmentation_labeled_satellite_image,
+    plot_list_change_detection_images,
 )
 
 # with open("../config.yml") as f:
@@ -798,9 +799,20 @@ def evaluer_modele_sur_jeu_de_test_change_detection_S2(
     Returns:
         None
     """
-    # tile_size = 250
-    # batch_size  = 4
+    tile_size = 250
+    batch_size  = 8
     model.eval()
+    npatch = int((1024 / tile_size) ** 2)
+    if 1024 % tile_size!=0:
+        npatch = npatch + 2*int(1024 / tile_size) + 1
+
+    count_patch = 0
+
+    list_img1 = []
+    list_img2 = []
+    list_label_true = []
+    list_label_pred = []
+    list_path = []
 
     for idx, batch in enumerate(test_dl):
         # idx, batch = 0, next(iter(test_dl))
@@ -819,39 +831,44 @@ def evaluer_modele_sur_jeu_de_test_change_detection_S2(
             pthlabel = dic["pathlabel"][i]
 
             triplet = ChangedetectionTripletS2Looking(pthimg1, pthimg2, pthlabel)
-            img1 = triplet.image1
-            img2 = triplet.image2
-            lab_true = triplet.label
-            lab_pred = mask_pred[i]
+            list_img1.append(triplet.image1)
+            list_img2.append(triplet.image2)
+            list_label_true.append(triplet.label)
+            list_label_pred.append(mask_pred[i])
+            list_path.append(pthimg1)
 
-            print("ecriture image")
-            if not os.path.exists("img/"):
-                os.makedirs("img/")
+            count_patch += 1
 
-            fig, ax = plt.subplots(1, 4, figsize=(15, 15))
-            ax[0].imshow(img1)
-            ax[0].set_title("Image 1")
-            ax[0].set_axis_off()
-            ax[1].imshow(img2)
-            ax[1].set_title("Image 2")
-            ax[1].set_axis_off()
-            ax[2].imshow(lab_true)
-            ax[2].set_title("Label True")
-            ax[2].set_axis_off()
-            ax[3].imshow(lab_pred, cmap="gray")
-            ax[3].set_title("Label Predicted")
-            ax[3].set_axis_off()
-            fig1 = plt.gcf()
+            if ((count_patch) % npatch) == 0:
+                print("ecriture image")
+                if not os.path.exists("img/"):
+                    os.makedirs("img/")
 
-            filename = pthimg1.split("/")[-1]
-            filename = filename.split(".")[0]
-            filename = filename + "_result"
-            plot_file = filename + ".png"
+                fig1 = plot_list_change_detection_images(
+                            list_img1,
+                            list_img2,
+                            list_label_true,
+                            list_label_pred,
+                            list_path,
+                        )
 
-            fig1.savefig(plot_file)
+                filename = pthimg1.split("/")[-1]
+                filename = filename.split(".")[0]
+                filename = filename.split("_")[0]
+                filename = filename + "_result"
+                plot_file = filename + ".png"
 
-            if use_mlflow:
-                mlflow.log_artifact(plot_file, artifact_path="plots")
+                fig1.savefig(plot_file)
+                list_img1 = []
+                list_img2 = []
+                list_label_true = []
+                list_label_pred = []
+                list_path = []
+
+                if use_mlflow:
+                    mlflow.log_artifact(plot_file, artifact_path="plots")
+
+                plt.close()
 
         del images, label, dic
 

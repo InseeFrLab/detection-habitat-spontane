@@ -19,8 +19,8 @@ optim:
   lr: 0.01
   momentum: 0.9
   module: "deeplabv3"
-  batch size: 5
-  batch size test: 4
+  batch size: 8
+  batch size test: 8
   max epochs: 100
   val prop: 0.2
   accumulate batch : 2

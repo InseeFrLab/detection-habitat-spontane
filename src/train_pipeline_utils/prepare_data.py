@@ -10,6 +10,7 @@ from osgeo import gdal
 from utils.filter import is_too_black, is_too_water
 from classes.data.satellite_image import SatelliteImage
 from classes.data.change_detection_triplet import ChangedetectionTripletS2Looking
+from utils.utils import list_sorted_filenames
 
 
 def check_labelled_images(output_directory_name):
@@ -339,22 +340,6 @@ def filter_images_by_path(
             os.remove(image_path)
 
 
-def split_and_filter_s2(output_dir, list_images1, list_images2, list_labels):
-
-    for img1, img2, lab in tqdm(zip(list_images1, list_images2, list_labels), total = len(list_images1)):
-            triplet = ChangedetectionTripletS2Looking(img1, img2, lab)
-            list_split_im1, list_split_im2, list_split_lab = triplet.split(tile_size)
-
-            for small_img1, small_img2, small_lab, i in zip(list_split_im1, list_split_im2, list_split_lab, range(tile_size)):
-                if np.sum(np.asarray(small_lab))>0 and small_img1: # filtre les images sans changement
-                    path = img1.split("/")[-1].split(".")[0] + "_" + "{:03d}".format(i)+".png"
-                    small_img1.save(output_dir + "Image1/" + path)
-                    small_img2.save(output_dir + "Image2/" + path)
-                    small_lab.save(output_dir + "label/" + path)
-    
-    return output_dir
-
-
 def prepare_data_per_doss(directory_path, tile_size, type_data):
 
     output_dir = (
@@ -376,6 +361,21 @@ def prepare_data_per_doss(directory_path, tile_size, type_data):
     list_images2 = list_sorted_filenames(directory_path + "Image2/")
     list_labels = list_sorted_filenames(directory_path + "label/")
 
-    split_and_filter_s2(output_dir, list_images1, list_images2, list_labels)
+    for img1, img2, lab in tqdm(zip(list_images1, list_images2, list_labels), total = len(list_images1)):
+            triplet = ChangedetectionTripletS2Looking(img1, img2, lab)
+            list_split_im1, list_split_im2, list_split_lab = triplet.split(tile_size)
 
+            for small_img1, small_img2, small_lab, i in zip(list_split_im1, list_split_im2, list_split_lab, range(tile_size)):
+                if type_data == "test":
+                    verif = True
+                    
+                else:
+                    verif = np.sum(np.asarray(small_lab))>0
+
+                if verif and small_img1: # filtre les images sans changement
+                            path = img1.split("/")[-1].split(".")[0] + "_" + "{:03d}".format(i)+".png"
+                            small_img1.save(output_dir + "Image1/" + path)
+                            small_img2.save(output_dir + "Image2/" + path)
+                            small_lab.save(output_dir + "label/" + path)
+    
     return output_dir

@@ -603,7 +603,6 @@ def instantiate_dataloader_s2(config, list_output_dir):
     )
 
     tile_size = config["donnees"]["tile size"]
-    batch_size = config["optim"]["batch size"]
 
     t_aug, t_preproc = generate_transform_pleiades(
         tile_size,
@@ -617,14 +616,16 @@ def instantiate_dataloader_s2(config, list_output_dir):
     # Creation of the dataloaders
     shuffle_bool = [True, False, False]
     num_workers = config["donnees"]["num_workers"]
+    batch_size = config["optim"]["batch size"]
+    batch_size_test = config["optim"]["batch size test"]
 
     train_dataloader, valid_dataloader, test_dataloader = [
         DataLoader(
-            ds, batch_size=8, shuffle=boolean, num_workers=num_workers, drop_last=True
+            ds, batch_size=size, shuffle=boolean, num_workers=num_workers, drop_last=True
         )
-        for ds, boolean in zip([train_dataset, valid_dataset, test_dataset], shuffle_bool)
+        for ds, boolean, size in zip([train_dataset, valid_dataset, test_dataset], shuffle_bool, [batch_size, batch_size, batch_size_test])
     ]
-
+    print(batch_size_test)
     return train_dataloader, valid_dataloader, test_dataloader
 
 

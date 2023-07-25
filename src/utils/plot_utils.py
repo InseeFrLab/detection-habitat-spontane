@@ -656,3 +656,56 @@ def draw_change_is_everywhere_exemples(changeiseverywheredataset, n_exemples):
     plt.show()
     res = plt.gcf()
     res.savefig("triplet_train.png")
+
+
+def plot_list_change_detection_images(
+    list_img1: List,
+    list_img2: List,
+    list_label_true: List,
+    list_label_pred: List,
+    list_path: List,
+):
+    # Utiliser zip pour combiner les trois listes
+    combined = zip(list_path, list_img1, list_img2, list_label_true, list_label_pred)
+
+    # Trier les éléments combinés en fonction de la premiere liste
+    sorted_combined = sorted(combined, key=lambda x: x[0])
+
+    # Diviser les listes triées en fonction de l'ordre des éléments
+    __, list_img1, list_img2, list_label_true, list_label_pred = zip(*sorted_combined)
+
+    size = int(math.sqrt(len(list_img1)))
+
+    # Create a figure and axes
+    fig, axs = plt.subplots(nrows=size, ncols=4 * size, figsize=(20, 5))
+
+    # Iterate over the grid of masks and plot them
+    for i in range(size):
+        for j in range(size):
+            axs[i, j].imshow(
+                list_img1[i * size + j]
+            )
+
+    for i in range(size):
+        for j in range(size):
+            axs[i, j + 1*size].imshow(
+                list_img2[i * size + j]
+            )
+
+    for i in range(size):
+        for j in range(size):
+            axs[i, j + 2*size].imshow(
+                list_label_true[i * size + j]
+            )
+
+    for i in range(size):
+        for j in range(size):
+            axs[i, j + 3*size].imshow(list_label_pred[i * size + j], cmap="gray")
+
+    # Remove any unused axes
+    for i in range(size):
+        for j in range(4 * size):
+            axs[i, j].set_axis_off()
+
+    # Show the plot
+    return plt.gcf()
