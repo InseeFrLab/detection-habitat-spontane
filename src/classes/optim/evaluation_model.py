@@ -15,6 +15,7 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay
 )
 
+from classes.data.change_detection_triplet import ChangedetectionTripletS2Looking
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
 from classes.data.satellite_image import SatelliteImage
 from utils.plot_utils import (
@@ -800,67 +801,59 @@ def evaluer_modele_sur_jeu_de_test_change_detection_S2(
     # tile_size = 250
     # batch_size  = 4
     model.eval()
-    npatch = int((2000 / tile_size) ** 2)
-    nbatchforfullimage = int(npatch / batch_size)
-
-    if not npatch % nbatchforfullimage == 0:
-        print(
-            "Le nombre de patchs \
-            n'est pas divisible par la taille d'un batch"
-        )
-        return None
-
-    list_images_mask = []
 
     for idx, batch in enumerate(test_dl):
         # idx, batch = 0, next(iter(test_dl))
         print(idx)
         images, label, dic = batch
 
-        model = model.to("cuda:0")
-        images = images.to("cuda:0")
+        model = model.to("cpu")
+        images = images.to("cpu")
 
         output_model = model(images)
         mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
 
         for i in range(batch_size):
-            pthimg1 = dic["pathimg1"][i]
-            pthimg2 = dic["pathimg2"][i]
+            pthimg1 = dic["pathim1"][i]
+            pthimg2 = dic["pathim2"][i]
             pthlabel = dic["pathlabel"][i]
 
-            triplet = 
-            list_labeled_satellite_image.append(
-                SegmentationLabeledSatelliteImage(
-                    satellite_image=si,
-                    label=mask_pred[i],
-                    source="",
-                    labeling_date="",
-                )
-            )
+            triplet = ChangedetectionTripletS2Looking(pthimg1, pthimg2, pthlabel)
+            img1 = triplet.image1
+            img2 = triplet.image2
+            lab_true = triplet.label
+            lab_pred = mask_pred[i]
 
-        if ((idx + 1) % nbatchforfullimage) == 0:
             print("ecriture image")
             if not os.path.exists("img/"):
                 os.makedirs("img/")
 
-            fig1 = plot_list_segmentation_labeled_satellite_image(
-                list_labeled_satellite_image, [0, 1, 2]
-            )
+            fig, ax = plt.subplots(1, 4, figsize=(15, 15))
+            ax[0].imshow(img1)
+            ax[0].set_title("Image 1")
+            ax[0].set_axis_off()
+            ax[1].imshow(img2)
+            ax[1].set_title("Image 2")
+            ax[1].set_axis_off()
+            ax[2].imshow(lab_true)
+            ax[2].set_title("Label True")
+            ax[2].set_axis_off()
+            ax[3].imshow(lab_pred, cmap="gray")
+            ax[3].set_title("Label Predicted")
+            ax[3].set_axis_off()
+            fig1 = plt.gcf()
 
-            filename = pthimg.split("/")[-1]
+            filename = pthimg1.split("/")[-1]
             filename = filename.split(".")[0]
-            filename = "_".join(filename.split("_")[0:6])
+            filename = filename + "_result"
             plot_file = filename + ".png"
 
             fig1.savefig(plot_file)
-            list_labeled_satellite_image = []
 
             if use_mlflow:
                 mlflow.log_artifact(plot_file, artifact_path="plots")
 
         del images, label, dic
-
-
 
 
 def calculate_IOU(output, labels):
