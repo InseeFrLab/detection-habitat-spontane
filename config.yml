@@ -1,11 +1,11 @@
 donnees:
-  source train: "PLEIADES"
+  source train: "S2Looking"
   dataset: "CHANGEDETECTIONDATASETS2" 
   dataset-test: "CHANGEDETECTIONDATASETS2"
-  year: [2022]
-  dep: ["972"]
-  type labeler: "BDTOPO"
-  buffer size: 10
+  year: "NA"
+  dep: "NA"
+  type labeler: "NA"
+  buffer size: "NA"
   n channels train: 6
   n bands: 3
   tile size: 250
@@ -13,7 +13,7 @@ donnees:
   task: "change-detection"
 
 optim:
-  loss: "softiou"
+  loss: "crossentropyselmade"
   lr: 0.01
   momentum: 0.9
   module: "deeplabv3"

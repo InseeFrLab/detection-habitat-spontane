@@ -311,3 +311,11 @@ def update_storage_access():
         del os.environ["AWS_SESSION_TOKEN"]
     except KeyError:
         pass
+
+def list_sorted_filenames(dir_path):
+    filenames = os.listdir(dir_path)
+    sorted_filenames = sorted(filenames, key=lambda x: int(x.split('.')[0]))
+
+    list_images = [dir_path + filename for filename in sorted_filenames]
+
+    return list_images

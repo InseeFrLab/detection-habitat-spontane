@@ -247,6 +247,7 @@ class ChangeDetectionS2LookingDataset(Dataset):
         list_paths_image1: List,
         list_paths_image2: List,
         list_paths_labels: List,
+        n_bands=3,
         transforms: Optional[Compose] = None,
     ):
         """
@@ -259,6 +260,7 @@ class ChangeDetectionS2LookingDataset(Dataset):
         self.list_paths_image1 = list_paths_image1
         self.list_paths_image2 = list_paths_image2
         self.list_paths_labels = list_paths_labels
+        self.n_bands = n_bands
         self.transforms = transforms
 
     def __getitem__(self, idx):
