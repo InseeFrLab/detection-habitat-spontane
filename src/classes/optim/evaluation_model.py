@@ -15,6 +15,7 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay
 )
 
+from classes.data.change_detection_triplet import ChangedetectionTripletS2Looking
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
 from classes.data.satellite_image import SatelliteImage
 from utils.plot_utils import (
@@ -177,7 +178,6 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
                     mlflow.log_artifact(plot_file, artifact_path="plots")
             except IndexError:
                 pass
-
 
 def reality_prediction_classification_pleiades(
     test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
@@ -773,6 +773,82 @@ def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(
 
             fig1.savefig(plot_file)
             list_labeled_satellite_image = []
+
+            if use_mlflow:
+                mlflow.log_artifact(plot_file, artifact_path="plots")
+
+        del images, label, dic
+
+
+def evaluer_modele_sur_jeu_de_test_change_detection_S2(
+    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+):
+    """
+    Evaluates the model on the Pleiade test dataset for image segmentation.
+
+    Args:
+        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        dataset.
+        model (torchvision.models): The segmentation model to evaluate.
+        tile_size (int): The size of each tile in pixels.
+        batch_size (int): The batch size.
+        use_mlflow (bool, optional): Whether to use MLflow for logging
+        artifacts. Defaults to False.
+
+    Returns:
+        None
+    """
+    # tile_size = 250
+    # batch_size  = 4
+    model.eval()
+
+    for idx, batch in enumerate(test_dl):
+        # idx, batch = 0, next(iter(test_dl))
+        print(idx)
+        images, label, dic = batch
+
+        model = model.to("cpu")
+        images = images.to("cpu")
+
+        output_model = model(images)
+        mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
+
+        for i in range(batch_size):
+            pthimg1 = dic["pathim1"][i]
+            pthimg2 = dic["pathim2"][i]
+            pthlabel = dic["pathlabel"][i]
+
+            triplet = ChangedetectionTripletS2Looking(pthimg1, pthimg2, pthlabel)
+            img1 = triplet.image1
+            img2 = triplet.image2
+            lab_true = triplet.label
+            lab_pred = mask_pred[i]
+
+            print("ecriture image")
+            if not os.path.exists("img/"):
+                os.makedirs("img/")
+
+            fig, ax = plt.subplots(1, 4, figsize=(15, 15))
+            ax[0].imshow(img1)
+            ax[0].set_title("Image 1")
+            ax[0].set_axis_off()
+            ax[1].imshow(img2)
+            ax[1].set_title("Image 2")
+            ax[1].set_axis_off()
+            ax[2].imshow(lab_true)
+            ax[2].set_title("Label True")
+            ax[2].set_axis_off()
+            ax[3].imshow(lab_pred, cmap="gray")
+            ax[3].set_title("Label Predicted")
+            ax[3].set_axis_off()
+            fig1 = plt.gcf()
+
+            filename = pthimg1.split("/")[-1]
+            filename = filename.split(".")[0]
+            filename = filename + "_result"
+            plot_file = filename + ".png"
+
+            fig1.savefig(plot_file)
 
             if use_mlflow:
                 mlflow.log_artifact(plot_file, artifact_path="plots")
