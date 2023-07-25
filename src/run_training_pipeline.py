@@ -42,6 +42,7 @@ from train_pipeline_utils.download_data import (
     load_2satellites_data,
     load_donnees_test,
     load_satellite_data,
+    load_s2_looking
 )
 from train_pipeline_utils.handle_dataset import (
     generate_transform_pleiades,
@@ -56,8 +57,10 @@ from train_pipeline_utils.prepare_data import (
     save_images_and_masks,
     extract_proportional_subset,
     filter_images_by_path,
+    prepare_data_per_doss,
 )
-from utils.utils import remove_dot_file, split_array, update_storage_access
+
+from utils.utils import remove_dot_file, split_array, update_storage_access, list_sorted_filenames
 
 # with open("../config.yml") as f:
 #     config = yaml.load(f, Loader=SafeLoader)
@@ -84,27 +87,70 @@ def download_data(config):
     deps = config_data["dep"]
     src = config_data["source train"]
 
-    for year, dep in zip(years, deps):
-        # year, dep = years[0], deps[0]
-        if src == "PLEIADES":
-            cloud_dir = load_satellite_data(year, dep, "NUAGESPLEIADES")
-            list_masks_cloud_dir.append(cloud_dir)
-            output_dir = load_satellite_data(year, dep, src)
-        elif src == "SENTINEL1-2" or src == "SENTINEL1-2-RVB":
-            output_dir = load_2satellites_data(year, dep, src)
-        else:
-            output_dir = load_satellite_data(year, dep, src)
-        list_output_dir.append(output_dir)
+    if src == "S2Looking":
+        list_output_dir = load_s2_looking()
+        test_dir = []
+    
+    else:
+        for year, dep in zip(years, deps):
+            # year, dep = years[0], deps[0]
+            if src == "PLEIADES":
+                cloud_dir = load_satellite_data(year, dep, "NUAGESPLEIADES")
+                list_masks_cloud_dir.append(cloud_dir)
+                output_dir = load_satellite_data(year, dep, src)
+            elif src == "SENTINEL1-2" or src == "SENTINEL1-2-RVB":
+                output_dir = load_2satellites_data(year, dep, src)
+            else:
+                output_dir = load_satellite_data(year, dep, src)
+            list_output_dir.append(output_dir)
 
-    print("chargement des données test")
-    test_dir = load_donnees_test(
-        type=config["donnees"]["task"], src=config["donnees"]["source train"]
-    )
+        print("chargement des données test")
+        test_dir = load_donnees_test(
+            type=config["donnees"]["task"], src=config["donnees"]["source train"]
+        )
 
     return list_output_dir, list_masks_cloud_dir, test_dir
 
 
-def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
+def prepare_data_s2(config, output_dir):
+    """
+    Preprocesses and splits the raw input images
+    into tiles and corresponding masks,
+    and saves them in the specified output directories.
+
+    Args:
+        config: A dictionary representing the configuration settings.
+        list_data_dir: A list of strings representing the paths
+        to the directories containing the raw input image files.
+
+    Returns:
+        A list of strings representing the paths to
+        the output directories containing the
+        preprocessed tile and mask image files.
+    """
+
+    print("Entre dans la fonction prepare_data")
+    tile_size = config["donnees"]["tile size"]
+
+    dir_train = output_dir + "/" + "/train/"
+    dir_val = output_dir + "/" + "/val/"
+    dir_test = output_dir + "/" + "/test/"
+
+    print("Preparation des données train")
+    type_data = "train"
+    output_dir_train = prepare_data_per_doss(dir_train, tile_size, type_data)
+
+    print("Preparation des données val")
+    type_data = "valid"
+    output_dir_valid = prepare_data_per_doss(dir_val, tile_size, type_data)
+
+    print("Preparation des données test")
+    type_data = "test"
+    output_dir_test = prepare_data_per_doss(dir_test, tile_size, type_data)
+
+    return [output_dir_train, output_dir_valid, output_dir_test]
+
+def prepare_train_data_else(config, list_data_dir, list_masks_cloud_dir):
     """
     Preprocesses and splits the raw input images
     into tiles and corresponding masks,
@@ -240,6 +286,33 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     return list_output_dir
 
 
+def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
+    """
+    Preprocesses and splits the raw input images
+    into tiles and corresponding masks,
+    and saves them in the specified output directories.
+
+    Args:
+        config: A dictionary representing the configuration settings.
+        list_data_dir: A list of strings representing the paths
+        to the directories containing the raw input image files.
+
+    Returns:
+        A list of strings representing the paths to
+        the output directories containing the
+        preprocessed tile and mask image files.
+    """
+    src = config["donnees"]["source train"]
+
+    if src == "S2Looking":
+        list_output_dir = prepare_data_s2(config, list_data_dir)
+    
+    else:
+        list_output_dir = prepare_train_data_else(config, list_data_dir, list_masks_cloud_dir)
+    
+    return list_output_dir
+
+
 def prepare_test_data(config, test_dir):
     print("Entre dans la fonction prepare_test_data")
 
@@ -251,174 +324,179 @@ def prepare_test_data(config, test_dir):
     config_task = config_data["task"]
     tile_size = config_data["tile size"]
 
-    output_test = (
-        "../test_data"
-        + "-"
-        + config_task
-        + "-"
-        + src
-        + "-"
-        + type_labeler
-        + "-"
-        + str(tile_size)
-        + "/"
-    )
+    if src != "S2Looking":
 
-    output_labels_path = output_test + "/labels"
+        output_test = (
+            "../test_data"
+            + "-"
+            + config_task
+            + "-"
+            + src
+            + "-"
+            + type_labeler
+            + "-"
+            + str(tile_size)
+            + "/"
+        )
 
-    if not os.path.exists(output_labels_path):
-        os.makedirs(output_labels_path)
-    else:
-        return output_test
+        output_labels_path = output_test + "/labels"
 
-    labels_path = test_dir + "/masks"
-    list_name_label = os.listdir(labels_path)
-    list_name_label = np.sort(remove_dot_file(list_name_label))
-    list_labels_path = [labels_path + "/" + name for name in list_name_label]
+        if not os.path.exists(output_labels_path):
+            os.makedirs(output_labels_path)
+        else:
+            return output_test
 
-    if config["donnees"]["task"] == "segmentation":
-        images_path = test_dir + "/images"
-        list_name_image = os.listdir(images_path)
-        list_name_image = np.sort(remove_dot_file(list_name_image))
-        list_images_path = [images_path + "/" + name for name in list_name_image]
-        output_images_path = output_test + "/images"
-        if not os.path.exists(output_images_path):
-            os.makedirs(output_images_path)
+        labels_path = test_dir + "/masks"
+        list_name_label = os.listdir(labels_path)
+        list_name_label = np.sort(remove_dot_file(list_name_label))
+        list_labels_path = [labels_path + "/" + name for name in list_name_label]
 
-        if len(list_labels_path) < len(list_images_path):
-            diff = len(list_images_path) - len(list_labels_path)
-            file_to_duplicate = list_labels_path[0]
-            for i in range(diff):
-                new_file = file_to_duplicate[0:-4]+f"_{i}.npy"
-                shutil.copyfile(file_to_duplicate, new_file)
-                list_labels_path.append(list_labels_path[0][0:-4]+f"_{i}.npy")
+        if config_task == "segmentation":
+            images_path = test_dir + "/images"
+            list_name_image = os.listdir(images_path)
+            list_name_image = np.sort(remove_dot_file(list_name_image))
+            list_images_path = [images_path + "/" + name for name in list_name_image]
+            output_images_path = output_test + "/images"
+            if not os.path.exists(output_images_path):
+                os.makedirs(output_images_path)
 
-        for image_path, label_path, name in zip(
-            list_images_path,
-            list_labels_path,
-            list_name_image
-        ):
+            if len(list_labels_path) < len(list_images_path):
+                diff = len(list_images_path) - len(list_labels_path)
+                file_to_duplicate = list_labels_path[0]
+                for i in range(diff):
+                    new_file = file_to_duplicate[0:-4]+f"_{i}.npy"
+                    shutil.copyfile(file_to_duplicate, new_file)
+                    list_labels_path.append(list_labels_path[0][0:-4]+f"_{i}.npy")
 
-            si = SatelliteImage.from_raster(
-                file_path=image_path, dep=None, date=None, n_bands=n_bands
-            )
-            mask = np.load(label_path)
+            for image_path, label_path, name in zip(
+                list_images_path,
+                list_labels_path,
+                list_name_image
+            ):
 
-            lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
-            list_lsi = lsi.split(tile_size)
+                si = SatelliteImage.from_raster(
+                    file_path=image_path, dep=None, date=None, n_bands=n_bands
+                )
+                mask = np.load(label_path)
 
-            for i, lsi in enumerate(list_lsi):
-                if np.isnan(lsi.satellite_image.array).any():
-                    continue
-                file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
-                in_ds = gdal.Open(image_path)
-                proj = in_ds.GetProjection()
-                lsi.satellite_image.to_raster(
-                    output_images_path, file_name_i, "tif", proj
-                    )
-                # lsi.satellite_image.to_raster(
-                #     output_images_path, file_name_i + ".jp2"
-                #     )
-                np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
+                lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
+                list_lsi = lsi.split(tile_size)
 
-    elif config["donnees"]["task"] == "classification":
-
-        images_path = test_dir + "/images"
-        list_name_image = os.listdir(images_path)
-        list_name_image = np.sort(remove_dot_file(list_name_image))
-        list_images_path = [images_path + "/" + name for name in list_name_image]
-        output_images_path = output_test + "/images"
-
-        for image_path, label_path, name in zip(
-            list_images_path,
-            list_labels_path,
-            list_name_image
-        ):
-
-            si = SatelliteImage.from_raster(
-                file_path=image_path, dep=None, date=None, n_bands=n_bands
-            )
-            mask = np.load(label_path)
-
-            lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
-            list_lsi = lsi.split(tile_size)
-            csv_file_path = output_labels_path + "/" + "fichierlabeler.csv"
-
-            for i, lsi in enumerate(list_lsi):
-                file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
-                
-                if config["donnees"]["source train"] == "PLEIADES":
-                    lsi.satellite_image.to_raster(
-                        output_images_path, file_name_i + ".jp2"
-                        )
-                else:
+                for i, lsi in enumerate(list_lsi):
+                    if np.isnan(lsi.satellite_image.array).any():
+                        continue
+                    file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
+                    in_ds = gdal.Open(image_path)
+                    proj = in_ds.GetProjection()
                     lsi.satellite_image.to_raster(
                         output_images_path, file_name_i, "tif", proj
                         )
+                    # lsi.satellite_image.to_raster(
+                    #     output_images_path, file_name_i + ".jp2"
+                    #     )
+                    np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
 
-                if np.sum(lsi.label) != 0:
-                    label = 1
-                else:
-                    label = 0
+        elif config_task == "classification":
 
-                # Create the csv file if it does not exist
-                if not os.path.isfile(csv_file_path):
-                    with open(csv_file_path, "w", newline="") as csvfile:
-                        writer = csv.writer(csvfile)
-                        writer.writerow(["Path_image", "Classification"])
-                        writer.writerow([file_name_i, label])
+            images_path = test_dir + "/images"
+            list_name_image = os.listdir(images_path)
+            list_name_image = np.sort(remove_dot_file(list_name_image))
+            list_images_path = [images_path + "/" + name for name in list_name_image]
+            output_images_path = output_test + "/images"
 
-                # Open it if it exists
-                else:
-                    with open(csv_file_path, "a", newline="") as csvfile:
-                        writer = csv.writer(csvfile)
-                        writer.writerow([file_name_i, label])
+            for image_path, label_path, name in zip(
+                list_images_path,
+                list_labels_path,
+                list_name_image
+            ):
+
+                si = SatelliteImage.from_raster(
+                    file_path=image_path, dep=None, date=None, n_bands=n_bands
+                )
+                mask = np.load(label_path)
+
+                lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
+                list_lsi = lsi.split(tile_size)
+                csv_file_path = output_labels_path + "/" + "fichierlabeler.csv"
+
+                for i, lsi in enumerate(list_lsi):
+                    file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
+                    
+                    if config["donnees"]["source train"] == "PLEIADES":
+                        lsi.satellite_image.to_raster(
+                            output_images_path, file_name_i + ".jp2"
+                            )
+                    else:
+                        lsi.satellite_image.to_raster(
+                            output_images_path, file_name_i, "tif", proj
+                            )
+
+                    if np.sum(lsi.label) != 0:
+                        label = 1
+                    else:
+                        label = 0
+
+                    # Create the csv file if it does not exist
+                    if not os.path.isfile(csv_file_path):
+                        with open(csv_file_path, "w", newline="") as csvfile:
+                            writer = csv.writer(csvfile)
+                            writer.writerow(["Path_image", "Classification"])
+                            writer.writerow([file_name_i, label])
+
+                    # Open it if it exists
+                    else:
+                        with open(csv_file_path, "a", newline="") as csvfile:
+                            writer = csv.writer(csvfile)
+                            writer.writerow([file_name_i, label])
+        else:
+            images_path_1 = test_dir + "/images_1"
+            list_name_image_1 = os.listdir(images_path_1)
+            list_name_image_1 = np.sort(remove_dot_file(list_name_image_1))
+            list_images_path_1 = [images_path_1 + "/" + name for name in list_name_image_1]
+            output_images_path_1 = output_test + "/images_1"
+
+            images_path_2 = test_dir + "/images_2"
+            list_name_image_2 = os.listdir(images_path_2)
+            list_name_image_2 = np.sort(remove_dot_file(list_name_image_2))
+            list_images_path_2 = [images_path_2 + "/" + name for name in list_name_image_2]
+            output_images_path_2 = output_test + "/images_2"
+
+            for image_path_1, image_path_2, label_path, name in zip(
+                list_images_path_1,
+                list_images_path_2,
+                list_labels_path,
+                list_name_image_1
+            ):
+
+                si1 = SatelliteImage.from_raster(
+                    file_path=image_path_1, dep=None, date=None, n_bands=n_bands
+                )
+                si2 = SatelliteImage.from_raster(
+                    file_path=image_path_2, dep=None, date=None, n_bands=n_bands
+                )
+                mask = np.load(label_path)
+
+                lsi1 = SegmentationLabeledSatelliteImage(si1, mask, "", "")
+                lsi2 = SegmentationLabeledSatelliteImage(si2, mask, "", "")
+
+                list_lsi1 = lsi1.split(tile_size)
+                list_lsi2 = lsi2.split(tile_size)
+
+                for i, (lsi1, lsi2) in enumerate(zip(list_lsi1, list_lsi2)):
+                    file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
+
+                    lsi1.satellite_image.to_raster(
+                        output_images_path_1, file_name_i + ".jp2"
+                        )
+                    lsi2.satellite_image.to_raster(
+                        output_images_path_2, file_name_i + ".jp2"
+                        )
+                    np.save(output_labels_path + "/" + file_name_i + ".npy", lsi1.label)
+
+        return output_test
+    
     else:
-        images_path_1 = test_dir + "/images_1"
-        list_name_image_1 = os.listdir(images_path_1)
-        list_name_image_1 = np.sort(remove_dot_file(list_name_image_1))
-        list_images_path_1 = [images_path_1 + "/" + name for name in list_name_image_1]
-        output_images_path_1 = output_test + "/images_1"
-
-        images_path_2 = test_dir + "/images_2"
-        list_name_image_2 = os.listdir(images_path_2)
-        list_name_image_2 = np.sort(remove_dot_file(list_name_image_2))
-        list_images_path_2 = [images_path_2 + "/" + name for name in list_name_image_2]
-        output_images_path_2 = output_test + "/images_2"
-
-        for image_path_1, image_path_2, label_path, name in zip(
-            list_images_path_1,
-            list_images_path_2,
-            list_labels_path,
-            list_name_image_1
-        ):
-
-            si1 = SatelliteImage.from_raster(
-                file_path=image_path_1, dep=None, date=None, n_bands=n_bands
-            )
-            si2 = SatelliteImage.from_raster(
-                file_path=image_path_2, dep=None, date=None, n_bands=n_bands
-            )
-            mask = np.load(label_path)
-
-            lsi1 = SegmentationLabeledSatelliteImage(si1, mask, "", "")
-            lsi2 = SegmentationLabeledSatelliteImage(si2, mask, "", "")
-
-            list_lsi1 = lsi1.split(tile_size)
-            list_lsi2 = lsi2.split(tile_size)
-
-            for i, (lsi1, lsi2) in enumerate(zip(list_lsi1, list_lsi2)):
-                file_name_i = name.split(".")[0] + "_" + "{:04d}".format(i)
-
-                lsi1.satellite_image.to_raster(
-                    output_images_path_1, file_name_i + ".jp2"
-                    )
-                lsi2.satellite_image.to_raster(
-                    output_images_path_2, file_name_i + ".jp2"
-                    )
-                np.save(output_labels_path + "/" + file_name_i + ".npy", lsi1.label)
-
-    return output_test
+        return None
 
 
 def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, test=False):
@@ -459,7 +537,98 @@ def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, 
     return full_dataset
 
 
-def instantiate_dataloader(config, list_output_dir, output_test):
+def instantiate_dataloader_s2(config, list_output_dir):
+    """
+    Instantiates and returns the data loaders for
+    training, validation, and testing datasets.
+
+    Args:
+    - config (dict): A dictionary containing the configuration parameters
+    for data loading and processing.
+    - list_output_dir (list): A list of strings containing the paths to
+    the directories that contain the training data.
+
+    Returns:
+    - train_dataloader (torch.utils.data.DataLoader):
+    The data loader for the training dataset.
+    - valid_dataloader (torch.utils.data.DataLoader):
+    The data loader for the validation dataset.
+    - test_dataloader (torch.utils.data.DataLoader):
+    The data loader for the testing dataset.
+
+    The function first generates the paths for the image and label data
+    based on the data source (Sentinel, PLEIADES) vs pre-annotated datasets.
+    It then instantiates the required dataset class
+    (using the `intantiate_dataset` function) and splits the full dataset
+    into training and validation datasets based on the validation proportion
+    specified in the configuration parameters.
+
+    Next, the appropriate transformations are applied to the training
+    and validation datasets using the `generate_transform` function.
+
+    Finally, the data loaders for the training and validation datasets
+    are created using the `DataLoader` class from the PyTorch library,
+    and the data loader for the testing dataset is set to `None`.
+    """
+    # génération des paths en fonction du type de Données
+    # (Sentinel, PLEIADES) VS Dataset préannotés
+
+    print("Entre dans la fonction instantiate_dataloader")
+
+    output_dir_train, output_dir_valid, output_dir_test = list_output_dir
+
+    train_list_images1 = list_sorted_filenames(output_dir_train + "Image1/")
+    train_list_images2 = list_sorted_filenames(output_dir_train + "Image2/")
+    train_list_labels = list_sorted_filenames(output_dir_train + "label/")
+
+    val_list_images1 = list_sorted_filenames(output_dir_valid + "Image1/")
+    val_list_images2 = list_sorted_filenames(output_dir_valid + "Image2/")
+    val_list_labels = list_sorted_filenames(output_dir_valid + "label/")
+
+    test_list_images1 = list_sorted_filenames(output_dir_test + "Image1/")
+    test_list_images2 = list_sorted_filenames(output_dir_test + "Image2/")
+    test_list_labels = list_sorted_filenames(output_dir_test + "label/")
+
+    # Retrieving the desired Dataset class
+    train_dataset = instantiate_dataset(
+        config, train_list_images1, train_list_labels,  train_list_images2
+    )
+
+    valid_dataset = instantiate_dataset(
+        config, val_list_images1, val_list_labels, val_list_images2
+    )
+
+    test_dataset = instantiate_dataset(
+        config, test_list_images1, test_list_labels, test_list_images2
+    )
+
+    tile_size = config["donnees"]["tile size"]
+    batch_size = config["optim"]["batch size"]
+
+    t_aug, t_preproc = generate_transform_pleiades(
+        tile_size,
+        True,
+    )
+
+    train_dataset.transforms = t_aug
+    valid_dataset.transforms = t_preproc
+    test_dataset.transforms = t_preproc
+
+    # Creation of the dataloaders
+    shuffle_bool = [True, False, False]
+    num_workers = config["donnees"]["num_workers"]
+
+    train_dataloader, valid_dataloader, test_dataloader = [
+        DataLoader(
+            ds, batch_size=8, shuffle=boolean, num_workers=num_workers, drop_last=True
+        )
+        for ds, boolean in zip([train_dataset, valid_dataset, test_dataset], shuffle_bool)
+    ]
+
+    return train_dataloader, valid_dataloader, test_dataloader
+
+
+def instantiate_dataloader_else(config, list_output_dir, output_test):
     """
     Instantiates and returns the data loaders for
     training, validation, and testing datasets.
@@ -681,7 +850,6 @@ def instantiate_dataloader(config, list_output_dir, output_test):
         dataset_test.transforms = t_preproc
 
     batch_size_test = config["optim"]["batch size test"]
-    num_workers = config["donnees"]["num_workers"]
     test_dataloader = DataLoader(
         dataset_test,
         batch_size=batch_size_test,
@@ -691,6 +859,51 @@ def instantiate_dataloader(config, list_output_dir, output_test):
 
     return train_dataloader, valid_dataloader, test_dataloader
 
+
+def instantiate_dataloader(config, list_output_dir, output_test):
+    """
+    Instantiates and returns the data loaders for
+    training, validation, and testing datasets.
+
+    Args:
+    - config (dict): A dictionary containing the configuration parameters
+    for data loading and processing.
+    - list_output_dir (list): A list of strings containing the paths to
+    the directories that contain the training data.
+
+    Returns:
+    - train_dataloader (torch.utils.data.DataLoader):
+    The data loader for the training dataset.
+    - valid_dataloader (torch.utils.data.DataLoader):
+    The data loader for the validation dataset.
+    - test_dataloader (torch.utils.data.DataLoader):
+    The data loader for the testing dataset.
+
+    The function first generates the paths for the image and label data
+    based on the data source (Sentinel, PLEIADES) vs pre-annotated datasets.
+    It then instantiates the required dataset class
+    (using the `intantiate_dataset` function) and splits the full dataset
+    into training and validation datasets based on the validation proportion
+    specified in the configuration parameters.
+
+    Next, the appropriate transformations are applied to the training
+    and validation datasets using the `generate_transform` function.
+
+    Finally, the data loaders for the training and validation datasets
+    are created using the `DataLoader` class from the PyTorch library,
+    and the data loader for the testing dataset is set to `None`.
+    """
+    # génération des paths en fonction du type de Données
+    # (Sentinel, PLEIADES) VS Dataset préannotés
+
+    src = config["donnees"]["source train"]
+
+    if src == "S2Looking":
+        train_dataloader, valid_dataloader, test_dataloader = instantiate_dataloader_s2(config, list_output_dir)
+    else:
+        train_dataloader, valid_dataloader, test_dataloader = instantiate_dataloader_else(config, list_output_dir, output_test)
+
+    return train_dataloader, valid_dataloader, test_dataloader
 
 def instantiate_model(config):
     """
@@ -770,7 +983,6 @@ def instantiate_lightning_module(config):
     )
 
     return lightning_module
-
 
 def instantiate_trainer(config, lightning_module):
     """
