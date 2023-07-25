@@ -717,17 +717,33 @@ def plot_image_mask_label(
     satellite_image,
     label,
     mask,
-    bands_idx
+    bands_idx,
+    label_buffered=None
 ):
     image = satellite_image.array[bands_idx, :, :].transpose(1,2,0)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(25, 25))
-    ax1.imshow(image)
-    ax1.imshow(label, alpha=0.5, cmap='OrRd')
-    ax1.set_title("image et label")
-    ax1.axis('off')
-    ax2.imshow(image)
-    ax2.imshow(mask, alpha=0.3)
-    ax2.set_title("image et masque")
-    ax2.axis('off')
+    if label_buffered is not None:
+        fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(27, 9))
+        ax1.imshow(image)
+        ax1.imshow(label, alpha=0.5, cmap='OrRd')
+        ax1.set_title("image et label")
+        ax1.axis('off')
+        ax2.imshow(image)
+        ax2.imshow(mask, alpha=0.3)
+        ax2.set_title("image et masque")
+        ax2.axis('off')
+        ax3.imshow(image)
+        ax3.imshow(label_buffered, alpha=0.5, cmap='OrRd')
+        ax3.set_title("image et label bufferisé")
+        ax3.axis('off')
+    else:
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(25, 25))
+        ax1.imshow(image)
+        ax1.imshow(label, alpha=0.5, cmap='OrRd')
+        ax1.set_title("image et label")
+        ax1.axis('off')
+        ax2.imshow(image)
+        ax2.imshow(mask, alpha=0.3)
+        ax2.set_title("image et masque")
+        ax2.axis('off')
     return plt.gcf()

@@ -4,6 +4,7 @@ import mlflow
 import numpy as np
 import torch
 import matplotlib
+from skimage.morphology import closing, disk
 
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
 from classes.data.satellite_image import SatelliteImage
@@ -117,6 +118,9 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
     use_mlflow=False,
 ):
     model.eval()
+    vrais_positifs_total, faux_positifs_total, faux_negatifs_total = 0, 0, 0
+    vrais_positifs_total_buffer, faux_positifs_total_buffer, faux_negatifs_total_buffer = 0, 0, 0
+
     for idx, batch in enumerate(test_dl):
         # idx, batch = 0, next(iter(test_dl))
         images, label, dic = batch
@@ -132,55 +136,86 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
             if len(dic["pathimage"]) != batch_size:
                 continue
             try:
+                vrais_positifs_image, faux_positifs_image, faux_negatifs_image = 0, 0, 0
+                vrais_positifs_buffer, faux_positifs_buffer, faux_negatifs_buffer = 0, 0, 0
                 pthimg = dic["pathimage"][i]
                 label = np.load(dic["pathlabel"][i])
+                masque = mask_pred[i]
+                label_buffered = closing(label.copy(),disk(2))
                 src = pthimg.split('/')[1].split('segmentation-')[1].split('-BDTOPO')[0]
                 si = SatelliteImage.from_raster(
                     file_path=pthimg, dep=None, date=None, n_bands=n_bands
                 )
                 si.normalize()
 
-                
-                labeled_satellite_image_label = SegmentationLabeledSatelliteImage(
-                    satellite_image=si,
-                    label=label,
-                    source="",
-                    labeling_date="",
-                )
-
-                labeled_satellite_image_mask = SegmentationLabeledSatelliteImage(
-                    satellite_image=si,
-                    label=mask_pred[i],
-                    source="",
-                    labeling_date="",
-                )
-
                 print("ecriture image")
                 if not os.path.exists("outputs_evaluation_model/"):
                     os.makedirs("outputs_evaluation_model/")
 
                 if src == 'SENTINEL1-2' or src == 'SENTINEL2':
-                    bands_list = (3, 2, 1)
                     bands_idx = 3, 2, 1
                 elif src == 'SENTINEL2-RVB' or src == 'SENTINEL1-2-RVB' or src == 'PLEIADES':
-                    bands_list = (0, 1, 2)
                     bands_idx = 0, 1, 2
-
-                fig1 = plot_image_mask_label(labeled_satellite_image_label.satellite_image, labeled_satellite_image_label.label, labeled_satellite_image_mask.label, bands_idx)
 
                 filename = pthimg.split("/")[-1]
                 filename = filename.split(".")[0]
                 filename = "_".join(filename.split("_")[0:6])
-                plot_file = "outputs_evaluation_model/" + filename + ".png"
 
+                fig1 = plot_image_mask_label(
+                    si,
+                    label,
+                    masque,
+                    bands_idx,
+                    label_buffered=label_buffered)
+                plot_file = "outputs_evaluation_model/" + filename + ".png"
                 fig1.savefig(plot_file)
                 matplotlib.pyplot.close()
 
                 if use_mlflow:
                     mlflow.log_artifact(plot_file, artifact_path="plots")
+
+                for m in range(tile_size):
+                    for n in range(tile_size):
+                        if label[m, n] == 1 and masque[m, n] == 1:
+                            vrais_positifs_image += 1
+                        elif label[m, n] == 0 and masque[m, n] == 1:
+                            faux_positifs_image += 1
+                        elif label[m, n] == 1 and masque[m, n] == 0:
+                            faux_negatifs_image += 1
+
+                        if label_buffered[m, n] == 1 and masque[m, n] == 1:
+                            vrais_positifs_buffer += 1
+                        elif label_buffered[m, n] == 0 and masque[m, n] == 1:
+                            faux_positifs_buffer += 1
+                        elif label_buffered[m, n] == 1 and masque[m, n] == 0:
+                            faux_negatifs_buffer += 1
+                vrais_positifs_total += vrais_positifs_image*100/tile_size**2
+                faux_positifs_total += faux_positifs_image*100/tile_size**2
+                faux_negatifs_total += faux_negatifs_image*100/tile_size**2
+
+                vrais_positifs_total_buffer += vrais_positifs_buffer*100/tile_size**2
+                faux_positifs_total_buffer += faux_positifs_buffer*100/tile_size**2
+                faux_negatifs_total_buffer += faux_negatifs_buffer*100/tile_size**2
+
             except IndexError:
                 print('IndexError')
                 pass
+
+    rappel = vrais_positifs_total/(vrais_positifs_total+faux_negatifs_total)
+    precision = vrais_positifs_total/(vrais_positifs_total+faux_positifs_total)
+    fscore = (2*rappel*precision)/(rappel+precision)
+
+    rappel_buffer = vrais_positifs_total_buffer/(vrais_positifs_total_buffer+faux_negatifs_total_buffer)
+    precision_buffer = vrais_positifs_total_buffer/(vrais_positifs_total_buffer+faux_positifs_total_buffer)
+    fscore_buffer = (2*rappel_buffer*precision_buffer)/(rappel_buffer+precision_buffer)
+
+    if use_mlflow:
+        mlflow.log_metric("Rappel sans buffer", rappel)
+        mlflow.log_metric("Précision sans buffer", precision)
+        mlflow.log_metric("F-Score sans buffer", fscore)
+        mlflow.log_metric("Rappel avec buffer", rappel_buffer)
+        mlflow.log_metric("Précision avec buffer", precision_buffer)
+        mlflow.log_metric("F-Score avec buffer", fscore_buffer)
 
 
 def evaluer_modele_sur_jeu_de_test_classification_pleiade(
