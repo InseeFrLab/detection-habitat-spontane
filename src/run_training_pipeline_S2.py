@@ -65,6 +65,7 @@ from utils.utils import remove_dot_file, split_array, update_storage_access
 
 from data.components.change_detection_dataset import ChangeDetectionS2LookingDataset 
 from classes.data.change_detection_triplet import ChangedetectionTripletS2Looking
+from classes.optim.evaluation_model import evaluer_modele_sur_jeu_de_test_change_detection_S2
 
 # with open("../config.yml") as f:
 #     config = yaml.load(f, Loader=SafeLoader)
@@ -478,19 +479,14 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
             model = light_module.model
 
-            
-
-            # if task_type == "classification":
-            #     model_uri = mlflow.get_artifact_uri("model")
-            #     print(model_uri)
-
-            #     mlflow.evaluate(
-            #         model_uri,
-            #         test_dl,
-            #         targets="labels",
-            #         model_type="classifier",
-            #         evaluators=["default"]
-            #     )
+            evaluer_modele_sur_jeu_de_test_change_detection_S2(
+                test_dl,
+                model,
+                tile_size,
+                batch_size_test,
+                config["donnees"]["n bands"],
+                config["mlflow"],
+            )
 
     else:
         trainer.fit(light_module, train_dl, valid_dl)
@@ -511,6 +507,15 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         gc.collect()
 
         model = light_module.model
+
+        evaluer_modele_sur_jeu_de_test_change_detection_S2(
+            test_dl,
+            model,
+            tile_size,
+            batch_size_test,
+            config["donnees"]["n bands"],
+            config["mlflow"],
+        )
 
 if __name__ == "__main__":
     # MLFlow params
