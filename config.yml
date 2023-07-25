@@ -14,7 +14,7 @@ donnees:
 
 optim:
   loss: "softiou"
-  lr: 0.001
+  lr: 0.01
   momentum: 0.9
   module: "deeplabv3"
   batch size: 5
