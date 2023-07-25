@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch.optim
 from torch.nn import CrossEntropyLoss
 
 from classes.labelers.labeler import (
@@ -37,7 +38,20 @@ dataset_dict = {
     "CHANGEDETECTIONDATASET": ChangeDetectionDataset,
 }
 
-module_dict = {"deeplabv3": DeepLabv3Module, "resnet50": ResNet50Module}
+module_dict = {
+    "deeplabv3": DeepLabv3Module,
+    "deeplabv3_RGB_MOCO": DeepLabv3Module,
+    "resnet50": ResNet50Module,}
+
+optimizer_dict = {
+    "SGD" : torch.optim.SGD,
+    "Adam" : torch.optim.Adam,
+}
+
+scheduler_dict = {
+    "ReduceLROnPlateau" : torch.optim.lr_scheduler.ReduceLROnPlateau,
+    "OneCycleLR" : torch.optim.lr_scheduler.OneCycleLR,
+}
 
 loss_dict = {
     "softiou": SoftIoULoss,

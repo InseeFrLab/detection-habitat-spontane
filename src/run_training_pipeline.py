@@ -35,6 +35,8 @@ from dico_config import (
     dataset_dict,
     loss_dict,
     module_dict,
+    optimizer_dict,
+    scheduler_dict,
     task_to_evaluation,
     task_to_lightningmodule,
 )
@@ -132,6 +134,7 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
     tile_size = config_data["tile size"]
 
     list_output_dir = []
+    nb_total_images = 0
 
     for i, (year, dep) in enumerate(zip(years, deps)):
         # i, year , dep = 0,years[0],deps[0]
@@ -234,9 +237,11 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
 
         list_output_dir.append(output_dir)
         nb = len(os.listdir(output_dir + "/images"))
+        nb_total_images += nb
         print(str(nb) + " couples images/masques retenus")
 
-    return list_output_dir
+    print("Au total, " + str(nb_total_images) + " couples images/masques retenus")
+    return list_output_dir, nb_total_images
 
 
 def prepare_test_data(config, test_dir):
@@ -428,6 +433,7 @@ def prepare_test_data(config, test_dir):
                     output_images_path_2, file_name_i + ".jp2"
                     )
                 np.save(output_labels_path + "/" + file_name_i + ".npy", lsi1.label)
+    return output_test        
 
     return output_test
 
@@ -652,10 +658,16 @@ def instantiate_dataloader(config, list_output_dir, output_test):
     # output_images_path = output_test_task + "/images/"
     # output_labels_path = output_test_task + "/masks/"
 
-    output_labels_path = output_test + "/labels/"
+    # output_test = "../test-data"
+    # output_labels_path = output_test + "/labels/"
+    # list_name_label_test = os.listdir(output_labels_path)
+    # list_path_labels_test = np.sort([output_labels_path + name_label for name_label in list_name_label_test])
+    
+    output_labels_path = output_test + "labels/"
     list_name_label_test = os.listdir(output_labels_path)
     list_name_label_test = remove_dot_file(list_name_label_test)
     list_path_labels_test = np.sort([output_labels_path + name_label for name_label in list_name_label_test])
+
 
     if config_task != "change-detection":
         output_images_path = output_test + "images/"
@@ -725,6 +737,8 @@ def instantiate_model(config):
 
     if module_type in ["deeplabv3", "resnet50"]:
         return module_dict[module_type](nchannel)
+    if module_type == "deeplabv3_RGB_MOCO":
+        return module_dict[module_type](nchannel, True)
     else:
         return module_dict[module_type]()
 
@@ -751,7 +765,7 @@ def instantiate_loss(config):
         return loss_dict[loss_type]()
 
 
-def instantiate_lightning_module(config):
+def instantiate_lightning_module(config, nb_total_images):
     """
     Create a PyTorch Lightning module for segmentation
     with the given model and optimization configuration.
@@ -765,7 +779,7 @@ def instantiate_lightning_module(config):
         A PyTorch Lightning module for segmentation.
     """
     print("Entre dans la fonction instantiate_lighting_module")
-    list_params = generate_optimization_elements(config)
+    list_params = generate_optimization_elements(config, optimizer_dict, scheduler_dict, nb_total_images)
     task_type = config["donnees"]["task"]
 
     if task_type not in task_to_lightningmodule:
@@ -865,13 +879,12 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
 
-    list_output_dir = prepare_train_data(config, list_data_dir, list_masks_cloud_dir)
+    list_output_dir, nb_total_images = prepare_train_data(config, list_data_dir, list_masks_cloud_dir)
     output_test = prepare_test_data(config, test_dir)
 
     train_dl, valid_dl, test_dl = instantiate_dataloader(config, list_output_dir, output_test)
-
     # train_dl.dataset[0][0].shape
-    light_module = instantiate_lightning_module(config)
+    light_module = instantiate_lightning_module(config, nb_total_images)
     trainer = instantiate_trainer(config, light_module)
 
     torch.cuda.empty_cache()

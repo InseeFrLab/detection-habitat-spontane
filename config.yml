@@ -1,28 +1,30 @@
 donnees:
-  source train: "SENTINEL1-2"
-  dataset: "CLASSIFICATION"
-  dataset-test: "CLASSIFICATION"
+  source train: "SENTINEL2-RVB"
+  dataset: "SENTINEL"
+  dataset-test: "SENTINEL"
   year: [2021, 2021, 2021, 2022, 2022, 2022]
   dep: ["971", "972", "974", "971", "972", "974"]
   type labeler: "BDTOPO"
   buffer size: 10
-  n channels train: 13
-  n bands entry: 13
-  n bands: 13
-  tile size: 100
+  n channels train: 3
+  n bands entry: 12
+  n bands: 3
+  tile size: 150
   augmentation: False
-  task: "classification"
-  prop: 1
+  task: "segmentation"
+  prop: 0.05
 
 optim:
-  loss: "lossbinaire"
-  lr: 0.0015
+  loss: "crossentropyselmade"
+  lr: 0.003
   momentum: 0.9
-  module: "resnet50"
-  batch size: 30
-  batch size test: 2
-  max epochs: 100
+  module: "deeplabv3_RGB_MOCO"
+  optimizer: "Adam"
+  scheduler: "OneCycleLR"
+  batch size: 50
+  batch size test: 16
+  max epochs: 150
   val prop: 0.2
-  accumulate batch : 3
+  accumulate batch : 4
 
 mlflow: True
