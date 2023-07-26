@@ -1145,8 +1145,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         light_module = light_module.load_from_checkpoint(
             loss=instantiate_loss(config),
-            checkpoint_path=trainer.checkpoint_callback.best_model_path,  # je créé un module qui charge
-            # checkpoint_path='',
+            # checkpoint_path=trainer.checkpoint_callback.best_model_path,  # je créé un module qui charge
+            checkpoint_path='epoch=18-step=7582.ckpt',
             model=light_module.model,
             optimizer=light_module.optimizer,
             optimizer_params=light_module.optimizer_params,
@@ -1160,15 +1160,15 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         model = light_module.model
 
-        # from classes.optim.evaluation_model import metrics_classification_pleiade3
-        # metrics_classification_pleiade4(
-        #     test_dl,
-        #     model,
-        #     tile_size,
-        #     batch_size_test,
-        #     config["donnees"]["n bands"],
-        #     False,
-        # )
+        from classes.optim.evaluation_model import predicted_labels_classification_pleiade
+        predicted_labels_classification_pleiade(
+            test_dl,
+            model,
+            tile_size,
+            batch_size_test,
+            config["donnees"]["n bands"],
+            False,
+        )
 
         # from classes.optim.evaluation_model import metrics_classification_pleiade2, evaluer_modele_sur_jeu_de_test_classification_pleiade2
         # trshld = metrics_classification_pleiade2(
