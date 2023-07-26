@@ -11,8 +11,8 @@ donnees:
   tile size: 250
   augmentation: True
   task: "change-detection"
+  max size ones: 15000
   prop: "NA"
-  num_workers: 0
 
 optim:
   loss: "crossentropyselmade"

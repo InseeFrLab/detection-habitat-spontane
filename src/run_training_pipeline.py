@@ -176,9 +176,10 @@ def prepare_train_data_else(config, list_data_dir, list_masks_cloud_dir):
     type_labeler = config_data["type labeler"]
     config_task = config_data["task"]
     tile_size = config_data["tile size"]
+    max_size_ones = config_data[" max size ones"]
 
     # Define the total of ones we want in each dossier
-    max_echant_ones = 15000/len(years)
+    max_echant_ones = max_size_ones/len(years)
 
     list_output_dir = []
 
@@ -615,17 +616,15 @@ def instantiate_dataloader_s2(config, list_output_dir):
 
     # Creation of the dataloaders
     shuffle_bool = [True, False, False]
-    num_workers = config["donnees"]["num_workers"]
     batch_size = config["optim"]["batch size"]
     batch_size_test = config["optim"]["batch size test"]
 
     train_dataloader, valid_dataloader, test_dataloader = [
         DataLoader(
-            ds, batch_size=size, shuffle=boolean, num_workers=num_workers, drop_last=True
+            ds, batch_size=size, shuffle=boolean, num_workers=0, drop_last=True
         )
         for ds, boolean, size in zip([train_dataset, valid_dataset, test_dataset], shuffle_bool, [batch_size, batch_size, batch_size_test])
     ]
-    print(batch_size_test)
     return train_dataloader, valid_dataloader, test_dataloader
 
 
@@ -792,11 +791,10 @@ def instantiate_dataloader_else(config, list_output_dir, output_test):
     #     shuffle_bool = [True, False]
 
     shuffle_bool = [True, False]
-    num_workers = config["donnees"]["num_workers"]
 
     train_dataloader, valid_dataloader = [
         DataLoader(
-            ds, batch_size=batch_size, shuffle=boolean, num_workers=num_workers, drop_last=True
+            ds, batch_size=batch_size, shuffle=boolean, num_workers=0, drop_last=True
         )
         for ds, boolean in zip([train_dataset, valid_dataset], shuffle_bool)
     ]
@@ -855,7 +853,7 @@ def instantiate_dataloader_else(config, list_output_dir, output_test):
         dataset_test,
         batch_size=batch_size_test,
         shuffle=False,
-        num_workers=num_workers,
+        num_workers=0,
     )
 
     return train_dataloader, valid_dataloader, test_dataloader
