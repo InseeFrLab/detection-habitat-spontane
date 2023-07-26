@@ -75,5 +75,6 @@ task_to_evaluation = {
     "SENTINEL2-RVBsegmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
     "SENTINEL1-2-RVBsegmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
     "SENTINEL1-2classification": evaluer_modele_sur_jeu_de_test_classification_sentinel,
-    "SENTINEL2classification": evaluer_modele_sur_jeu_de_test_classification_sentinel
+    "SENTINEL2classification": evaluer_modele_sur_jeu_de_test_classification_sentinel,
+    "SENTINEL2-RVBclassification": evaluer_modele_sur_jeu_de_test_classification_sentinel,
 }
