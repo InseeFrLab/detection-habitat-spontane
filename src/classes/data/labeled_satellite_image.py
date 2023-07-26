@@ -168,9 +168,10 @@ class DetectionLabeledSatelliteImage:
         """
         image = self.satellite_image.array.copy()
         # Normalisation ?
+        image = np.uint8(image * 255)
 
         image = Image.fromarray(
-            np.transpose(image.astype(np.uint8), (1, 2, 0))[:, :, bands_indices], mode="RGB"
+            np.transpose(image, (1, 2, 0))[:, :, bands_indices], mode="RGB"
         )
         # Drawing bounding boxes
         for x, y, xx, yy in self.label:

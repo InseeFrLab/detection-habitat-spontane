@@ -63,32 +63,6 @@ class Labeler(ABC):
         else:
             raise NotImplementedError("Task must be 'segmentation'" "or 'detection'.")
 
-    def create_detection_label(self, satellite_image: SatelliteImage) -> List[Tuple[int]]:
-        """
-        Create an object detection label for a SatelliteImage.
-
-        Args:
-            satellite_image (SatelliteImage): Satellite image.
-
-        Returns:
-            List[Tuple[int]]: Object detection label.
-        """
-        image_height = satellite_image.array.shape[1]
-        image_width = satellite_image.array.shape[2]
-        segmentation_mask = self.create_segmentation_label(satellite_image)
-
-        polygon_list = []
-        for shape in list(shapes(segmentation_mask)):
-            polygon = Polygon(shape[0]["coordinates"][0])
-            if polygon.area > 0.85 * image_height * image_width:
-                continue
-            polygon_list.append(polygon)
-
-        g = gpd.GeoSeries(polygon_list)
-        clipped_g = gpd.clip(g, (0, 0, image_height, image_width))
-
-        return [polygon.bounds for polygon in clipped_g]
-
 
 class RILLabeler(Labeler):
     """
@@ -171,6 +145,7 @@ class BDTOPOLabeler(Labeler):
         """
         super(BDTOPOLabeler, self).__init__(labeling_date, dep)
         self.labeling_data = load_bdtopo(millesime=str(self.labeling_date.year), dep=self.dep)
+        self.labeling_data['bbox'] = self.labeling_data.geometry.apply(lambda geom: geom.bounds)
 
     def create_segmentation_label(self, satellite_image: SatelliteImage) -> np.array:
         """
@@ -248,6 +223,90 @@ class BDTOPOLabeler(Labeler):
             )
 
         return rasterized
+
+    @staticmethod
+    def get_object_coordinates_in_image(row, bounds, image_width, image_height):
+        xmin, ymin, xmax, ymax = row['bbox']
+
+        xmin_in_image = (xmin - bounds[0]) * (image_width) / (bounds[2] - bounds[0])
+        xmin_in_image = np.maximum(xmin_in_image, 0)
+        xmin_in_image = round(xmin_in_image)
+
+        xmax_in_image = (xmax - bounds[0]) * (image_width) / (bounds[2] - bounds[0])
+        xmax_in_image = np.minimum(xmax_in_image, image_width)
+        xmax_in_image = round(xmax_in_image)
+
+        ymin_in_image = (ymin - bounds[1]) * (image_height) / (bounds[3] - bounds[1])
+        ymin_in_image = np.maximum(ymin_in_image, 0)
+        ymin_in_image = round(ymin_in_image)
+
+        ymax_in_image = (ymax - bounds[1]) * (image_height) / (bounds[3] - bounds[1])
+        ymax_in_image = np.minimum(ymax_in_image, image_height)
+        ymax_in_image = round(ymax_in_image)
+
+        return xmin_in_image, ymin_in_image, xmax_in_image, ymax_in_image
+
+    @staticmethod
+    def geometry_to_pixel_bounds(geom, transform):
+        minx, miny, maxx, maxy = geom.bounds
+        x_pixel_min, y_pixel_max = ~transform * (minx, miny)
+        x_pixel_max, y_pixel_min = ~transform * (maxx, maxy)
+        return (x_pixel_min, y_pixel_min, x_pixel_max, y_pixel_max)
+
+    def create_detection_label(self, satellite_image: SatelliteImage) -> List[Tuple[int]]:
+        """
+        Create an object detection label for a SatelliteImage.
+
+        Args:
+            satellite_image (SatelliteImage): Satellite image.
+
+        Returns:
+            List[Tuple[int]]: Object detection label.
+        """
+        # LEGACY FUNCTION ---
+        # image_height = satellite_image.array.shape[1]
+        # image_width = satellite_image.array.shape[2]
+        # segmentation_mask = self.create_segmentation_label(satellite_image)
+
+        # polygon_list = []
+        # for shape in list(shapes(segmentation_mask)):
+        #     polygon = Polygon(shape[0]["coordinates"][0])
+        #     if polygon.area > 0.85 * image_height * image_width:
+        #         continue
+        #     polygon_list.append(polygon)
+
+        # g = gpd.GeoSeries(polygon_list)
+        # clipped_g = gpd.clip(g, (0, 0, image_height, image_width))
+
+        # return [polygon.bounds for polygon in clipped_g]
+        # -------------------
+
+        if self.labeling_data.crs != satellite_image.crs:
+            self.labeling_data.geometry = self.labeling_data.geometry.to_crs(satellite_image.crs)
+
+        image_height = satellite_image.array.shape[1]
+        image_width = satellite_image.array.shape[2]
+
+        # Filtering geometries from BDTOPO
+        xmin, ymin, xmax, ymax = satellite_image.bounds
+        patch = self.labeling_data.cx[xmin:xmax, ymin:ymax].copy()
+
+        if patch.empty:
+            label = np.array([], dtype=np.uint8)
+        else:
+            # label = patch.apply(
+            #     lambda row: self.get_object_coordinates_in_image(
+            #         row,
+            #         satellite_image.bounds,
+            #         image_width,
+            #         image_height
+            #     ),
+            #     axis=1
+            # )
+            label = patch.geometry.apply(self.geometry_to_pixel_bounds, transform=satellite_image.transform).tolist()
+            label = [tuple(max(min(round(coord), image_height), 0) for coord in bbox) for bbox in label]
+            label = [bbox for bbox in label if ((bbox[0] != bbox[2]) and (bbox[1] != bbox[3]))]
+        return label
 
 
 class RIL_BDTOPOLabeler(Labeler):
