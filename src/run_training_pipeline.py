@@ -615,13 +615,12 @@ def instantiate_dataloader_s2(config, list_output_dir):
 
     # Creation of the dataloaders
     shuffle_bool = [True, False, False]
-    num_workers = config["donnees"]["num_workers"]
     batch_size = config["optim"]["batch size"]
     batch_size_test = config["optim"]["batch size test"]
 
     train_dataloader, valid_dataloader, test_dataloader = [
         DataLoader(
-            ds, batch_size=size, shuffle=boolean, num_workers=num_workers, drop_last=True
+            ds, batch_size=size, shuffle=boolean, num_workers=0, drop_last=True
         )
         for ds, boolean, size in zip([train_dataset, valid_dataset, test_dataset], shuffle_bool, [batch_size, batch_size, batch_size_test])
     ]
@@ -792,11 +791,10 @@ def instantiate_dataloader_else(config, list_output_dir, output_test):
     #     shuffle_bool = [True, False]
 
     shuffle_bool = [True, False]
-    num_workers = config["donnees"]["num_workers"]
 
     train_dataloader, valid_dataloader = [
         DataLoader(
-            ds, batch_size=batch_size, shuffle=boolean, num_workers=num_workers, drop_last=True
+            ds, batch_size=batch_size, shuffle=boolean, num_workers=0, drop_last=True
         )
         for ds, boolean in zip([train_dataset, valid_dataset], shuffle_bool)
     ]
@@ -855,7 +853,7 @@ def instantiate_dataloader_else(config, list_output_dir, output_test):
         dataset_test,
         batch_size=batch_size_test,
         shuffle=False,
-        num_workers=num_workers,
+        num_workers=0,
     )
 
     return train_dataloader, valid_dataloader, test_dataloader
@@ -1147,8 +1145,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         light_module = light_module.load_from_checkpoint(
             loss=instantiate_loss(config),
-            checkpoint_path=trainer.checkpoint_callback.best_model_path,  # je créé un module qui charge
-            # checkpoint_path='',
+            # checkpoint_path=trainer.checkpoint_callback.best_model_path,  # je créé un module qui charge
+            checkpoint_path='epoch=18-step=7582.ckpt',
             model=light_module.model,
             optimizer=light_module.optimizer,
             optimizer_params=light_module.optimizer_params,
@@ -1162,15 +1160,15 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         model = light_module.model
 
-        # from classes.optim.evaluation_model import metrics_classification_pleiade3
-        # metrics_classification_pleiade4(
-        #     test_dl,
-        #     model,
-        #     tile_size,
-        #     batch_size_test,
-        #     config["donnees"]["n bands"],
-        #     False,
-        # )
+        from classes.optim.evaluation_model import predicted_labels_classification_pleiade
+        predicted_labels_classification_pleiade(
+            test_dl,
+            model,
+            tile_size,
+            batch_size_test,
+            config["donnees"]["n bands"],
+            False,
+        )
 
         # from classes.optim.evaluation_model import metrics_classification_pleiade2, evaluer_modele_sur_jeu_de_test_classification_pleiade2
         # trshld = metrics_classification_pleiade2(

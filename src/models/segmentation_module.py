@@ -103,10 +103,10 @@ class SegmentationModule(pl.LightningModule):
         output = self.forward(images)
 
         loss = self.loss(output, labels)
-        self.log("test_loss", loss, on_epoch=True)
+        self.log("test_loss", loss, on_epoch=False)
 
         IOU = calculate_IOU(output, labels)
-        self.log("test IOU", IOU, on_epoch=True)
+        self.log("test IOU", IOU, on_epoch=False)
 
         return IOU
 

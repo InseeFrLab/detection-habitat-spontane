@@ -1,28 +1,28 @@
 donnees:
-  source train: "S2Looking"
-  dataset: "CHANGEDETECTIONDATASETS2" 
-  dataset-test: "CHANGEDETECTIONDATASETS2"
-  year: "NA"
-  dep: "NA"
-  type labeler: "NA"
-  buffer size: "NA"
-  n channels train: 6
+  source train: "PLEIADES"
+  dataset: "CLASSIFICATION" 
+  dataset-test: "CLASSIFICATION"
+  year: [2022]
+  dep: ["972"]
+  type labeler: "BDTOPO"
+  buffer size: 10
+  n channels train: 3
+  n bands entry: 3
   n bands: 3
   tile size: 250
-  augmentation: True
-  task: "change-detection"
-  prop: "NA"
-  num_workers: 0
+  augmentation: False
+  task: "classification"
+  prop: 1
 
 optim:
-  loss: "crossentropyselmade"
-  lr: 0.01
+  loss: "lossbinaire"
+  lr: 0.0001
   momentum: 0.9
-  module: "deeplabv3"
+  module: "resnet50"
   batch size: 8
   batch size test: 8
-  max epochs: 100
+  max epochs: 20
   val prop: 0.2
-  accumulate batch : 2
+  accumulate batch : 3
 
 mlflow: True
