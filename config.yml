@@ -16,18 +16,18 @@ data:
 
 optim:
   loss: "crossentropy"
-  lr: 0.0002
+  lr: 0.001
   momentum: 0.9
   module: "fasterrcnn"
   batch_size: 4
   batch_size_test: 4
-  max_epochs: 100
+  max_epochs: 200
   val_prop: 0.2
   accumulate_batch : 8
   monitor: "validation_accuracy"
   mode: "max"
-  patience: 10
-  scheduler_patience: 5
+  patience: 35
+  scheduler_patience: 10
   num_sanity_val_steps: 2
 
 mlflow: True
