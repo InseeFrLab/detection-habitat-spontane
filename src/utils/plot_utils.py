@@ -747,3 +747,25 @@ def plot_image_mask_label(
         ax2.set_title("image et masque")
         ax2.axis('off')
     return plt.gcf()
+
+
+def plot_2image_mask_difference(
+    image1,
+    image2,
+    masque_diff,
+    # bands_idx
+):
+    image1 = image1.array.transpose(1,2,0)
+    image2 = image2.array.transpose(1,2,0)
+
+    fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(27, 9))
+    ax1.imshow(image1)
+    ax1.set_title("Image1")
+    ax1.axis('off')
+    ax2.imshow(image2)
+    ax2.set_title("Image2")
+    ax2.axis('off')
+    ax3.imshow(masque_diff, cmap='gray')
+    ax3.set_title("Masque de différence")
+    ax3.axis('off')
+    return plt.gcf()

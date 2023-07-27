@@ -5,13 +5,16 @@ import numpy as np
 import torch
 import matplotlib
 from skimage.morphology import closing, disk
+import random
+import shutil
 
 from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteImage
 from classes.data.satellite_image import SatelliteImage
 from utils.plot_utils import (
     plot_list_labeled_sat_images,
     plot_list_segmentation_labeled_satellite_image,
-    plot_image_mask_label
+    plot_image_mask_label,
+    plot_2image_mask_difference,
 )
 
 # with open("../config.yml") as f:
@@ -476,3 +479,97 @@ def proportion_ones(labels):
     prop_ones = round(prop_ones, 2)
 
     return prop_ones
+
+
+def evaluer_modele_sur_jeu_de_test_change_detection_algo_sentinel(
+    test_dl,
+    model,
+    tile_size,
+    batch_size,
+    n_bands,
+    use_mlflow=False,
+):
+    print("Entre dans la fonction evaluer_modele_sur_jeu_de_test_change_detection_algo_sentinel")
+    model.eval()
+
+    path_masques = 'masques_segmentation_pour_change_detection'
+    if not os.path.exists(path_masques):
+        os.makedirs(path_masques)
+    else:
+        shutil.rmtree(path_masques)
+        os.makedirs(path_masques)
+    
+    path_masques_difference = 'masques_difference_pour_change_detection'
+    if not os.path.exists(path_masques_difference):
+        os.makedirs(path_masques_difference)
+    else:
+        shutil.rmtree(path_masques_difference)
+        os.makedirs(path_masques_difference)
+    
+    path_plot_difference = 'outputs_evaluation_model'
+    if not os.path.exists(path_plot_difference):
+        os.makedirs(path_plot_difference)
+    else:
+        shutil.rmtree(path_plot_difference)
+        os.makedirs(path_plot_difference)
+    
+
+    list_paths_images = []
+
+    for idx, batch in enumerate(test_dl):
+        # idx, batch = 0, next(iter(test_dl))
+        images, label, dic = batch
+
+        if torch.cuda.is_available():
+            model = model.to("cuda:0")
+            images = images.to("cuda:0")
+
+        output_model = model(images)
+        mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
+
+        for i in range(batch_size):
+            if len(dic["pathimage"]) != batch_size:
+                continue
+            pthimg = dic["pathimage"][i]
+            masque = mask_pred[i]
+            np.save(path_masques + '/' + pthimg.split('/')[-1].split('.')[0], masque)
+            list_paths_images.append(pthimg)
+    list_names_masques = os.listdir(path_masques)
+    list_paths_masques = [path_masques + '/' + name_masque for name_masque in list_names_masques]
+
+    i = 0
+    for i in range(5):
+        path_img1, path_img2 = random.sample(list_paths_images, 2)
+        name_img1, name_img2 = path_img1.split('/')[-1].split('.')[0], path_img2.split('/')[-1].split('.')[0]
+        
+        for path_masque in list_paths_masques:
+            if name_img1 in path_masque:
+                path_masque1 = path_masque
+            if name_img2 in path_masque:
+                path_masque2 = path_masque
+
+        masque_diff = np.zeros((tile_size, tile_size))
+        masque1 = np.load(path_masque1)
+        masque2 = np.load(path_masque2)
+        for m in range(tile_size):
+            for n in range(tile_size):
+                if masque1[m, n] != masque2[m, n]:
+                    masque_diff[m, n] = 1
+        name_diff = name_img1 + '-' + name_img2
+        np.save(path_masques_difference + '/' + name_diff, masque_diff)
+
+        src = path_img1.split('/')[1].split('segmentation-')[1].split('-BDTOPO')[0]
+        if src == 'SENTINEL1-2' or src == 'SENTINEL2':
+            bands_idx = 3, 2, 1
+        elif src == 'SENTINEL2-RVB' or src == 'SENTINEL1-2-RVB' or src == 'PLEIADES':
+            bands_idx = 0, 1, 2
+
+        image1 = SatelliteImage.from_raster(file_path=path_img1, dep=None, date=None, n_bands=n_bands)
+        image2 = SatelliteImage.from_raster(file_path=path_img2, dep=None, date=None, n_bands=n_bands)
+        image1.normalize()
+        image2.normalize()
+
+        fig=plot_2image_mask_difference(image1, image2, masque_diff)#, bands_idx)
+        plot_file = path_plot_difference + '/' + name_diff + ".png"
+        fig.savefig(plot_file)
+        matplotlib.pyplot.close()
