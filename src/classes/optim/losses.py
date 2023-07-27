@@ -81,7 +81,6 @@ class CrossEntropySelfmade(nn.Module):
         output = output.to("cpu")
 
         weights = torch.tensor([1., 3.])
-
         target = torch.LongTensor(target)
 
         criterion_weighted = nn.CrossEntropyLoss(weight=weights)
