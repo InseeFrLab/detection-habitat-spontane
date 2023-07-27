@@ -9,6 +9,33 @@ from yaml.loader import SafeLoader
 import numpy as np
 
 
+def decode_predictions(
+    prediction,
+    score_threshold,
+    nms_iou_threshold
+):
+    boxes = prediction["boxes"]
+    scores = prediction["scores"]
+    labels = prediction["labels"]    # Remove any low-score predictions.
+    if score_threshold is not None:
+        want = scores > score_threshold
+        boxes = boxes[want]
+        scores = scores[want]
+        labels = labels[want]    # Remove any overlapping bounding boxes using NMS.
+    if nms_iou_threshold is not None:
+        want = torchvision.ops.nms(
+            boxes = boxes,
+            scores = scores,
+            iou_threshold = nms_iou_threshold)
+        boxes = boxes[want]
+        scores = scores[want]
+        labels = labels[want]
+    
+    return (boxes.cpu().detach().numpy(), 
+            labels.cpu().detach().numpy(), 
+            scores.cpu().detach().numpy())
+
+
 def main():
     if torch.cuda.is_available():
         device = "cuda:0"
@@ -51,7 +78,13 @@ def main():
         output_model = model(images)
 
         for i in range(len(batch)):
-            boxes = output_model[i]["boxes"].to("cpu").detach().numpy()
+            prediction = output_model[i]
+            boxes, labels, scores = decode_predictions(
+                prediction,
+                score_threshold=0.8,
+                nms_iou_threshold=0.2
+            )
+
             pthimg = dic[i]["pathimage"]
             si = SatelliteImage.from_raster(
                 file_path=pthimg, dep=None, date=None, n_bands=n_bands
