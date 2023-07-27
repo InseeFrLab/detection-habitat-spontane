@@ -49,10 +49,10 @@ def generate_optimization_elements(config):
             scheduler_interval = "epoch"
 
         elif task == "detection":
-            optimizer = torch.optim.SGD
+            optimizer = torch.optim.Adam
             optimizer_params = {
                 "lr": config["optim"]["lr"],
-                "momentum": config["optim"]["momentum"],
+                # "momentum": config["optim"]["momentum"],
             }
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
             scheduler_params = {
