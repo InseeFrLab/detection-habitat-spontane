@@ -709,3 +709,112 @@ def plot_list_change_detection_images(
 
     # Show the plot
     return plt.gcf()
+
+
+def plot_list_change_pleiades_images(
+    list_img1: List,
+    list_img2: List,
+):
+
+    list_bounding_box = [[im.bounds[3], im.bounds[0]] for im in list_img1]
+
+    # Utiliser zip pour combiner les trois listes
+    combined = zip(list_bounding_box, list_img1)
+
+    # Trier les éléments combinés en fonction de la troisième liste
+    sorted_combined = sorted(combined, key=lambda x: (-x[0][0], x[0][1]))
+
+    # Diviser les listes triées en fonction de l'ordre des éléments
+    __, list_img1 = zip(*sorted_combined)
+
+    list_bounding_box = [[im.bounds[3], im.bounds[0]] for im in list_img2]
+
+    # Utiliser zip pour combiner les trois listes
+    combined = zip(list_bounding_box, list_img2)
+
+    # Trier les éléments combinés en fonction de la troisième liste
+    sorted_combined = sorted(combined, key=lambda x: (-x[0][0], x[0][1]))
+
+    # Diviser les listes triées en fonction de l'ordre des éléments
+    __, list_img2 = zip(*sorted_combined)
+
+    size = int(math.sqrt(len(list_img1)))
+
+    # Create a figure and axes
+    fig, axs = plt.subplots(nrows=size, ncols=2 * size, figsize=(20, 10))
+
+    # Iterate over the grid of masks and plot them
+    for i in range(size):
+        for j in range(size):
+            axs[i, j].imshow(
+                list_img1[i * size + j].array.transpose(1, 2, 0)[
+                    :, :, [0,1,2]
+                ]
+            )
+
+    for i in range(size):
+        for j in range(size):
+            axs[i, j + 1*size].imshow(
+                list_img2[i * size + j].array.transpose(1, 2, 0)[
+                    :, :, [0,1,2]
+                ]
+            )
+    # Remove any unused axes
+    for i in range(size):
+        for j in range(2 * size):
+            axs[i, j].set_axis_off()
+
+    # Show the plot
+    return plt.gcf()
+
+
+def plot_list_mask_inversion_pleiades_images(
+    list_img: List,
+    list_mask_1: List,
+    list_mask_2: List,
+):
+
+    list_bounding_box = [[im.bounds[3], im.bounds[0]] for im in list_img]
+
+    # Utiliser zip pour combiner les trois listes
+    combined = zip(list_bounding_box, list_img, list_mask_1, list_mask_2)
+
+    # Trier les éléments combinés en fonction de la troisième liste
+    sorted_combined = sorted(combined, key=lambda x: (-x[0][0], x[0][1]))
+
+    # Diviser les listes triées en fonction de l'ordre des éléments
+    __, list_img, list_mask_1, list_mask_2 = zip(*sorted_combined)
+
+    size = int(math.sqrt(len(list_img)))
+
+    # Create a figure and axes
+    fig, axs = plt.subplots(nrows=size, ncols=3 * size, figsize=(20, 7))
+
+    # Iterate over the grid of masks and plot them
+    for i in range(size):
+        for j in range(size):
+            axs[i, j].imshow(
+                list_img[i * size + j].array.transpose(1, 2, 0)[
+                    :, :, [0,1,2]
+                ]
+            )
+
+    for i in range(size):
+        for j in range(size):
+            axs[i, j + 1*size].imshow(
+                list_mask_1[i * size + j], cmap ="gray"
+            )
+
+    for i in range(size):
+        for j in range(size):
+            axs[i, j + 2*size].imshow(
+                list_mask_2[i * size + j], cmap ="gray"
+            )
+    
+    # Remove any unused axes
+    for i in range(size):
+        for j in range(3 * size):
+            axs[i, j].set_axis_off()
+
+    # Show the plot
+    return plt.gcf()

@@ -220,17 +220,14 @@ def variation_threshold_classification_pleiades(
 
     thresholds = np.linspace(0, 1, num=100)
     accuracies = []
-
-    for threshold in thresholds:
-        y_pred = (y_prob >= threshold).astype(int)
-        accuracy = accuracy_score(y_true, y_pred)
-        accuracies.append(accuracy)
-
     fnr_list = []
 
     for threshold in thresholds:
-
         y_pred = (y_prob >= threshold).astype(int)
+
+        accuracy = accuracy_score(y_true, y_pred)
+        accuracies.append(accuracy)
+
         confusion = confusion_matrix(y_true, y_pred)
         tn, fp, fn, tp = confusion.ravel()
         fnr = fn / (fn + tp)
@@ -245,7 +242,7 @@ def variation_threshold_classification_pleiades(
     plt.ylabel('Précision (Accuracy)')
     plt.title('Précision en fonction du seuil de classification')
     plt.show()
-    plot_file_AccuracyonThreshold = "img/AccuracyonThreshold.png"
+    plot_file_AccuracyonThreshold = "img/" + "AccuracyonThreshold.png"
     plt.savefig(plot_file_AccuracyonThreshold)
     plt.close()
 
@@ -254,7 +251,7 @@ def variation_threshold_classification_pleiades(
     plt.ylabel('Taux de faux négatifs (FNR)')
     plt.title('Taux de faux négatifs en fonction du seuil de classification')
     plt.show()
-    plot_file_FalseNegativeRateonThreshold = "img/FalseNegativeRateonThreshold.png"
+    plot_file_FalseNegativeRateonThreshold = "img/" + "FalseNegativeRateonThreshold.png"
     plt.savefig(plot_file_FalseNegativeRateonThreshold)
     plt.close()
 
@@ -287,6 +284,7 @@ def ROC_confusion_matrix_classification_pleiades(
 
     plot_file_roc = "img/ROC.png"
     plt.savefig(plot_file_roc)
+    plt.close()
 
     class_names = ["Bâti", "Non bâti"]
 
@@ -311,7 +309,7 @@ def ROC_confusion_matrix_classification_pleiades(
                                                 cmap="Pastel1",
                                                 normalize="true")
     disp.plot()
-    plot_file_cm = "img/confusion_matrix_05.png"
+    plot_file_cm = "img/" + "confusion_matrix_05.png"
     plt.savefig(plot_file_cm)
     plt.close()
 
@@ -320,7 +318,7 @@ def ROC_confusion_matrix_classification_pleiades(
                                                         cmap="Pastel1",
                                                         normalize="true")
     disp_best.plot()
-    plot_file_cm_best = "img/confusion_matrix_best.png"
+    plot_file_cm_best = "img/" + "confusion_matrix_best.png"
     plt.savefig(plot_file_cm_best)
     plt.close()
 
@@ -356,13 +354,13 @@ def metrics_classification_pleiade(
     Returns:
         None
     """
-    best_threshold = ROC_confusion_matrix_classification_pleiades(
-        test_dl, model, tile_size, batch_size, n_bands, use_mlflow
-        )
     variation_threshold_classification_pleiades(
         test_dl, model, tile_size, batch_size, n_bands, use_mlflow
         )
 
+    best_threshold = ROC_confusion_matrix_classification_pleiades(
+        test_dl, model, tile_size, batch_size, n_bands, use_mlflow
+        )
     return best_threshold
 
 
@@ -450,131 +448,130 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
     Returns:
         None
     """
-    with torch.no_grad():
-        threshold = metrics_classification_pleiade(
-                        test_dl, model, tile_size, batch_size, n_bands, use_mlflow
-                    )
+    threshold = metrics_classification_pleiade(
+                    test_dl, model, tile_size, batch_size, n_bands, use_mlflow
+                )
 
-        model.eval()
-        npatch = int((2000 / tile_size) ** 2)
-        count_patch = 0
+    model.eval()
+    npatch = int((2000 / tile_size) ** 2)
+    count_patch = 0
 
-        list_labeled_satellite_image = []
+    list_labeled_satellite_image = []
 
-        for idx, batch in enumerate(test_dl):
+    for idx, batch in enumerate(test_dl):
 
-            images, labels, dic = batch
+        images, labels, dic = batch
 
-            model = model.to("cuda:0")
-            images = images.to("cuda:0")
-            labels = labels.to("cuda:0")
+        model = model.to("cuda:0")
+        images = images.to("cuda:0")
+        labels = labels.to("cuda:0")
 
-            output_model = model(images)
-            output_model = output_model.to("cpu")
-            probability_class_1 = output_model[:, 1]
+        output_model = model(images)
+        output_model = output_model.to("cpu")
+        probability_class_1 = output_model[:, 1]
 
-            # Set a threshold for class prediction
-            # threshold = 0.90
+        # Set a threshold for class prediction
+        # threshold = 0.90
 
-            # Make predictions based on the threshold
-            predictions = torch.where(
-                probability_class_1 > threshold,
-                torch.tensor([1]),
-                torch.tensor([0]),
+        # Make predictions based on the threshold
+        predictions = torch.where(
+            probability_class_1 > threshold,
+            torch.tensor([1]),
+            torch.tensor([0]),
+        )
+        predicted_classes = predictions.type(torch.float)
+
+        if batch_size > len(images):
+            batch_size_current = len(images)
+
+        elif batch_size <= len(images):
+            batch_size_current = batch_size
+
+        for i in range(batch_size_current):
+            pthimg = dic["pathimage"][i]
+            si = SatelliteImage.from_raster(
+                file_path=pthimg, dep=None, date=None, n_bands=n_bands
             )
-            predicted_classes = predictions.type(torch.float)
+            si.normalize()
 
-            if batch_size > len(images):
-                batch_size_current = len(images)
+            if int(predicted_classes[i]) == 0:
+                mask_pred = np.full((tile_size, tile_size, 3), 255, dtype=np.uint8)
 
-            elif batch_size <= len(images):
-                batch_size_current = batch_size
+                if int(predicted_classes[i]) != int(labels[i]):
+                    # Contours de l'image en rouge
+                    array_red_borders = si.array.copy()
+                    array_red_borders = array_red_borders.transpose(1, 2, 0)
+                    red_color = [1.0, 0.0, 0.0]
+                    array_red_borders[:, :7, :] = red_color
+                    array_red_borders[:, -7:-1, :] = red_color
+                    array_red_borders[:7, :, :] = red_color
+                    array_red_borders[-7:-1, :, :] = red_color
+                    array_red_borders = array_red_borders.transpose(2, 1, 0)
+                    si.array = array_red_borders
 
-            for i in range(batch_size_current):
-                pthimg = dic["pathimage"][i]
-                si = SatelliteImage.from_raster(
-                    file_path=pthimg, dep=None, date=None, n_bands=n_bands
+            elif int(predicted_classes[i]) == 1:
+                mask_pred = np.full((tile_size, tile_size, 3), 0, dtype=np.uint8)
+
+                if int(predicted_classes[i]) != int(labels[i]):
+                    # Contours de l'image en rouge
+                    array_red_borders = si.array.copy()
+                    array_red_borders = array_red_borders.transpose(1, 2, 0)
+                    red_color = [1.0, 0.0, 0.0]
+                    array_red_borders[:, :7, :] = red_color
+                    array_red_borders[:, -7:-1, :] = red_color
+                    array_red_borders[:7, :, :] = red_color
+                    array_red_borders[-7:-1, :, :] = red_color
+                    array_red_borders = array_red_borders.transpose(2, 0, 1)
+                    si.array = array_red_borders
+
+                elif int(predicted_classes[i]) == int(labels[i]):
+                    # Contours de l'image en rouge
+                    array_green_borders = si.array.copy()
+                    array_green_borders = array_green_borders.transpose(1, 2, 0)
+                    green_color = [0.0, 1.0, 0.0]
+                    array_green_borders[:, :7, :] = green_color
+                    array_green_borders[:, -7:-1, :] = green_color
+                    array_green_borders[:7, :, :] = green_color
+                    array_green_borders[-7:-1, :, :] = green_color
+                    array_green_borders = array_green_borders.transpose(2, 0, 1)
+                    si.array = array_green_borders
+
+            list_labeled_satellite_image.append(
+                SegmentationLabeledSatelliteImage(
+                    satellite_image=si,
+                    label=mask_pred,
+                    source="",
+                    labeling_date="",
                 )
-                si.normalize()
+            )
+            count_patch += 1
 
-                if int(predicted_classes[i]) == 0:
-                    mask_pred = np.full((tile_size, tile_size, 3), 255, dtype=np.uint8)
+            if ((count_patch) % npatch) == 0:
+                print("ecriture image")
+                if not os.path.exists("img/"):
+                    os.makedirs("img/")
 
-                    if int(predicted_classes[i]) != int(labels[i]):
-                        # Contours de l'image en rouge
-                        array_red_borders = si.array.copy()
-                        array_red_borders = array_red_borders.transpose(1, 2, 0)
-                        red_color = [1.0, 0.0, 0.0]
-                        array_red_borders[:, :7, :] = red_color
-                        array_red_borders[:, -7:-1, :] = red_color
-                        array_red_borders[:7, :, :] = red_color
-                        array_red_borders[-7:-1, :, :] = red_color
-                        array_red_borders = array_red_borders.transpose(2, 1, 0)
-                        si.array = array_red_borders
-
-                elif int(predicted_classes[i]) == 1:
-                    mask_pred = np.full((tile_size, tile_size, 3), 0, dtype=np.uint8)
-
-                    if int(predicted_classes[i]) != int(labels[i]):
-                        # Contours de l'image en rouge
-                        array_red_borders = si.array.copy()
-                        array_red_borders = array_red_borders.transpose(1, 2, 0)
-                        red_color = [1.0, 0.0, 0.0]
-                        array_red_borders[:, :7, :] = red_color
-                        array_red_borders[:, -7:-1, :] = red_color
-                        array_red_borders[:7, :, :] = red_color
-                        array_red_borders[-7:-1, :, :] = red_color
-                        array_red_borders = array_red_borders.transpose(2, 1, 0)
-                        si.array = array_red_borders
-
-                    elif int(predicted_classes[i]) == int(labels[i]):
-                        # Contours de l'image en rouge
-                        array_green_borders = si.array.copy()
-                        array_green_borders = array_green_borders.transpose(1, 2, 0)
-                        green_color = [0.0, 1.0, 0.0]
-                        array_green_borders[:, :7, :] = green_color
-                        array_green_borders[:, -7:-1, :] = green_color
-                        array_green_borders[:7, :, :] = green_color
-                        array_green_borders[-7:-1, :, :] = green_color
-                        array_green_borders = array_green_borders.transpose(2, 1, 0)
-                        si.array = array_green_borders
-
-                list_labeled_satellite_image.append(
-                    SegmentationLabeledSatelliteImage(
-                        satellite_image=si,
-                        label=mask_pred,
-                        source="",
-                        labeling_date="",
-                    )
+                fig1 = plot_list_labeled_sat_images(
+                    list_labeled_satellite_image, [0, 1, 2]
                 )
-                count_patch += 1
 
-                if ((count_patch) % npatch) == 0:
-                    print("ecriture image")
-                    if not os.path.exists("img/"):
-                        os.makedirs("img/")
+                filename = pthimg.split("/")[-1]
+                filename = filename.split(".")[0]
+                filename = "_".join(filename.split("_")[0:6])
+                plot_file = "img/" + filename + ".png"
 
-                    fig1 = plot_list_labeled_sat_images(
-                        list_labeled_satellite_image, [0, 1, 2]
-                    )
+                fig1.savefig(plot_file)
+                list_labeled_satellite_image = []
 
-                    filename = pthimg.split("/")[-1]
-                    filename = filename.split(".")[0]
-                    filename = "_".join(filename.split("_")[0:6])
-                    plot_file = "img/" + filename + ".png"
+                if use_mlflow:
+                    mlflow.log_artifact(plot_file, artifact_path="plots")
 
-                    fig1.savefig(plot_file)
-                    list_labeled_satellite_image = []
+                plt.close()
 
-                    if use_mlflow:
-                        mlflow.log_artifact(plot_file, artifact_path="plots")
-
-                    plt.close()
-
-            del images, labels, dic
+        del images, labels, dic
 
 
-def evaluer_modele_sur_jeu_de_test_classification_pleiade_without_borders(
+def evaluer_modele_sur_jeu_de_test_classification_pleiade_mask_inversion(
     test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
 ):
     """
@@ -591,110 +588,108 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade_without_borders(
 
     Returns:
         None
-    """
-    with torch.no_grad():
+"""
+    threshold = metrics_classification_pleiade(
+                    test_dl, model, tile_size, batch_size, n_bands, use_mlflow
+                )
 
-        threshold = metrics_classification_pleiade(
-                        test_dl, model, tile_size, batch_size, n_bands, use_mlflow
-                    )
+    model.eval()
+    npatch = int((2000 / tile_size) ** 2)
+    count_patch = 0
 
-        model.eval()
-        npatch = int((2000 / tile_size) ** 2)
-        count_patch = 0
+    list_labeled_satellite_image = []
 
-        list_labeled_satellite_image = []
+    for idx, batch in enumerate(test_dl):
 
-        for idx, batch in enumerate(test_dl):
+        images, labels, dic = batch
 
-            images, labels, dic = batch
+        model = model.to("cuda:0")
+        images = images.to("cuda:0")
+        labels = labels.to("cuda:0")
 
-            model = model.to("cuda:0")
-            images = images.to("cuda:0")
-            labels = labels.to("cuda:0")
+        output_model = model(images)
+        output_model = output_model.to("cpu")
+        probability_class_1 = output_model[:, 1]
 
-            output_model = model(images)
-            output_model = output_model.to("cpu")
-            probability_class_1 = output_model[:, 1]
+        # Set a threshold for class prediction
+        # threshold = 0.90
 
-            # Set a threshold for class prediction
-            # threshold = 0.90
+        # Make predictions based on the threshold
+        predictions = torch.where(
+            probability_class_1 > threshold,
+            torch.tensor([1]),
+            torch.tensor([0]),
+        )
+        predicted_classes = predictions.type(torch.float)
 
-            # Make predictions based on the threshold
-            predictions = torch.where(
-                probability_class_1 > threshold,
-                torch.tensor([1]),
-                torch.tensor([0]),
+        if batch_size > len(images):
+            batch_size_current = len(images)
+
+        elif batch_size <= len(images):
+            batch_size_current = batch_size
+
+        for i in range(batch_size_current):
+            pthimg = dic["pathimage"][i]
+            si = SatelliteImage.from_raster(
+                file_path=pthimg, dep=None, date=None, n_bands=n_bands
             )
-            predicted_classes = predictions.type(torch.float)
 
-            if batch_size > len(images):
-                batch_size_current = len(images)
+            if int(predicted_classes[i]) == 0:
+                mask_pred = np.full((tile_size, tile_size, 3), 0, dtype=np.uint8)
 
-            elif batch_size <= len(images):
-                batch_size_current = batch_size
+            elif int(predicted_classes[i]) == 1:
+                img = si.array.copy()
+                img = img[:3, :, :]
+                img = (img * 255).astype(np.uint8)
+                img = img.transpose(1, 2, 0)
 
-            for i in range(batch_size_current):
-                pthimg = dic["pathimage"][i]
-                si = SatelliteImage.from_raster(
-                    file_path=pthimg, dep=None, date=None, n_bands=n_bands
+                shape = img.shape[0:2]
+
+                grayscale = np.mean(img, axis=2)
+
+                black = np.ones(shape, dtype=float)
+                white = np.zeros(shape, dtype=float)
+
+                # Creation of the mask : all grayscaled prixels below the threshold \
+                # will be black and all the grayscaled prixels above the threshold \
+                # will be white.
+
+                mask_pred = np.where(grayscale > 100, white, black)
+
+            si.normalize()
+            list_labeled_satellite_image.append(
+                SegmentationLabeledSatelliteImage(
+                    satellite_image=si,
+                    label=mask_pred,
+                    source="",
+                    labeling_date="",
+                )
+            )
+            count_patch += 1
+
+            if ((count_patch) % npatch) == 0:
+                print("ecriture image")
+                if not os.path.exists("img/"):
+                    os.makedirs("img/")
+
+                fig1 = plot_list_labeled_sat_images(
+                    list_labeled_satellite_image, [0, 1, 2]
                 )
 
-                if int(predicted_classes[i]) == 0:
-                    mask_pred = np.full((tile_size, tile_size, 3), 0, dtype=np.uint8)
+                filename = pthimg.split("/")[-1]
+                filename = filename.split(".")[0]
+                filename = "_".join(filename.split("_")[0:6])
+                plot_file = "img/" + filename + ".png"
 
-                elif int(predicted_classes[i]) == 1:
-                    img = si.array.copy()
-                    img = img[:3, :, :]
-                    img = (img * 255).astype(np.uint8)
-                    img = img.transpose(1, 2, 0)
+                fig1.savefig(plot_file)
+                list_labeled_satellite_image = []
 
-                    shape = img.shape[0:2]
+                if use_mlflow:
+                    mlflow.log_artifact(plot_file, artifact_path="plots")
 
-                    grayscale = np.mean(img, axis=2)
+                plt.close()
 
-                    black = np.ones(shape, dtype=float)
-                    white = np.zeros(shape, dtype=float)
-
-                    # Creation of the mask : all grayscaled prixels below the threshold \
-                    # will be black and all the grayscaled prixels above the threshold \
-                    # will be white.
-
-                    mask_pred = np.where(grayscale > 100, white, black)
-
-                si.normalize()
-                list_labeled_satellite_image.append(
-                    SegmentationLabeledSatelliteImage(
-                        satellite_image=si,
-                        label=mask_pred,
-                        source="",
-                        labeling_date="",
-                    )
-                )
-                count_patch += 1
-
-                if ((count_patch) % npatch) == 0:
-                    print("ecriture image")
-                    if not os.path.exists("img/"):
-                        os.makedirs("img/")
-
-                    fig1 = plot_list_labeled_sat_images(
-                        list_labeled_satellite_image, [0, 1, 2]
-                    )
-
-                    filename = pthimg.split("/")[-1]
-                    filename = filename.split(".")[0]
-                    filename = "_".join(filename.split("_")[0:6])
-                    plot_file = "img/" + filename + ".png"
-
-                    fig1.savefig(plot_file)
-                    list_labeled_satellite_image = []
-
-                    if use_mlflow:
-                        mlflow.log_artifact(plot_file, artifact_path="plots")
-
-                    plt.close()
-
-            del images, labels, dic
+        del images, labels, dic
 
 
 def evaluer_modele_sur_jeu_de_test_change_detection_pleiade(
@@ -805,118 +800,116 @@ def evaluer_modele_sur_jeu_de_test_change_detection_S2(
     """
     # tile_size = 250
     # batch_size  = 8
-    with torch.no_grad():
 
-        model.eval()
-        mean_IOU = test_iou_change_detection_s2(
-                            test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+    model.eval()
+    mean_IOU = test_iou_change_detection_s2(
+                        test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+                    )
+    if use_mlflow:
+        mlflow.log_metric("test mean IOU", mean_IOU)
+
+    npatch = int((1024 / tile_size) ** 2)
+    if 1024 % tile_size!=0:
+        npatch = npatch + 2*int(1024 / tile_size) + 1
+
+    count_patch = 0
+
+    list_img1 = []
+    list_img2 = []
+    list_label_true = []
+    list_label_pred = []
+    list_path = []
+
+    for idx, batch in enumerate(test_dl):
+        # idx, batch = 0, next(iter(test_dl))
+        print(idx)
+        images, label, dic = batch
+
+        model = model.to("cuda:0")
+        images = images.to("cuda:0")
+
+        output_model = model(images)
+        mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
+
+        if batch_size > len(images):
+            batch_size_current = len(images)
+
+        elif batch_size <= len(images):
+            batch_size_current = batch_size
+
+        for i in range(batch_size_current):
+            pthimg1 = dic["pathim1"][i]
+            pthimg2 = dic["pathim2"][i]
+            pthlabel = dic["pathlabel"][i]
+
+            triplet = ChangedetectionTripletS2Looking(pthimg1, pthimg2, pthlabel)
+            list_img1.append(triplet.image1)
+            list_img2.append(triplet.image2)
+            list_label_true.append(triplet.label)
+            list_label_pred.append(mask_pred[i])
+            list_path.append(pthimg1)
+
+            count_patch += 1
+
+            if ((count_patch) % npatch) == 0:
+                print("ecriture image")
+                if not os.path.exists("img/"):
+                    os.makedirs("img/")
+
+                fig1 = plot_list_change_detection_images(
+                            list_img1,
+                            list_img2,
+                            list_label_true,
+                            list_label_pred,
+                            list_path,
                         )
-        if use_mlflow:
-            mlflow.log_metric("test mean IOU", mean_IOU)
 
-        npatch = int((1024 / tile_size) ** 2)
-        if 1024 % tile_size!=0:
-            npatch = npatch + 2*int(1024 / tile_size) + 1
+                filename = pthimg1.split("/")[-1]
+                filename = filename.split(".")[0]
+                filename = filename.split("_")[0]
+                filename = filename + "_result"
+                plot_file = "img/" + filename + ".png"
 
-        count_patch = 0
+                fig1.savefig(plot_file)
+                list_img1 = []
+                list_img2 = []
+                list_label_true = []
+                list_label_pred = []
+                list_path = []
 
-        list_img1 = []
-        list_img2 = []
-        list_label_true = []
-        list_label_pred = []
-        list_path = []
+                if use_mlflow:
+                    mlflow.log_artifact(plot_file, artifact_path="plots")
 
-        for idx, batch in enumerate(test_dl):
-            # idx, batch = 0, next(iter(test_dl))
-            print(idx)
-            images, label, dic = batch
+                plt.close()
 
-            model = model.to("cuda:0")
-            images = images.to("cuda:0")
-
-            output_model = model(images)
-            mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
-
-            if batch_size > len(images):
-                batch_size_current = len(images)
-
-            elif batch_size <= len(images):
-                batch_size_current = batch_size
-
-            for i in range(batch_size_current):
-                pthimg1 = dic["pathim1"][i]
-                pthimg2 = dic["pathim2"][i]
-                pthlabel = dic["pathlabel"][i]
-
-                triplet = ChangedetectionTripletS2Looking(pthimg1, pthimg2, pthlabel)
-                list_img1.append(triplet.image1)
-                list_img2.append(triplet.image2)
-                list_label_true.append(triplet.label)
-                list_label_pred.append(mask_pred[i])
-                list_path.append(pthimg1)
-
-                count_patch += 1
-
-                if ((count_patch) % npatch) == 0:
-                    print("ecriture image")
-                    if not os.path.exists("img/"):
-                        os.makedirs("img/")
-
-                    fig1 = plot_list_change_detection_images(
-                                list_img1,
-                                list_img2,
-                                list_label_true,
-                                list_label_pred,
-                                list_path,
-                            )
-
-                    filename = pthimg1.split("/")[-1]
-                    filename = filename.split(".")[0]
-                    filename = filename.split("_")[0]
-                    filename = filename + "_result"
-                    plot_file = filename + ".png"
-
-                    fig1.savefig(plot_file)
-                    list_img1 = []
-                    list_img2 = []
-                    list_label_true = []
-                    list_label_pred = []
-                    list_path = []
-
-                    if use_mlflow:
-                        mlflow.log_artifact(plot_file, artifact_path="plots")
-
-                    plt.close()
-
-            del images, label, dic
+        del images, label, dic
 
 
 def test_iou_change_detection_s2(
     test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
 ):
-    with torch.no_grad():
-        model.eval()
-        list_IOU = []
+    model.eval()
+    list_IOU = []
 
-        for idx, batch in enumerate(test_dl):
+    for idx, batch in enumerate(test_dl):
 
-            images, labels, __ = batch
+        images, labels, __ = batch
 
-            model = model.to("cuda:0")
-            images = images.to("cuda:0")
+        model = model.to("cuda:0")
+        images = images.to("cuda:0")
 
-            output_model = model(images)
-            output_model = output_model.to("cpu")
+        output_model = model(images)
+        output_model = output_model.to("cpu")
 
-            iou = calculate_IOU(output_model, labels)
-            value_iou = iou.tolist()[0]
-            list_IOU.append(value_iou)
+        iou = calculate_IOU(output_model, labels)
+        value_iou = iou.tolist()[0]
+        list_IOU.append(value_iou)
 
-        del images, labels
+    del images, labels
 
-        mean_IOU = np.mean(list_IOU)
+    mean_IOU = np.mean(list_IOU)
 
-        return mean_IOU
+    return mean_IOU
 
 
 def calculate_IOU(output, labels):
@@ -984,53 +977,52 @@ def predicted_labels_classification_pleiade(
 
     Returns:
         None
-    """
-    with torch.no_grad():
+    """ 
+    model.eval()
+    csv_file_path = "../fichierlabelerpredicted.csv"
 
-        threshold = metrics_classification_pleiade(
-                        test_dl, model, tile_size, batch_size, n_bands, use_mlflow
-                    )
+    # threshold = metrics_classification_pleiade(
+    #                 test_dl, model, tile_size, batch_size, n_bands, use_mlflow
+    #             )
+    threshold = 0.4
 
-        model.eval()
-        csv_file_path = "../fichierlabelerpredicted.csv"
+    for idx, batch in enumerate(test_dl):
 
-        for idx, batch in enumerate(test_dl):
+        images, labels, dic = batch
 
-            images, labels, dic = batch
+        model = model.to("cuda:0")
+        images = images.to("cuda:0")
+        labels = labels.to("cuda:0")
 
-            model = model.to("cuda:0")
-            images = images.to("cuda:0")
-            labels = labels.to("cuda:0")
+        output_model = model(images)
+        output_model = output_model.to("cpu")
+        probability_class_1 = output_model[:, 1]
 
-            output_model = model(images)
-            output_model = output_model.to("cpu")
-            probability_class_1 = output_model[:, 1]
+        # Set a threshold for class prediction
+        # threshold = 0.90
 
-            # Set a threshold for class prediction
-            # threshold = 0.90
+        # Make predictions based on the threshold
+        predictions = torch.where(
+            probability_class_1 > threshold,
+            torch.tensor([1]),
+            torch.tensor([0]),
+        )
+        predicted_classes = predictions.type(torch.float)
 
-            # Make predictions based on the threshold
-            predictions = torch.where(
-                probability_class_1 > threshold,
-                torch.tensor([1]),
-                torch.tensor([0]),
-            )
-            predicted_classes = predictions.type(torch.float)
-
-            for i in range(batch_size):
-                print(i)
-                pthimg = dic["pathimage"][i]
-                
-                if not os.path.isfile(csv_file_path):
-                        with open(csv_file_path, "w", newline="") as csvfile:
-                            writer = csv.writer(csvfile)
-                            writer.writerow(["Path_image", "Classification_Pred"])
-                            writer.writerow([pthimg, int(predicted_classes[i])])
-
-                # Open it if it exists
-                else:
-                    with open(csv_file_path, "a", newline="") as csvfile:
+        for i in range(batch_size):
+            print(i)
+            pthimg = dic["pathimage"][i]
+            
+            if not os.path.isfile(csv_file_path):
+                    with open(csv_file_path, "w", newline="") as csvfile:
                         writer = csv.writer(csvfile)
+                        writer.writerow(["Path_image", "Classification_Pred"])
                         writer.writerow([pthimg, int(predicted_classes[i])])
 
-            del images, labels, dic
+            # Open it if it exists
+            else:
+                with open(csv_file_path, "a", newline="") as csvfile:
+                    writer = csv.writer(csvfile)
+                    writer.writerow([pthimg, int(predicted_classes[i])])
+
+        del images, labels, dic

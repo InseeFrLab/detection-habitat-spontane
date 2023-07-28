@@ -768,6 +768,8 @@ def create_doss_cloud(year, dep):
 output_directory_name = create_doss_cloud("2020", "GUADELOUPE")
 
 
+
+
 import zipfile
 import os
 

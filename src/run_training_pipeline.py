@@ -176,7 +176,8 @@ def prepare_train_data_else(config, list_data_dir, list_masks_cloud_dir):
     type_labeler = config_data["type labeler"]
     config_task = config_data["task"]
     tile_size = config_data["tile size"]
-    max_size_ones = config_data[" max size ones"]
+    max_size_ones = config_data["max size ones"]
+    mask_inversion_threshold = config_data["mask inversion threshold"]
 
     # Define the total of ones we want in each dossier
     max_echant_ones = max_size_ones/len(years)
@@ -260,7 +261,7 @@ def prepare_train_data_else(config, list_data_dir, list_masks_cloud_dir):
                 )
 
                 labels, balancing_dict = label_images(
-                    list_filtered_splitted_images, labeler, task=config_task
+                    list_filtered_splitted_images, labeler, config_task, mask_inversion_threshold
                 )
 
                 nb_ones = sum(1 for value in balancing_dict.values() if value == 1)
@@ -1053,7 +1054,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     # Open the file and load the file
     with open("../config.yml") as f:
         config = yaml.load(f, Loader=SafeLoader)
-
+    print(config)
     tile_size = config["donnees"]["tile size"]
     batch_size_test = config["optim"]["batch size test"]
     task_type = config["donnees"]["task"]
@@ -1146,7 +1147,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         light_module = light_module.load_from_checkpoint(
             loss=instantiate_loss(config),
             # checkpoint_path=trainer.checkpoint_callback.best_model_path,  # je créé un module qui charge
-            checkpoint_path='epoch=18-step=7582.ckpt',
+            checkpoint_path='epoch=15-step=16048.ckpt',
             model=light_module.model,
             optimizer=light_module.optimizer,
             optimizer_params=light_module.optimizer_params,
@@ -1160,7 +1161,10 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         model = light_module.model
 
-        from classes.optim.evaluation_model import predicted_labels_classification_pleiade
+        from classes.optim.evaluation_model import predicted_labels_classification_pleiade, variation_threshold_classification_pleiades
+        variation_threshold_classification_pleiades(
+            test_dl, model, tile_size, batch_size_test, n_bands=3, use_mlflow=False
+        )
         predicted_labels_classification_pleiade(
             test_dl,
             model,
