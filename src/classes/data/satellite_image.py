@@ -9,7 +9,6 @@ from typing import List, Literal, Optional
 import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
-import rasterio.plot as rp
 import torch
 from osgeo import gdal
 
@@ -92,7 +91,6 @@ class SatelliteImage:
 
         return splitted_images
 
-
     def to_tensor(self, bands_indices: Optional[List[int]] = None) -> torch.Tensor:
         """
         Return SatelliteImage array as a torch.Tensor.
@@ -140,10 +138,47 @@ class SatelliteImage:
                     normalized_bands.append(np.full_like(array, mean))
                 else:
                     # Normalisation z-score
-                    normalized_bands.append((array - mean)/std)
+                    normalized_bands.append((array - mean) / std)
 
             elif np.max(array) != np.min(array):
-                normalized_bands.append((array-np.min(array))/(np.max(array)-np.min(array)))
+                normalized_bands.append(
+                    (array - np.min(array)) / (np.max(array) - np.min(array))
+                )
+
+        self.array = np.stack(normalized_bands)
+        self.normalized = True
+
+    def normalize_L1C(self, quantile: float = 0.97):
+        """
+        Normalize array values.
+
+        Args:
+            params (Dict): _description_
+        """
+        if self.normalized:
+            # TODO: clean up
+            print("Warning: this SatelliteImage is already normalized.")
+            return
+        if quantile < 0.5 or quantile > 1:
+            raise ValueError(
+                "Value of the `quantile` parameter must be between 0.5 and 1."
+            )
+
+        normalized_bands = []
+        mean = [1373.1, 1322.3, 1397.6]
+        std = [1144.9, 878.7, 854.3]
+        for i in range(self.n_bands):
+            array = self.array[i, :, :]
+            if i != 12:
+                array = np.clip(array, np.min(array), np.quantile(array, quantile))
+
+            mini = mean[i] - 2 * std[i]
+            maxi = mean[i] + 2 * std[i]
+
+            img = (array - mini) / (maxi - mini) * 255
+            img = np.clip(img, 0, 255).astype(np.uint8)
+
+            normalized_bands.append(img)
 
         self.array = np.stack(normalized_bands)
         self.normalized = True
@@ -304,7 +339,7 @@ def to_raster_tif(self, directory_name: str, filename: str, proj):
 
     driver = gdal.GetDriverByName("GTiff")
     out_ds = driver.Create(
-        directory_name + '/' + filename + ".tif",
+        directory_name + "/" + filename + ".tif",
         array.shape[2],
         array.shape[1],
         array.shape[0],

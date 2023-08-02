@@ -1,12 +1,11 @@
+import csv
 import gc
 import json
 import os
 import random
+import shutil
 import sys
 from datetime import datetime
-import csv
-import shutil
-from osgeo import gdal
 
 import mlflow
 import numpy as np
@@ -14,13 +13,14 @@ import pandas as pd
 import pytorch_lightning as pl
 import torch
 import yaml
+from osgeo import gdal
 from pytorch_lightning.callbacks import (
     EarlyStopping,
     LearningRateMonitor,
     ModelCheckpoint,
 )
 from rasterio.errors import RasterioIOError
-from torch.utils.data import DataLoader, WeightedRandomSampler
+from torch.utils.data import DataLoader, WeightedRandomSampler # noqa: F401
 from tqdm import tqdm
 from yaml.loader import SafeLoader
 
@@ -28,11 +28,10 @@ from classes.data.labeled_satellite_image import (  # noqa: E501
     SegmentationLabeledSatelliteImage,
 )
 from classes.data.satellite_image import SatelliteImage
-
 from classes.optim.optimizer import generate_optimization_elements
 from dico_config import (
-    labeler_dict,
     dataset_dict,
+    labeler_dict,
     loss_dict,
     module_dict,
     optimizer_dict,
@@ -53,11 +52,11 @@ from train_pipeline_utils.handle_dataset import (
 )
 from train_pipeline_utils.prepare_data import (
     check_labelled_images,
+    extract_proportional_subset,
     filter_images,
+    filter_images_by_path,
     label_images,
     save_images_and_masks,
-    extract_proportional_subset,
-    filter_images_by_path,
 )
 from utils.utils import remove_dot_file, split_array, update_storage_access
 
@@ -173,7 +172,9 @@ def prepare_train_data(config, list_data_dir, list_masks_cloud_dir):
                 ]
 
             dir = list_data_dir[i]
-            list_path = [dir + "/" + filename for filename in remove_dot_file(os.listdir(dir))]
+            list_path = [
+                dir + "/" + filename for filename in remove_dot_file(os.listdir(dir))
+            ]
 
             random.shuffle(list_path)
 
@@ -293,16 +294,13 @@ def prepare_test_data(config, test_dir):
             diff = len(list_images_path) - len(list_labels_path)
             file_to_duplicate = list_labels_path[0]
             for i in range(diff):
-                new_file = file_to_duplicate[0:-4]+f"_{i}.npy"
+                new_file = file_to_duplicate[0:-4] + f"_{i}.npy"
                 shutil.copyfile(file_to_duplicate, new_file)
-                list_labels_path.append(list_labels_path[0][0:-4]+f"_{i}.npy")
+                list_labels_path.append(list_labels_path[0][0:-4] + f"_{i}.npy")
 
         for image_path, label_path, name in zip(
-            list_images_path,
-            list_labels_path,
-            list_name_image
+            list_images_path, list_labels_path, list_name_image
         ):
-
             si = SatelliteImage.from_raster(
                 file_path=image_path, dep=None, date=None, n_bands=n_bands
             )
@@ -320,17 +318,16 @@ def prepare_test_data(config, test_dir):
                 if src == "PLEIADES":
                     lsi.satellite_image.to_raster(
                         output_images_path, file_name_i + ".jp2"
-                        )
-                elif 'SENTINEL' in src:
+                    )
+                elif "SENTINEL" in src:
                     in_ds = gdal.Open(image_path)
                     proj = in_ds.GetProjection()
                     lsi.satellite_image.to_raster(
                         output_images_path, file_name_i, "tif", proj
-                        )
+                    )
                 np.save(output_labels_path + "/" + file_name_i + ".npy", lsi.label)
 
     elif config["donnees"]["task"] == "classification":
-
         images_path = test_dir + "/images"
         list_name_image = os.listdir(images_path)
         list_name_image = np.sort(remove_dot_file(list_name_image))
@@ -340,11 +337,8 @@ def prepare_test_data(config, test_dir):
             os.makedirs(output_images_path)
 
         for image_path, label_path, name in zip(
-            list_images_path,
-            list_labels_path,
-            list_name_image
+            list_images_path, list_labels_path, list_name_image
         ):
-
             si = SatelliteImage.from_raster(
                 file_path=image_path, dep=None, date=None, n_bands=n_bands
             )
@@ -363,14 +357,14 @@ def prepare_test_data(config, test_dir):
                 if src == "PLEIADES":
                     lsi.satellite_image.to_raster(
                         output_images_path, file_name_i + ".jp2"
-                        )
-                elif 'SENTINEL' in src:
+                    )
+                elif "SENTINEL" in src:
                     in_ds = gdal.Open(image_path)
                     proj = in_ds.GetProjection()
 
                     lsi.satellite_image.to_raster(
                         output_images_path, file_name_i, "tif", proj
-                        )
+                    )
 
                 if np.sum(lsi.label) != 0:
                     label = 1
@@ -393,22 +387,25 @@ def prepare_test_data(config, test_dir):
         images_path_1 = test_dir + "/images_1"
         list_name_image_1 = os.listdir(images_path_1)
         list_name_image_1 = np.sort(remove_dot_file(list_name_image_1))
-        list_images_path_1 = [images_path_1 + "/" + name for name in list_name_image_1]
+        list_images_path_1 = [
+            images_path_1 + "/" + name for name in list_name_image_1
+        ]
         output_images_path_1 = output_test + "/images_1"
 
         images_path_2 = test_dir + "/images_2"
         list_name_image_2 = os.listdir(images_path_2)
         list_name_image_2 = np.sort(remove_dot_file(list_name_image_2))
-        list_images_path_2 = [images_path_2 + "/" + name for name in list_name_image_2]
+        list_images_path_2 = [
+            images_path_2 + "/" + name for name in list_name_image_2
+        ]
         output_images_path_2 = output_test + "/images_2"
 
         for image_path_1, image_path_2, label_path, name in zip(
             list_images_path_1,
             list_images_path_2,
             list_labels_path,
-            list_name_image_1
+            list_name_image_1,
         ):
-
             si1 = SatelliteImage.from_raster(
                 file_path=image_path_1, dep=None, date=None, n_bands=n_bands
             )
@@ -428,17 +425,17 @@ def prepare_test_data(config, test_dir):
 
                 lsi1.satellite_image.to_raster(
                     output_images_path_1, file_name_i + ".jp2"
-                    )
+                )
                 lsi2.satellite_image.to_raster(
                     output_images_path_2, file_name_i + ".jp2"
-                    )
+                )
                 np.save(output_labels_path + "/" + file_name_i + ".npy", lsi1.label)
-    return output_test        
-
     return output_test
 
 
-def instantiate_dataset(config, list_images, list_labels, list_images_2 = None, test=False):
+def instantiate_dataset(
+    config, list_images, list_labels, list_images_2=None, test=False
+):
     """
     Instantiates the appropriate dataset object
     based on the configuration settings.
@@ -520,7 +517,7 @@ def instantiate_dataloader(config, list_output_dir, output_test):
         "SENTINEL2",
         "SENTINEL1-2",
         "SENTINEL2-RVB",
-        "SENTINEL1-2-RVB"
+        "SENTINEL1-2-RVB",
     ]:
         list_labels = []
         list_images = []
@@ -589,10 +586,7 @@ def instantiate_dataloader(config, list_output_dir, output_test):
         list_labels = unbalanced_labels[indices_to_balance]
 
     train_idx, val_idx = select_indices_to_split_dataset(
-        config_task,
-        config["optim"]["val prop"],
-        list_labels,
-        full_balancing_dict
+        config_task, config["optim"]["val prop"], list_labels, full_balancing_dict
     )
 
     # Retrieving the desired Dataset class
@@ -628,10 +622,13 @@ def instantiate_dataloader(config, list_output_dir, output_test):
     #     class_counts_valid = np.bincount(valid_dataset.list_labels.astype(np.int64))
 
     #     class_weights_train = class_counts_train/np.sum(class_counts_train)
-    #     train_sampler = WeightedRandomSampler(weights=class_weights_train, num_samples=len(train_dataset), replacement=True)
+        # train_sampler = WeightedRandomSampler(
+        #     weights=class_weights_train,
+        #     num_samples=len(train_dataset),
+        #     replacement=True)
 
     #     class_weights_valid = class_counts_valid/np.sum(class_counts_valid)
-    #     valid_sampler = WeightedRandomSampler(weights=class_weights_valid, num_samples=len(valid_dataset), replacement=True)
+    #     valid_sampler = WeightedRandomSampler(weights=class_weights_valid, num_samples=len(valid_dataset), replacement=True) # noqa: E501
 
     #     shuffle_bool = [False, False]
     # else:
@@ -649,7 +646,11 @@ def instantiate_dataloader(config, list_output_dir, output_test):
             sampler=smpl,
             num_workers=0,
         )
-        for ds, boolean, smpl in zip([train_dataset, valid_dataset], shuffle_bool, [train_sampler, valid_sampler])
+        for ds, boolean, smpl in zip(
+            [train_dataset, valid_dataset],
+            shuffle_bool,
+            [train_sampler, valid_sampler],
+        )
     ]
 
     # Gestion datset test
@@ -661,18 +662,21 @@ def instantiate_dataloader(config, list_output_dir, output_test):
     # output_test = "../test-data"
     # output_labels_path = output_test + "/labels/"
     # list_name_label_test = os.listdir(output_labels_path)
-    # list_path_labels_test = np.sort([output_labels_path + name_label for name_label in list_name_label_test])
-    
+    # list_path_labels_test = np.sort([output_labels_path + name_label for name_label in list_name_label_test]) # noqa: E501
+
     output_labels_path = output_test + "labels/"
     list_name_label_test = os.listdir(output_labels_path)
     list_name_label_test = remove_dot_file(list_name_label_test)
-    list_path_labels_test = np.sort([output_labels_path + name_label for name_label in list_name_label_test])
-
+    list_path_labels_test = np.sort(
+        [output_labels_path + name_label for name_label in list_name_label_test]
+    )
 
     if config_task != "change-detection":
         output_images_path = output_test + "images/"
         list_name_image_test = os.listdir(output_images_path)
-        list_path_images_test = np.sort([output_images_path + name_image for name_image in list_name_image_test])
+        list_path_images_test = np.sort(
+            [output_images_path + name_image for name_image in list_name_image_test]
+        )
 
         if config_task == "classification":
             csv_labeler = list_path_labels_test[0]
@@ -683,9 +687,9 @@ def instantiate_dataloader(config, list_output_dir, output_test):
             list_labels_dir = df[["Path_image", "Classification"]].values.tolist()
 
             list_labels_dir = sorted(list_labels_dir, key=lambda x: x[0])
-            list_path_labels_test = list(np.array(
-                [sous_liste[1] for sous_liste in list_labels_dir]
-            ))
+            list_path_labels_test = list(
+                np.array([sous_liste[1] for sous_liste in list_labels_dir])
+            )
 
         dataset_test = instantiate_dataset(
             config, list_path_images_test, list_path_labels_test, test=True
@@ -693,18 +697,25 @@ def instantiate_dataloader(config, list_output_dir, output_test):
         dataset_test.transforms = t_preproc
 
     else:
-
         output_images_path_1 = output_test + "/images_1/"
         list_name_image_1 = os.listdir(output_images_path_1)
-        list_path_images_1 = np.sort([output_images_path_1 + name_image for name_image in list_name_image_1])
+        list_path_images_1 = np.sort(
+            [output_images_path_1 + name_image for name_image in list_name_image_1]
+        )
 
         output_images_path_2 = output_test + "/images_2/"
         list_name_image_2 = os.listdir(output_images_path_2)
-        list_path_images_2 = np.sort([output_images_path_2 + name_image for name_image in list_name_image_2])
+        list_path_images_2 = np.sort(
+            [output_images_path_2 + name_image for name_image in list_name_image_2]
+        )
 
         dataset_test = instantiate_dataset(
-                config, list_path_images_1, list_path_labels_test, list_images_2 = list_path_images_2, test = True
-            )
+            config,
+            list_path_images_1,
+            list_path_labels_test,
+            list_images_2=list_path_images_2,
+            test=True,
+        )
         dataset_test.transforms = t_preproc
 
     batch_size_test = config["optim"]["batch size test"]
@@ -779,7 +790,9 @@ def instantiate_lightning_module(config, nb_total_images):
         A PyTorch Lightning module for segmentation.
     """
     print("Entre dans la fonction instantiate_lighting_module")
-    list_params = generate_optimization_elements(config, optimizer_dict, scheduler_dict, nb_total_images)
+    list_params = generate_optimization_elements(
+        config, optimizer_dict, scheduler_dict, nb_total_images
+    )
     task_type = config["donnees"]["task"]
 
     if task_type not in task_to_lightningmodule:
@@ -839,9 +852,14 @@ def instantiate_trainer(config, lightning_module):
 
     if config["donnees"]["task"] == "change-detection":
         checkpoint_callback_IOU = ModelCheckpoint(
-                monitor="validation_IOU", save_top_k=1, save_last=True, mode="max"
-                )
-        list_callbacks = [lr_monitor, checkpoint_callback, early_stop_callback, checkpoint_callback_IOU]
+            monitor="validation_IOU", save_top_k=1, save_last=True, mode="max"
+        )
+        list_callbacks = [
+            lr_monitor,
+            checkpoint_callback,
+            early_stop_callback,
+            checkpoint_callback_IOU,
+        ]
 
     strategy = "auto"
 
@@ -879,10 +897,14 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
 
-    list_output_dir, nb_total_images = prepare_train_data(config, list_data_dir, list_masks_cloud_dir)
+    list_output_dir, nb_total_images = prepare_train_data(
+        config, list_data_dir, list_masks_cloud_dir
+    )
     output_test = prepare_test_data(config, test_dir)
 
-    train_dl, valid_dl, test_dl = instantiate_dataloader(config, list_output_dir, output_test)
+    train_dl, valid_dl, test_dl = instantiate_dataloader(
+        config, list_output_dir, output_test
+    )
     # train_dl.dataset[0][0].shape
     light_module = instantiate_lightning_module(config, nb_total_images)
     trainer = instantiate_trainer(config, light_module)
@@ -904,23 +926,19 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         with mlflow.start_run(run_name=run_name):
             mlflow.autolog()
-            mlflow.log_artifact(
-                "../config.yml",
-                artifact_path="config.yml"
-            )
+            mlflow.log_artifact("../config.yml", artifact_path="config.yml")
             trainer.fit(light_module, train_dl, valid_dl)
 
             light_module = light_module.load_from_checkpoint(
                 loss=instantiate_loss(config),
-                checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
+                checkpoint_path=trainer.checkpoint_callback.best_model_path,
                 # checkpoint_path='',
                 model=light_module.model,
                 optimizer=light_module.optimizer,
                 optimizer_params=light_module.optimizer_params,
                 scheduler=light_module.scheduler,
                 scheduler_params=light_module.scheduler_params,
-                scheduler_interval=light_module.scheduler_interval
-
+                scheduler_interval=light_module.scheduler_interval,
             )
             torch.cuda.empty_cache()
             gc.collect()
@@ -933,13 +951,13 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 evaluer_modele_sur_jeu_de_test = task_to_evaluation[src_task]
 
             evaluer_modele_sur_jeu_de_test(
-                    test_dl,
-                    model,
-                    tile_size,
-                    batch_size_test,
-                    config["donnees"]["n bands"],
-                    config["mlflow"]
-                )
+                test_dl,
+                model,
+                tile_size,
+                batch_size_test,
+                config["donnees"]["n bands"],
+                config["mlflow"],
+            )
 
             # if task_type == "classification":
             #     model_uri = mlflow.get_artifact_uri("model")
@@ -958,14 +976,14 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
         light_module = light_module.load_from_checkpoint(
             loss=instantiate_loss(config),
-            checkpoint_path=trainer.checkpoint_callback.best_model_path,  # je créé un module qui charge
+            checkpoint_path=trainer.checkpoint_callback.best_model_path,
             # checkpoint_path='',
             model=light_module.model,
             optimizer=light_module.optimizer,
             optimizer_params=light_module.optimizer_params,
             scheduler=light_module.scheduler,
             scheduler_params=light_module.scheduler_params,
-            scheduler_interval=light_module.scheduler_interval
+            scheduler_interval=light_module.scheduler_interval,
         )
 
         torch.cuda.empty_cache()
@@ -983,7 +1001,9 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         #     False,
         # )
 
-        # from classes.optim.evaluation_model import metrics_classification_pleiade2, evaluer_modele_sur_jeu_de_test_classification_pleiade2
+        # from classes.optim.evaluation_model import (
+        #     metrics_classification_pleiade2,
+        #     evaluer_modele_sur_jeu_de_test_classification_pleiade2)
         # trshld = metrics_classification_pleiade2(
         #     test_dl,
         #     model,

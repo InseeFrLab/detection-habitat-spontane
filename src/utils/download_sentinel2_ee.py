@@ -15,10 +15,10 @@ credentials = ee.ServiceAccountCredentials(service_account, "GCP_credentials.jso
 ee.Initialize(credentials)
 
 
-def get_s2_sr_cld_col(aoi, start_date, end_date):
+def get_s2_sr_cld_col(aoi, start_date, end_date, collection):
     # Import and filter S2 SR.
     s2_sr_col = (
-        ee.ImageCollection("COPERNICUS/S2_SR")
+        ee.ImageCollection(collection)
         .filterBounds(aoi)
         .filterDate(start_date, end_date)
         .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", CLOUD_FILTER))
@@ -62,17 +62,23 @@ def add_cloud_bands(img):
 
 def add_shadow_bands(img):
     # Identify water pixels from the SCL band.
-    not_water = img.select("SCL").neq(6)
+    if COLLECTION == "COPERNICUS/S2_SR_HARMONIZED":
+        not_water = img.select("SCL").neq(6)
 
     # Identify dark NIR pixels that are not water
     # (potential cloud shadow pixels).
     SR_BAND_SCALE = 1e4
-    dark_pixels = (
-        img.select("B8")
-        .lt(NIR_DRK_THRESH * SR_BAND_SCALE)
-        .multiply(not_water)
-        .rename("dark_pixels")
-    )
+    if COLLECTION == "COPERNICUS/S2_SR_HARMONIZED":
+        dark_pixels = (
+            img.select("B8")
+            .lt(NIR_DRK_THRESH * SR_BAND_SCALE)
+            .multiply(not_water)
+            .rename("dark_pixels")
+        )
+    elif COLLECTION == "COPERNICUS/S2_HARMONIZED":
+        dark_pixels = (
+            img.select("B8").lt(NIR_DRK_THRESH * SR_BAND_SCALE).rename("dark_pixels")
+        )
 
     # Determine the direction to project cloud shadow from clouds
     # (assumes UTM projection).
@@ -142,6 +148,7 @@ def export_s2_no_cloud(
     EPSGs,
     start_date,
     end_date,
+    collection,
     cloud_filter,
     cloud_prb_thresh,
     nir_drk_thresh,
@@ -173,19 +180,26 @@ def export_s2_no_cloud(
     root_path = get_root_path()
     environment = get_environment()
 
+    if collection == "COPERNICUS/S2_HARMONIZED":
+        check_nbands12 = False
+        check_nbands13 = True
+        n_bands = 13
+        src = "SENTINEL2-L1C"
+    if collection == "COPERNICUS/S2_SR_HARMONIZED":
+        check_nbands12 = True
+        check_nbands13 = False
+        n_bands = 12
+        src = "SENTINEL2"
+
     bucket = environment["bucket"]
-    path_s3 = environment["sources"]["SENTINEL2"][int(start_date[0:4])][
-        DEPs[DOM.upper()]
-    ]
+    path_s3 = environment["sources"][src][int(start_date[0:4])][DEPs[DOM.upper()]]
     path_local = os.path.join(
         root_path,
-        environment["local-path"]["SENTINEL2"][int(start_date[0:4])][
-            DEPs[DOM.upper()]
-        ],
+        environment["local-path"][src][int(start_date[0:4])][DEPs[DOM.upper()]],
     )
 
     AOI = ee.Geometry.BBox(**AOIs[DOM.upper()])
-    s2_sr_cld_col = get_s2_sr_cld_col(AOI, START_DATE, END_DATE)
+    s2_sr_cld_col = get_s2_sr_cld_col(AOI, START_DATE, END_DATE, collection)
     s2_sr_median = (
         s2_sr_cld_col.map(add_cld_shdw_mask).map(apply_cld_shdw_mask).median()
     )
@@ -207,8 +221,9 @@ def export_s2_no_cloud(
         DEPs[DOM.upper()],
         int(start_date[0:4]),
         250,
-        12,
-        True,
+        n_bands,
+        check_nbands12,
+        check_nbands13,
     )
 
     shutil.rmtree(path_local, ignore_errors=True)
@@ -219,6 +234,9 @@ if __name__ == "__main__":
     DEPs = utils.mappings.name_dep_to_num_dep
     AOIs = utils.mappings.name_dep_to_aoi
 
+    COLLECTION = "COPERNICUS/S2_HARMONIZED"
+    # COLLECTION = "COPERNICUS/S2_SR_HARMONIZED"
+
     START_DATE = "2022-05-01"
     END_DATE = "2022-09-01"
     CLOUD_FILTER = 60
@@ -227,18 +245,19 @@ if __name__ == "__main__":
     CLD_PRJ_DIST = 2
     BUFFER = 50
 
-    export_s2_no_cloud(
-        "Guadeloupe",
-        AOIs,
-        EPSGs,
-        START_DATE,
-        END_DATE,
-        CLOUD_FILTER,
-        CLD_PRB_THRESH,
-        NIR_DRK_THRESH,
-        CLD_PRJ_DIST,
-        BUFFER,
-    )
+    # export_s2_no_cloud(
+    #     "Guadeloupe",
+    #     AOIs,
+    #     EPSGs,
+    #     START_DATE,
+    #     END_DATE,
+    #     COLLECTION,
+    #     CLOUD_FILTER,
+    #     CLD_PRB_THRESH,
+    #     NIR_DRK_THRESH,
+    #     CLD_PRJ_DIST,
+    #     BUFFER,
+    # )
 
     # export_s2_no_cloud(
     #     "Martinique",
@@ -246,6 +265,7 @@ if __name__ == "__main__":
     #     EPSGs,
     #     START_DATE,
     #     END_DATE,
+    #     COLLECTION,
     #     CLOUD_FILTER,
     #     CLD_PRB_THRESH,
     #     NIR_DRK_THRESH,
@@ -259,19 +279,7 @@ if __name__ == "__main__":
     #     EPSGs,
     #     START_DATE,
     #     END_DATE,
-    #     CLOUD_FILTER,
-    #     CLD_PRB_THRESH,
-    #     NIR_DRK_THRESH,
-    #     CLD_PRJ_DIST,
-    #     BUFFER,
-    # )
-
-    # export_s2_no_cloud(
-    #     "Guyane",
-    #     AOIs,
-    #     EPSGs,
-    #     START_DATE,
-    #     END_DATE,
+    #     COLLECTION,
     #     CLOUD_FILTER,
     #     CLD_PRB_THRESH,
     #     NIR_DRK_THRESH,
@@ -285,6 +293,21 @@ if __name__ == "__main__":
     #     EPSGs,
     #     START_DATE,
     #     END_DATE,
+    #     COLLECTION,
+    #     CLOUD_FILTER,
+    #     CLD_PRB_THRESH,
+    #     NIR_DRK_THRESH,
+    #     CLD_PRJ_DIST,
+    #     BUFFER,
+    # )
+
+    # export_s2_no_cloud(
+    #     "Guyane",
+    #     AOIs,
+    #     EPSGs,
+    #     START_DATE,
+    #     END_DATE,
+    #     COLLECTION,
     #     CLOUD_FILTER,
     #     CLD_PRB_THRESH,
     #     NIR_DRK_THRESH,

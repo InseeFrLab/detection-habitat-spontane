@@ -4,11 +4,10 @@ import os
 import numpy as np
 import pandas as pd
 import rasterio
-from tqdm import tqdm
 from osgeo import gdal
+from tqdm import tqdm
 
 from utils.filter import is_too_black, is_too_water
-from classes.data.satellite_image import SatelliteImage
 
 
 def check_labelled_images(output_directory_name):
@@ -110,7 +109,7 @@ def filter_images_sentinel(list_images, src):
         array = splitted_image.array
         if not is_too_water(splitted_image, 0.95):
             if not np.isnan(array).any():
-                if src == 'SENTINEL2-RVB':
+                if src == "SENTINEL2-RVB":
                     splitted_image.array = splitted_image.array[(3, 2, 1), :, :]
                 list_filtered_splitted_images.append(splitted_image)
     return list_filtered_splitted_images
@@ -156,7 +155,6 @@ def label_images(list_images, labeler, task="segmentation"):
                     satellite_image.filename.split(".")[0] + "_" + "{:04d}".format(i)
                 ] = 0
                 labels.append(0)
-
 
     # print(
     #     "Nombre d'images labelisées : ",
@@ -216,21 +214,23 @@ def save_images_and_masks(
 
         try:
             if task != "classification":
-                if np.sum(mask) >= 0.1*image.array.shape[1]**2:
-                    in_ds = gdal.Open(direc+'/'+image.filename)
+                if np.sum(mask) >= 0.1 * image.array.shape[1] ** 2:
+                    in_ds = gdal.Open(direc + "/" + image.filename)
                     proj = in_ds.GetProjection()
 
-                    image.to_raster(output_images_path, filename, "tif", proj)
+                    image.to_raster(output_images_path + "/", filename, "tif", proj)
                     np.save(
                         output_masks_path + "/" + filename + ".npy",
                         mask,
                     )
             if task == "classification":
                 # if i in selected_indices:
-                if src == 'PLEIADES':
-                    image.to_raster(output_images_path, filename + ".jp2", "jp2", None)
-                elif 'SENTINEL' in src:
-                    in_ds = gdal.Open(direc+'/'+image.filename)
+                if src == "PLEIADES":
+                    image.to_raster(
+                        output_images_path, filename + ".jp2", "jp2", None
+                    )
+                elif "SENTINEL" in src:
+                    in_ds = gdal.Open(direc + "/" + image.filename)
                     proj = in_ds.GetProjection()
 
                     image.to_raster(output_images_path, filename, "tif", proj)
@@ -288,17 +288,16 @@ def extract_proportional_subset(
     nb_ones = len(df_1)
 
     difference = abs(nb_ones - nb_zeros)
-    tolerance = 0.2*prop*nb_ones
+    tolerance = 0.2 * prop * nb_ones
 
     if difference > tolerance:
-
         if nb_zeros > nb_ones:
             # Randomly sample the same number of samples from each class
-            df_sample_max = df_0.sample(prop*nb_ones)
+            df_sample_max = df_0.sample(prop * nb_ones)
             df_not_sample = df_1
         else:
             # Randomly sample the same number of samples from each class
-            df_sample_max = df_1.sample(prop*nb_zeros)
+            df_sample_max = df_1.sample(prop * nb_zeros)
             df_not_sample = df_0
 
         # Concatenate the sample dataframes
@@ -334,9 +333,9 @@ def filter_images_by_path(
     # Extract the "path_image" column as a list
     list_name = df[path_column].tolist()
 
-    if 'PLEIADES' in csv_file:
+    if "PLEIADES" in csv_file:
         ext = ".jp2"
-    elif 'SENTINEL' in csv_file:
+    elif "SENTINEL" in csv_file:
         ext = ".tif"
 
     list_name_ext = [name + ext for name in list_name]

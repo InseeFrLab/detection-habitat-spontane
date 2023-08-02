@@ -132,14 +132,20 @@ def load_2satellites_data(year: int, dep: str, src: str):
             path_s2 = list_paths_s2[list_paths_s2_rac.index(path)]
 
             image_s1 = SatelliteImage.from_raster(
-                output_dir_s1 + "/" + path_s1, dep=dep, date=year, n_bands=1
+                output_dir_s1 + "/" + path_s1, dep=dep, date=year, n_bands=2
             )
 
-            image_s2 = SatelliteImage.from_raster(
-                output_dir_s2 + "/" + path_s2, dep=dep, date=year, n_bands=12
-            )
+            try:
+                image_s2 = SatelliteImage.from_raster(
+                    output_dir_s2 + "/" + path_s2, dep=dep, date=year, n_bands=13
+                )
+            except IndexError:
+                image_s2 = SatelliteImage.from_raster(
+                    output_dir_s2 + "/" + path_s2, dep=dep, date=year, n_bands=12
+                )
 
             matrice = np.concatenate((image_s2.array, image_s1.array))
+            n_bands = matrice.shape[0]
 
             transf = image_s1.transform
             driver = gdal.GetDriverByName("GTiff")
@@ -164,7 +170,7 @@ def load_2satellites_data(year: int, dep: str, src: str):
             proj = in_ds.GetProjection()
             out_ds.SetProjection(proj)
 
-            for i in range(13):
+            for i in range(n_bands):
                 out_ds.GetRasterBand(i + 1).WriteArray(matrice[i, :, :])
 
             out_ds = None

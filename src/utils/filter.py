@@ -1,27 +1,25 @@
 """
 """
-import rasterio
-from tqdm import tqdm
-from rasterio.errors import RasterioIOError
 import os
+import sys
 from typing import Literal, Union
+
 import geopandas as gpd
 import numpy as np
+from rasterio.errors import RasterioIOError
 from rasterio.features import rasterize, shapes
 from scipy.ndimage import label
 from shapely.geometry import Polygon, box
+from tqdm import tqdm
 
-import sys
-sys.path.append('../src')
-from classes.data.satellite_image import SatelliteImage
-from train_pipeline_utils.download_data import load_satellite_data
-from classes.data.satellite_image import SatelliteImage
-
-from classes.data.labeled_satellite_image import (
+sys.path.append("../src")
+from classes.data.labeled_satellite_image import ( # noqa:E402
     DetectionLabeledSatelliteImage,
     SegmentationLabeledSatelliteImage,
 )
-from utils.utils import get_environment, get_file_system
+from classes.data.satellite_image import SatelliteImage # noqa:E402
+from train_pipeline_utils.download_data import load_satellite_data # noqa:E402
+from utils.utils import get_environment, get_file_system # noqa:E402
 
 
 def is_too_water(image: SatelliteImage, water_value_threshold=0.95) -> bool:
@@ -54,10 +52,13 @@ def is_too_water(image: SatelliteImage, water_value_threshold=0.95) -> bool:
     for i in range(tile_size):
         for j in range(tile_size):
             if not np.isnan(array[2, i, j]) and not np.isnan(array[7, i, j]):
-                if (int(array[2, i, j]) - int(array[7, i, j])) / (
-                    int(array[2, i, j]) + int(array[7, i, j])
-                ) < 0:
-                    NDWI[i][j] = 1
+                try:
+                    if (int(array[2, i, j]) - int(array[7, i, j])) / (
+                        int(array[2, i, j]) + int(array[7, i, j])
+                    ) < 0:
+                        NDWI[i][j] = 1
+                except ZeroDivisionError:
+                    continue
     if np.sum(NDWI) <= (1 - water_value_threshold) * tile_size * tile_size:
         return True
     return False
@@ -491,10 +492,9 @@ def patch_nocloud(
 
 
 def create_doss_cloud(year, dep_num, dep_str):
-
     load_satellite_data(int(year), str(dep_num), "PLEIADES")
-    file_path = '../data/PLEIADES/' + year + "/" + dep_str
-    output_masks_path = '../nuagespleiades/' + year + "/" + dep_str
+    file_path = "../data/PLEIADES/" + year + "/" + dep_str
+    output_masks_path = "../nuagespleiades/" + year + "/" + dep_str
 
     if os.path.exists(output_masks_path):
         print("fichiers déjà écrits")
@@ -502,12 +502,12 @@ def create_doss_cloud(year, dep_num, dep_str):
     if not os.path.exists(output_masks_path):
         os.makedirs(output_masks_path)
 
+    list_name = os.listdir(file_path)
+    list_path = [file_path + "/" + name for name in list_name]
 
-    list_name=os.listdir(file_path)
-    list_path=[file_path + "/" + name for name in list_name]
-
-
-    for path, file_name in tqdm(zip(list_path, list_name), total=len(list_path), desc='Processing'):
+    for path, file_name in tqdm(
+        zip(list_path, list_name), total=len(list_path), desc="Processing"
+    ):
         try:
             big_satellite_image = SatelliteImage.from_raster(
                 file_path=path, dep=None, date=None, n_bands=3

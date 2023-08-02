@@ -70,13 +70,16 @@ def export_s1(DOM, AOIs, EPSGs, start_date, end_date):
 
     s1_grd = get_s1_grd(AOI, start_date, end_date)
 
-    image = ee.Image(s1_grd.first()).clip(feature_aoi)
+    image = ee.Image(s1_grd.first()).clip(feature_aoi).select("V.*")
 
     if ee.Feature(image).contains(feature_aoi).getInfo():
         export_s1_grd_first(start_date, AOI, image, DOM)
     else:
         export_s1_grd_mean(
-            start_date, AOI, ee.Image(s1_grd.mean()).clip(feature_aoi), DOM
+            start_date,
+            AOI,
+            ee.Image(s1_grd.mean()).clip(feature_aoi).select("V.*"),
+            DOM,
         )
 
 
@@ -127,7 +130,8 @@ def export_s1_grd_first(start_date, AOI, s1_grd, DOM):
         f"{DEPs[DOM.upper()]}",
         int(start_date[0:4]),
         250,
-        1,
+        2,
+        False,
         False,
     )
 
@@ -169,7 +173,8 @@ def export_s1_grd_mean(start_date, AOI, s1_grd, DOM):
         f"{DEPs[DOM.upper()]}",
         int(start_date[0:4]),
         250,
-        1,
+        2,
+        False,
         False,
     )
 
@@ -206,6 +211,7 @@ def upload_satelliteImages(
     dim,
     n_bands,
     check_nbands12=False,
+    check_nbands13=False,
 ):
     """
     Transforms a raster in a SatelliteImage and calls a function\
@@ -221,6 +227,9 @@ def upload_satelliteImages(
         n_bands: number of bands of the image to upload.
         check_nbands12: boolean that, if set to True, allows to check\
             if the image to upload is indeed 12 bands.\
+            Usefull in download_sentinel2_ee.py
+        check_nbands13: boolean that, if set to True, allows to check\
+            if the image to upload is indeed 13 bands.\
             Usefull in download_sentinel2_ee.py
     """
 
@@ -254,6 +263,19 @@ def upload_satelliteImages(
                     dep=dep,
                     date=year,
                     n_bands=12,
+                )
+                exportToMinio(filename + ".tif", rpath)
+                os.remove(filename + ".tif")
+
+            except PIL.UnidentifiedImageError:
+                print("L'image ne possède pas assez de bandes")
+        elif check_nbands13:
+            try:
+                image = SatelliteImage.from_raster(
+                    file_path=filename + ".tif",
+                    dep=dep,
+                    date=year,
+                    n_bands=13,
                 )
                 exportToMinio(filename + ".tif", rpath)
                 os.remove(filename + ".tif")
