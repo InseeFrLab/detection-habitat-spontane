@@ -91,7 +91,7 @@ def download_data(config):
             cloud_dir = load_satellite_data(year, dep, "NUAGESPLEIADES")
             list_masks_cloud_dir.append(cloud_dir)
             output_dir = load_satellite_data(year, dep, src)
-        elif src == "SENTINEL1-2" or src == "SENTINEL1-2-RVB":
+        elif src == "SENTINEL1-2" or src == "SENTINEL1-2-RVB" or src == "SENTINEL1-2L1C" or src == "SENTINEL1-2L1C-RVB":
             output_dir = load_2satellites_data(year, dep, src)
         else:
             output_dir = load_satellite_data(year, dep, src)
@@ -460,11 +460,17 @@ def instantiate_dataset(
         raise ValueError("Invalid dataset type")
     else:
         dataset_select = dataset_dict[dataset_type]
+        model = config["optim"]["module"]
 
         if list_images_2 is None:
-            full_dataset = dataset_select(
-                list_images, list_labels, config["donnees"]["n bands"]
-            )
+            if model in ["deeplabv3_RGB_MOCO", "deeplabv3_MOCO"]:
+                full_dataset = dataset_select(
+                    list_images, list_labels, config["donnees"]["n bands"], model_MOCO=True
+                )
+            else:
+                full_dataset = dataset_select(
+                    list_images, list_labels, config["donnees"]["n bands"]
+                )
         else:
             full_dataset = dataset_select(
                 list_images, list_images_2, list_labels, config["donnees"]["n bands"]
@@ -518,6 +524,10 @@ def instantiate_dataloader(config, list_output_dir, output_test):
         "SENTINEL1-2",
         "SENTINEL2-RVB",
         "SENTINEL1-2-RVB",
+        "SENTINEL2L1C",
+        "SENTINEL1-2L1C",
+        "SENTINEL2L1C-RVB",
+        "SENTINEL1-2L1C-RVB",
     ]:
         list_labels = []
         list_images = []
@@ -749,7 +759,9 @@ def instantiate_model(config):
     if module_type in ["deeplabv3", "resnet50"]:
         return module_dict[module_type](nchannel)
     if module_type == "deeplabv3_RGB_MOCO":
-        return module_dict[module_type](nchannel, True)
+        return module_dict[module_type](nchannel, True, False)
+    if module_type == "deeplabv3_MOCO":
+        return module_dict[module_type](nchannel, False, True)
     else:
         return module_dict[module_type]()
 

@@ -153,6 +153,7 @@ class SentinelDataset(Dataset):
         list_paths_labels,
         n_bands: int,
         transforms=None,
+        model_MOCO=False,
     ):
         """
         Constructor.
@@ -166,6 +167,7 @@ class SentinelDataset(Dataset):
         self.list_paths_labels = list_paths_labels
         self.transforms = transforms
         self.n_bands = n_bands
+        self.model_MOCO = model_MOCO
 
     def __getitem__(self, idx):
         """_summary_
@@ -185,10 +187,11 @@ class SentinelDataset(Dataset):
         img = SatelliteImage.from_raster(
             file_path=pathim, dep=None, date=None, n_bands=self.n_bands
         )
-        if "L1C" in pathim:
-            img.normalize_L1C()
+        if self.model_MOCO:
+            img.normalize_MOCO(pathim)
         else:
             img.normalize()
+
         img = img.array
 
         img = np.transpose(img.astype(float), [1, 2, 0])

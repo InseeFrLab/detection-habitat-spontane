@@ -12,7 +12,7 @@ class DeepLabv3Module(nn.Module):
     n_channel: (int) number of channels of the input image
     """
 
-    def __init__(self, nchannel=3, SENTINEL2_RGB_MOCO = False):
+    def __init__(self, nchannel=3, SENTINEL2_RGB_MOCO = False, SENTINEL2_MOCO = False):
         """ """
         super().__init__()
 
@@ -21,13 +21,26 @@ class DeepLabv3Module(nn.Module):
                 url="https://huggingface.co/torchgeo/resnet50_sentinel2_rgb_moco/resolve/main/resnet50_sentinel2_rgb_moco-e3a335e3.pth",  # noqa: E501
                 transforms=None,
                 meta={
-                    "in_chans": 3,
+                    "in_chans": nchannel,
                     "model": "resnet50",
                 },
             )
 
             self.model = torchvision.models.segmentation.deeplabv3_resnet50(
                 weights_backbone=SENTINEL2_RGB_MOCO
+            )
+        elif SENTINEL2_MOCO:
+            SENTINEL2_MOCO = Weights(
+                url="https://huggingface.co/torchgeo/resnet50_sentinel2_all_moco/resolve/main/resnet50_sentinel2_all_moco-e3a335e3.pth",  # noqa: E501
+                transforms=None,
+                meta={
+                    "in_chans": nchannel,
+                    "model": "resnet50",
+                },
+            )
+
+            self.model = torchvision.models.segmentation.deeplabv3_resnet50(
+                weights_backbone=SENTINEL2_MOCO
             )
         else:
             self.model = torchvision.models.segmentation.deeplabv3_resnet101(

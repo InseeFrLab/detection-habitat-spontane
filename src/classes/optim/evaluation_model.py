@@ -168,9 +168,9 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
                 if not os.path.exists("outputs_evaluation_model/"):
                     os.makedirs("outputs_evaluation_model/")
 
-                if src == 'SENTINEL1-2' or src == 'SENTINEL2':
+                if src in ['SENTINEL1-2', 'SENTINEL2', 'SENTINEL1-2L1C', 'SENTINEL2L1C']:
                     bands_idx = 3, 2, 1
-                elif src == 'SENTINEL2-RVB' or src == 'SENTINEL1-2-RVB' or src == 'PLEIADES':
+                elif src in ['SENTINEL2-RVB', 'SENTINEL1-2-RVB', 'SENTINEL2L1C-RVB', 'SENTINEL1-2L1C-RVB', 'PLEIADES']:
                     bands_idx = 0, 1, 2
 
                 filename = pthimg.split("/")[-1]

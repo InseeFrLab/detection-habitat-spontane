@@ -39,6 +39,7 @@ dataset_dict = {
 module_dict = {
     "deeplabv3": DeepLabv3Module,
     "deeplabv3_RGB_MOCO": DeepLabv3Module,
+    "deeplabv3_MOCO": DeepLabv3Module,
     "resnet50": ResNet50Module,
 }
 
@@ -73,6 +74,10 @@ task_to_evaluation = {
     "SENTINEL1-2segmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
     "SENTINEL2-RVBsegmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
     "SENTINEL1-2-RVBsegmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
+    "SENTINEL2L1Csegmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
+    "SENTINEL1-2L1Csegmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
+    "SENTINEL2L1C-RVBsegmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
+    "SENTINEL1-2L1C-RVBsegmentation": evaluer_modele_sur_jeu_de_test_segmentation_sentinel,
     "SENTINEL1-2classification": evaluer_modele_sur_jeu_de_test_classification_sentinel,
     "SENTINEL2classification": evaluer_modele_sur_jeu_de_test_classification_sentinel,
     "SENTINEL2-RVBclassification": evaluer_modele_sur_jeu_de_test_classification_sentinel, # noqa: E501

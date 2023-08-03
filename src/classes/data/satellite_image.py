@@ -148,7 +148,7 @@ class SatelliteImage:
         self.array = np.stack(normalized_bands)
         self.normalized = True
 
-    def normalize_L1C(self, quantile: float = 0.97):
+    def normalize_MOCO(self, pathim, quantile: float = 0.97):
         """
         Normalize array values.
 
@@ -165,12 +165,27 @@ class SatelliteImage:
             )
 
         normalized_bands = []
-        mean = [1373.1, 1322.3, 1397.6]
-        std = [1144.9, 878.7, 854.3]
+        if self.n_bands == 2:
+            mean = [-12.59, -20.26]
+            std = [5.26, 5.91]
+        elif self.n_bands == 12:
+            mean = [756.4, 889.6, 1151.7, 1307.6, 1637.6, 2212.6, 2442.0, 2538.9, 2602.9, 2666.8, 2388.8, 1821.5]
+            std = [ 1111.4, 1159.1, 1188.1, 1375.2, 1376.6, 1358.6, 1418.4, 1476.4, 1439.9, 1582.1, 1460.7, 1352.2]
+        elif self.n_bands == 13:
+            mean = [1612.9, 1397.6, 1322.3, 1373.1, 1561.0, 2108.4, 2390.7, 2318.7, 2581.0, 837.7, 22.0, 2195.2, 1537.4]
+            std = [791.0, 854.3, 878.7, 1144.9, 1127.5, 1164.2, 1276.0, 1249.5, 1345.9, 577.5, 47.5, 1340.0, 1142.9]
+        elif self.n_bands == 3:
+            if "L1C" in pathim:
+                mean = [1373.1, 1322.3, 1397.6]
+                std = [1144.9, 878.7, 854.3]
+            else:
+                mean = [1307.6, 1151.7, 889.6]
+                std = [1375.2, 1188.1, 1159.1]
+
         for i in range(self.n_bands):
             array = self.array[i, :, :]
-            if i != 12:
-                array = np.clip(array, np.min(array), np.quantile(array, quantile))
+            # if i != 12:
+            #     array = np.clip(array, np.min(array), np.quantile(array, quantile))
 
             mini = mean[i] - 2 * std[i]
             maxi = mean[i] + 2 * std[i]

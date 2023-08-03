@@ -114,8 +114,9 @@ def load_2satellites_data(year: int, dep: str, src: str):
         print("Le dossier existe déjà")
         return path_local
 
+    src2 = 'SENTINEL' + src.split('SENTINEL1-')[-1]
     output_dir_s1 = load_satellite_data(year, dep, "SENTINEL1")
-    output_dir_s2 = load_satellite_data(year, dep, "SENTINEL2")
+    output_dir_s2 = load_satellite_data(year, dep, src2)
 
     list_paths_s1 = os.listdir(output_dir_s1)
     list_paths_s2 = os.listdir(output_dir_s2)
