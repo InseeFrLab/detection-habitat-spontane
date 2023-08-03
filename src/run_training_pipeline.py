@@ -261,7 +261,7 @@ def prepare_train_data_else(config, list_data_dir, list_masks_cloud_dir):
                 )
 
                 labels, balancing_dict = label_images(
-                    list_filtered_splitted_images, labeler, config_task, mask_inversion_threshold
+                    list_filtered_splitted_images, labeler, config_task, mask_inversion_threshold[i]
                 )
 
                 nb_ones = sum(1 for value in balancing_dict.values() if value == 1)
@@ -1082,6 +1082,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     # experiment_name = "classification"
     # run_name = "mergemain"
 
+    model = mlflow.pytorch.load_model('/home/onyxia/work/detection-habitat-spontane/src/old_model/model/')
+
     if config["mlflow"]:
         update_storage_access()
         os.environ["MLFLOW_S3_ENDPOINT_URL"] = "https://minio.lab.sspcloud.fr"
@@ -1102,7 +1104,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 loss=instantiate_loss(config),
                 checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
                 # checkpoint_path='',
-                model=light_module.model,
+                # model=light_module.model,
+                model=model,
                 optimizer=light_module.optimizer,
                 optimizer_params=light_module.optimizer_params,
                 scheduler=light_module.scheduler,

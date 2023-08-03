@@ -2,10 +2,10 @@ donnees:
   source train: "PLEIADES"
   dataset: "PLEIADE" 
   dataset-test: "PLEIADE"
-  year: [2022]
-  dep: ["972"]
+  year: [2020, 2017]
+  dep: ["976", "976"]
   type labeler: "BDTOPO"
-  mask inversion threshold: 140
+  mask inversion threshold: [100, 95]
   buffer size: 10
   n channels train: 3
   n bands entry: 3
@@ -13,8 +13,8 @@ donnees:
   tile size: 250
   augmentation: False
   task: "segmentation"
-  max size ones: 15000
-  prop: 0.01
+  max size ones: 45000
+  prop: 0.00
 
 optim:
   loss: "softiou"
