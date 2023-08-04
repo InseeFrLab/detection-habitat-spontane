@@ -1082,7 +1082,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
     # experiment_name = "classification"
     # run_name = "mergemain"
 
-    model = mlflow.pytorch.load_model('/home/onyxia/work/detection-habitat-spontane/src/old_model/model/')
+    # model = mlflow.pytorch.load_model('/home/onyxia/work/detection-habitat-spontane/src/old_model/model/')
 
     if config["mlflow"]:
         update_storage_access()
@@ -1104,8 +1104,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 loss=instantiate_loss(config),
                 checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
                 # checkpoint_path='',
-                # model=light_module.model,
-                model=model,
+                model=light_module.model,
+                # model=model,
                 optimizer=light_module.optimizer,
                 optimizer_params=light_module.optimizer_params,
                 scheduler=light_module.scheduler,
