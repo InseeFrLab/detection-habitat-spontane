@@ -1,0 +1,51 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Slum detection like a boss",
+    "section": "",
+    "text": "Project description"
+  },
+  {
+    "objectID": "1-Introduction.html#un-bidonville-le-mont-baduel",
+    "href": "1-Introduction.html#un-bidonville-le-mont-baduel",
+    "title": "1  Introduction",
+    "section": "1.1 Un bidonville, le mont Baduel",
+    "text": "1.1 Un bidonville, le mont Baduel\n\n\n\nFigure 1.1: Mont Baduel\n\n\n\n\n\nFigure 1.2: Détection du Mont Baduel\n\n\n\nOn peut détecter la présence de bidonvilles !"
+  },
+  {
+    "objectID": "1-Introduction.html#les-attendus-techniques-du-projet-sont-il-bien-définis",
+    "href": "1-Introduction.html#les-attendus-techniques-du-projet-sont-il-bien-définis",
+    "title": "1  Introduction",
+    "section": "1.2 Les attendus techniques du projet sont-il bien définis ?",
+    "text": "1.2 Les attendus techniques du projet sont-il bien définis ?\n\nOn voudrait ici être en mesure pour une zone donnée de détecter des apparitions ou disparitions de logement\nA-t’on des données annotées qui nous permettent réellement de le faire ?\n\n\n\n\n\nDuque, Juan, Jorge Patino, and Alejandro Betancourt. 2017. “Exploring the Potential of Machine Learning for Automatic Slum Identification from VHR Imagery.” Remote Sensing 9 (9): 895. https://doi.org/10.3390/rs9090895.\n\n\nMboga, Nicholus, Claudio Persello, John Bergado, and Alfred Stein. 2017. “Detection of Informal Settlements from VHR Images Using Convolutional Neural Networks.” Remote Sensing 9 (11): 1106. https://doi.org/10.3390/rs9111106."
+  },
+  {
+    "objectID": "2-Image-input.html#une-image-satellite",
+    "href": "2-Image-input.html#une-image-satellite",
+    "title": "2  Les images en entrées",
+    "section": "2.1 Une image satellite",
+    "text": "2.1 Une image satellite\nPlusieurs caractéristiques possibles pour une image satellite :\n\nLa résolution : équivalence entre un pixel et le nombre de mètre couvert par ce dernier\nLa fréquence d’acquisition : fréquence des prises de vue pour un même endroit\nsource de l’émission : optique, radar, laser\nune fauchée : Largeur de la zone enregistrée sur un passage\nUne couverture géographique donnée"
+  },
+  {
+    "objectID": "2-Image-input.html#images-faibles-résolution",
+    "href": "2-Image-input.html#images-faibles-résolution",
+    "title": "2  Les images en entrées",
+    "section": "2.2 Images Faibles résolution",
+    "text": "2.2 Images Faibles résolution\n\n\n\nFigure 2.1: Images Sentinel 2, résolution : 10 m, fréquence : tous les 5 jours, gratuites\n\n\n\n\n\nFigure 2.2: Exemple masques Sentinel 2\n\n\n\nOn ne peut espérer obtenir plus précis de ces images que ne peut permettre la résolution"
+  },
+  {
+    "objectID": "2-Image-input.html#images-haute-résolution-les-données-pleiades",
+    "href": "2-Image-input.html#images-haute-résolution-les-données-pleiades",
+    "title": "2  Les images en entrées",
+    "section": "2.3 Images haute résolution : les données pleiades",
+    "text": "2.3 Images haute résolution : les données pleiades\n\n\n\nFigure 2.3: Image Pléiades\n\n\n\nRésolution 50/70 cm, acquisitions fraîches mais coûteuses sur demandes \\(\\approx 1.5 \\text{~~euros}/ km^{2}\\)\nEn réalité résolution 1 bande 50 cm et réanchantillonnage des couleurs par dessus\n\n\n\n\nFigure 2.4: Grille Pléiades Cayenne\n\n\n\nLes acquisitions peuvent être de plus ou moins bonnes qualité dépendant du moment de la prise de vue, on peut être amené à les refaire (nuage, ensoleillement), ça double les coûts.\n\nCaractéristiques de la prise de vue pouvant nuire à la qualité de l’image récupérée :\n\nLa couverture nuageuse : trop de nuages \\(\\longrightarrow\\) images non exploitables\nAngle d’incidence : angle entre le satellite et la localisation considérée, si l’angle est trop élevé, trop de déformations dans la prise de vue\n\n\n\n\nFigure 2.5: Coûts Pléiades\n\n\n\n\n\nFigure 2.6: Catalogue Dinamis\n\n\n\nFacturation des images hautes résolution \\(\\approx 1.50 / km^2\\).\n\n\nTerritoire\nSuperficie (\\(km^2\\))\nPrix (en euros)\n\n\n\n\nMartinique\n1128\n1692\n\n\nGuadeloupe\n1628\n2442\n\n\nRéunion\n2512\n3768\n\n\nMayotte\n374\n561\n\n\nGuyane\n83900\n125850\n\n\n\n\nNécessite une approche en deux temps où on sélectionnerait au préalable grossièrement les zones que l’on veut vérifier (notamment en Guyane)\nQuotas de gratuité pour les acteurs publics 4000 \\(km^2\\) monoscopiques."
+  },
+  {
+    "objectID": "references.html",
+    "href": "references.html",
+    "title": "References",
+    "section": "",
+    "text": "Duque, Juan, Jorge Patino, and Alejandro Betancourt. 2017.\n“Exploring the Potential of Machine\nLearning for Automatic Slum\nIdentification from VHR\nImagery.” Remote Sensing 9 (9): 895. https://doi.org/10.3390/rs9090895.\n\n\nMboga, Nicholus, Claudio Persello, John Bergado, and Alfred Stein. 2017.\n“Detection of Informal Settlements from\nVHR Images Using\nConvolutional Neural\nNetworks.” Remote Sensing 9 (11): 1106. https://doi.org/10.3390/rs9111106."
+  }
+]
