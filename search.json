@@ -9,14 +9,14 @@
   {
     "objectID": "1-Introduction.html#un-bidonville-le-mont-baduel",
     "href": "1-Introduction.html#un-bidonville-le-mont-baduel",
-    "title": "1  Introduction",
+    "title": "1  Introduction de kekos",
     "section": "1.1 Un bidonville, le mont Baduel",
     "text": "1.1 Un bidonville, le mont Baduel\n\n\n\nFigure 1.1: Mont Baduel\n\n\n\n\n\nFigure 1.2: Détection du Mont Baduel\n\n\n\nOn peut détecter la présence de bidonvilles !"
   },
   {
     "objectID": "1-Introduction.html#les-attendus-techniques-du-projet-sont-il-bien-définis",
     "href": "1-Introduction.html#les-attendus-techniques-du-projet-sont-il-bien-définis",
-    "title": "1  Introduction",
+    "title": "1  Introduction de kekos",
     "section": "1.2 Les attendus techniques du projet sont-il bien définis ?",
     "text": "1.2 Les attendus techniques du projet sont-il bien définis ?\n\nOn voudrait ici être en mesure pour une zone donnée de détecter des apparitions ou disparitions de logement\nA-t’on des données annotées qui nous permettent réellement de le faire ?\n\n\n\n\n\nDuque, Juan, Jorge Patino, and Alejandro Betancourt. 2017. “Exploring the Potential of Machine Learning for Automatic Slum Identification from VHR Imagery.” Remote Sensing 9 (9): 895. https://doi.org/10.3390/rs9090895.\n\n\nMboga, Nicholus, Claudio Persello, John Bergado, and Alfred Stein. 2017. “Detection of Informal Settlements from VHR Images Using Convolutional Neural Networks.” Remote Sensing 9 (11): 1106. https://doi.org/10.3390/rs9111106."
   },
