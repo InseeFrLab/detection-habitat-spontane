@@ -11,7 +11,7 @@ from utils.filter import is_too_black, is_too_water
 from classes.data.satellite_image import SatelliteImage
 from classes.data.change_detection_triplet import ChangedetectionTripletS2Looking
 from utils.utils import list_sorted_filenames
-from classes.changes.mask_changes import mask_inversion
+from classes.changes.mask_changes import mask_rgb
 
 
 def check_labelled_images(output_directory_name):
@@ -119,7 +119,7 @@ def filter_images_sentinel(list_images, src):
     return list_filtered_splitted_images
 
 
-def label_images(list_images, labeler, task="segmentation", mask_inversion_threshold="None"):
+def label_images(list_images, labeler, task="segmentation", mask_rgb_threshold="None"):
     """
     labels the images according to type of labeler desired.
 
@@ -147,8 +147,8 @@ def label_images(list_images, labeler, task="segmentation", mask_inversion_thres
                 balancing_dict[
                     satellite_image.filename.split(".")[0] + "_" + "{:04d}".format(i)
                 ] = 0
-            if mask_inversion_threshold:
-                mask = mask_inversion(satellite_image, mask_inversion_threshold)
+            if mask_rgb_threshold:
+                mask = mask_rgb(satellite_image, mask_rgb_threshold)
             labels.append(mask)
         elif task == "classification":
             if np.sum(mask) != 0:

@@ -768,7 +768,7 @@ def plot_list_change_pleiades_images(
     return plt.gcf()
 
 
-def plot_list_mask_inversion_pleiades_images(
+def plot_list_mask_rgb_pleiades_images(
     list_img: List,
     list_mask_1: List,
     list_mask_2: List,

@@ -26,7 +26,7 @@ from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteIma
 from classes.data.satellite_image import SatelliteImage
 from utils.plot_utils import (
     plot_list_change_pleiades_images,
-    plot_list_mask_inversion_pleiades_images
+    plot_list_mask_rgb_pleiades_images
 )
 
 
@@ -125,10 +125,9 @@ def plot_changes_predicted_test(
             plt.close()
 
 
-def mask_inversion(image, threshold = 100):
+def mask_rgb(image, threshold = 156):
     img = image.array.copy()
     img = img[:3,:,:]
-    img = (img * 255).astype(np.uint8)
     img = img.transpose(1,2,0)
 
     shape = img.shape[0:2]
@@ -138,7 +137,7 @@ def mask_inversion(image, threshold = 100):
     black = np.ones(shape, dtype=float)
     white = np.zeros(shape, dtype=float)
 
-    mask = np.where(grayscale > threshold, white, black)
+    mask = np.where(grayscale < threshold, white, black)
     
     return(mask)
 
@@ -174,11 +173,11 @@ def plot_two_masks_predicted_test(
             threshold = 100
 
         if pred == 0:
-            mask_pred_1 = mask_inversion(si, threshold)
+            mask_pred_1 = mask_rgb(si, threshold)
             mask_pred_2 = np.full((tile_size, tile_size, 3), 0, dtype=np.uint8)
 
         elif pred == 1:
-            mask_pred_1 = mask_inversion(si, threshold)
+            mask_pred_1 = mask_rgb(si, threshold)
             mask_pred_2 = mask_pred_1
 
         si.normalize()
@@ -193,7 +192,7 @@ def plot_two_masks_predicted_test(
             if not os.path.exists("img2/"):
                 os.makedirs("img2/")
 
-            fig1 = plot_list_mask_inversion_pleiades_images(
+            fig1 = plot_list_mask_rgb_pleiades_images(
                         list_img, list_mask_1, list_mask_2
                     )
             filename = img.split("/")[-1]
@@ -238,7 +237,7 @@ def create_doss_mask_inv(year, dep, threshold):
             continue
     
         else:
-            mask_inv = mask_inversion(si, threshold)
+            mask_inv = mask_rgb(si, threshold)
             file_name = file_name.split(".")[0]
             np.save(output_masks_path + "/" + file_name + ".npy", mask_inv)
 

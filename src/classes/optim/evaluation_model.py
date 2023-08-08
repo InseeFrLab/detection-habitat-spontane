@@ -571,7 +571,7 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
         del images, labels, dic
 
 
-def evaluer_modele_sur_jeu_de_test_classification_pleiade_mask_inversion(
+def evaluer_modele_sur_jeu_de_test_classification_pleiade_mask_rgb(
     test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
 ):
     """
