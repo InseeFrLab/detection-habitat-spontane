@@ -12,7 +12,7 @@ class DeepLabv3Module(nn.Module):
     n_channel: (int) number of channels of the input image
     """
 
-    def __init__(self, nchannel=3, SENTINEL2_RGB_MOCO = False, SENTINEL2_MOCO = False):
+    def __init__(self, nchannel=3, SENTINEL2_RGB_MOCO = False, SENTINEL2_MOCO = False, backbone_requires_grad = True):
         """ """
         super().__init__()
 
@@ -46,6 +46,9 @@ class DeepLabv3Module(nn.Module):
             self.model = torchvision.models.segmentation.deeplabv3_resnet101(
                 weights="DeepLabV3_ResNet101_Weights.DEFAULT"
             )
+
+        for param in self.model.backbone.parameters():
+            param.requires_grad = backbone_requires_grad
 
         # 1 classe !
         self.model.classifier[4] = nn.Conv2d(

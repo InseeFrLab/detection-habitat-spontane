@@ -18,7 +18,7 @@ optim:
   loss: "crossentropyselmade"
   lr: 0.003
   momentum: 0.9
-  module: "deeplabv3"
+  backbone_requires_grad: True
   optimizer: "Adam"
   scheduler: "OneCycleLR"
   batch size: 50

@@ -91,7 +91,7 @@ def download_data(config):
             cloud_dir = load_satellite_data(year, dep, "NUAGESPLEIADES")
             list_masks_cloud_dir.append(cloud_dir)
             output_dir = load_satellite_data(year, dep, src)
-        elif src == "SENTINEL1-2" or src == "SENTINEL1-2-RVB" or src == "SENTINEL1-2L1C" or src == "SENTINEL1-2L1C-RVB":
+        elif src == "SENTINEL1-2L2A" or src == "SENTINEL1-2L2A-RVB" or src == "SENTINEL1-2L1C" or src == "SENTINEL1-2L1C-RVB":
             output_dir = load_2satellites_data(year, dep, src)
         else:
             output_dir = load_satellite_data(year, dep, src)
@@ -520,10 +520,10 @@ def instantiate_dataloader(config, list_output_dir, output_test):
     prop = config["donnees"]["prop"]
     if config["donnees"]["source train"] in [
         "PLEIADES",
-        "SENTINEL2",
-        "SENTINEL1-2",
-        "SENTINEL2-RVB",
-        "SENTINEL1-2-RVB",
+        "SENTINEL2L2A",
+        "SENTINEL1-2L2A",
+        "SENTINEL2L2A-RVB",
+        "SENTINEL1-2L2A-RVB",
         "SENTINEL2L1C",
         "SENTINEL1-2L1C",
         "SENTINEL2L1C-RVB",
@@ -752,6 +752,7 @@ def instantiate_model(config):
     print("Entre dans la fonction instantiate_model")
     module_type = config["optim"]["module"]
     nchannel = config["donnees"]["n channels train"]
+    backbone_requires_grad = config["optim"]["backbone_requires_grad"]
 
     if module_type not in module_dict:
         raise ValueError("Invalid module type")
@@ -759,9 +760,9 @@ def instantiate_model(config):
     if module_type in ["deeplabv3", "resnet50"]:
         return module_dict[module_type](nchannel)
     if module_type == "deeplabv3_RGB_MOCO":
-        return module_dict[module_type](nchannel, True, False)
+        return module_dict[module_type](nchannel, True, False, backbone_requires_grad)
     if module_type == "deeplabv3_MOCO":
-        return module_dict[module_type](nchannel, False, True)
+        return module_dict[module_type](nchannel, False, True, backbone_requires_grad)
     else:
         return module_dict[module_type]()
 

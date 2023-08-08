@@ -168,9 +168,9 @@ def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
                 if not os.path.exists("outputs_evaluation_model/"):
                     os.makedirs("outputs_evaluation_model/")
 
-                if src in ['SENTINEL1-2', 'SENTINEL2', 'SENTINEL1-2L1C', 'SENTINEL2L1C']:
+                if src in ['SENTINEL1-2L1C', 'SENTINEL2L1C', 'SENTINEL1-2L2A', 'SENTINEL2L2A']:
                     bands_idx = 3, 2, 1
-                elif src in ['SENTINEL2-RVB', 'SENTINEL1-2-RVB', 'SENTINEL2L1C-RVB', 'SENTINEL1-2L1C-RVB', 'PLEIADES']:
+                elif src in ['SENTINEL2L2A-RVB', 'SENTINEL1-2L2A-RVB', 'SENTINEL2L1C-RVB', 'SENTINEL1-2L1C-RVB', 'PLEIADES']:
                     bands_idx = 0, 1, 2
 
                 filename = pthimg.split("/")[-1]
@@ -304,10 +304,10 @@ def evaluer_modele_sur_jeu_de_test_classification_sentinel(
             )
             si.normalize()
 
-            if src == 'SENTINEL1-2' or src == 'SENTINEL2':
+            if src == 'SENTINEL1-2L1C' or src == 'SENTINEL2L1C' or src == 'SENTINEL1-2L2A' or src == 'SENTINEL2L2A':
                 bands_list = (3, 2, 1)
                 bands_idx = 3, 2, 1
-            elif src == 'SENTINEL2-RVB' or src == 'SENTINEL1-2-RVB' or src == 'PLEIADES':
+            elif src == 'SENTINEL2L1C-RVB' or src == 'SENTINEL1-2L1C-RVB' or src == 'SENTINEL2L2A-RVB' or src == 'SENTINEL1-2L2A-RVB' or src == 'PLEIADES':
                 bands_list = (0, 1, 2)
                 bands_idx = 0, 1, 2
 
@@ -1225,9 +1225,9 @@ def evaluer_modele_sur_jeu_de_test_change_detection_algo_sentinel(
         np.save(path_masques_difference + '/' + name_diff, masque_diff)
 
         src = path_img1.split('/')[1].split('segmentation-')[1].split('-BDTOPO')[0]
-        if src == 'SENTINEL1-2' or src == 'SENTINEL2':
+        if src == 'SENTINEL1-2L2A' or src == 'SENTINEL2L2A' or src == 'SENTINEL1-2L1C' or src == 'SENTINEL2L1C':
             bands_idx = 3, 2, 1
-        elif src == 'SENTINEL2-RVB' or src == 'SENTINEL1-2-RVB' or src == 'PLEIADES':
+        elif src == 'SENTINEL2L2A-RVB' or src == 'SENTINEL1-2L2A-RVB' or src == 'SENTINEL2L1C-RVB' or src == 'SENTINEL1-2L1C-RVB' or src == 'PLEIADES':
             bands_idx = 0, 1, 2
 
         image1 = SatelliteImage.from_raster(file_path=path_img1, dep=None, date=None, n_bands=n_bands)

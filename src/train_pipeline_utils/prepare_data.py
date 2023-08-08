@@ -109,8 +109,12 @@ def filter_images_sentinel(list_images, src):
         array = splitted_image.array
         if not is_too_water(splitted_image, 0.95):
             if not np.isnan(array).any():
-                if src == "SENTINEL2-RVB":
+                if src == "SENTINEL2L2A-RVB" or src == "SENTINEL2L1C-RVB":
                     splitted_image.array = splitted_image.array[(3, 2, 1), :, :]
+                elif src == "SENTINEL1-2L2A-RVB":
+                    splitted_image.array = splitted_image.array[(3, 2, 1, 12, 13), :, :]
+                elif src == "SENTINEL1-2L1C-RVB":
+                    splitted_image.array = splitted_image.array[(3, 2, 1, 13, 14), :, :]
                 list_filtered_splitted_images.append(splitted_image)
     return list_filtered_splitted_images
 

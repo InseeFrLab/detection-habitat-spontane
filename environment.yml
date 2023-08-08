@@ -6,16 +6,16 @@ sources:
       segmentation: donnees-test/segmentation/PLEIADES
       change-detection: donnees-test/change_detection/PLEIADES
       classification: donnees-test/classification/PLEIADES
-    SENTINEL2:
+    SENTINEL2L2A:
       segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2
       classification: donnees-test/classification/SENTINEL/SENTINEL2
-    SENTINEL1-2:
+    SENTINEL1-2L2A:
       segmentation: donnees-test/segmentation/SENTINEL/SENTINEL1-2
       classification: donnees-test/classification/SENTINEL/SENTINEL1-2
-    SENTINEL1-2-RVB:
+    SENTINEL1-2L2A-RVB:
       segmentation: donnees-test/segmentation/SENTINEL/SENTINEL1-2-RVB
       classification: donnees-test/classification/SENTINEL/SENTINEL1-2-RVB
-    SENTINEL2-RVB:
+    SENTINEL2L2A-RVB:
       segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2-RVB
       classification: donnees-test/classification/SENTINEL/SENTINEL2-RVB
     SENTINEL2L1C:
@@ -25,11 +25,11 @@ sources:
       segmentation: donnees-test/segmentation/SENTINEL/SENTINEL1-2L1C
       classification: donnees-test/classification/SENTINEL/SENTINEL1-2L1C
     SENTINEL1-2L1C-RVB:
-      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL1-2-RVBL1C
-      classification: donnees-test/classification/SENTINEL/SENTINEL1-2-RVBL1C
-    SENTINEL2-RVBL1C:
-      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2-RVBL1C
-      classification: donnees-test/classification/SENTINEL/SENTINEL2-RVBL1C
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL1-2L1C-RVB
+      classification: donnees-test/classification/SENTINEL/SENTINEL1-2L1C-RVB
+    SENTINEL2L1C-RVB:
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2L1C-RVB
+      classification: donnees-test/classification/SENTINEL/SENTINEL2L1C-RVB
   PAPERS:
     S2Looking: Donnees/PAPERS/S2Looking
     LEVIR_CD: Donnees/PAPERS/LEVIR_CD
@@ -115,7 +115,7 @@ sources:
       "974": Donnees/SENTINEL/SENTINEL1/REUNION/TUILES_2022
       "976": Donnees/SENTINEL/SENTINEL1/MAYOTTE/TUILES_2022
 
-  SENTINEL2:
+  SENTINEL2L2A:
     2020:
       "971": Donnees/SENTINEL/SENTINEL2/GUADELOUPE/TUILES_2020
       "972": Donnees/SENTINEL/SENTINEL2/MARTINIQUE/TUILES_2020
@@ -149,7 +149,7 @@ sources:
       "974": Donnees/SENTINEL/SENTINEL2-L1C/REUNION/TUILES_2022
       "976": Donnees/SENTINEL/SENTINEL2-L1C/MAYOTTE/TUILES_2022
 
-  SENTINEL2-RVB:
+  SENTINEL2L2A-RVB:
     2020:
       "971": Donnees/SENTINEL/SENTINEL2/GUADELOUPE/TUILES_2020
       "972": Donnees/SENTINEL/SENTINEL2/MARTINIQUE/TUILES_2020
@@ -252,18 +252,18 @@ local-path:
       segmentation: donnees-test/segmentation
       change-detection: donnees-test/change_detection
       classification: donnees-test/classification
-    SENTINEL2:
-      segmentation: donnees-test/segmentation/SENTINEL2
-      classification: donnees-test/classification/SENTINEL2
-    SENTINEL1-2:
-      segmentation: donnees-test/segmentation/SENTINEL1-2
-      classification: donnees-test/classification/SENTINEL1-2
-    SENTINEL2-RVB:
-      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2-RVB
-      classification: donnees-test/classification/SENTINEL/SENTINEL2-RVB
-    SENTINEL1-2-RVB:
-      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL1-2-RVB
-      classification: donnees-test/classification/SENTINEL/SENTINEL1-2-RVB
+    SENTINEL2L2A:
+      segmentation: donnees-test/segmentation/SENTINEL2L2A
+      classification: donnees-test/classification/SENTINEL2L2A
+    SENTINEL1-2L2A:
+      segmentation: donnees-test/segmentation/SENTINEL1-2L2A
+      classification: donnees-test/classification/SENTINEL1-2L2A
+    SENTINEL2L2A-RVB:
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2L2A-RVB
+      classification: donnees-test/classification/SENTINEL/SENTINEL2L2A-RVB
+    SENTINEL1-2L2A-RVB:
+      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL1-2L2A-RVB
+      classification: donnees-test/classification/SENTINEL/SENTINEL1-2L2A-RVB
     SENTINEL2L1C:
       segmentation: donnees-test/segmentation/SENTINEL2L1C
       classification: donnees-test/classification/SENTINEL2L1C
@@ -361,22 +361,22 @@ local-path:
       "974": data/SENTINEL1/REUNION/TUILES_2022
       "976": data/SENTINEL1/MAYOTTE/TUILES_2022
 
-  SENTINEL2:
+  SENTINEL2L2A:
     2020:
-      "971": data/SENTINEL2/GUADELOUPE/TUILES_2020
-      "972": data/SENTINEL2/MARTINIQUE/TUILES_2020
-      "974": data/SENTINEL2/REUNION/TUILES_2020
-      "976": data/SENTINEL2/MAYOTTE/TUILES_2020
+      "971": data/SENTINEL2L2A/GUADELOUPE/TUILES_2020
+      "972": data/SENTINEL2L2A/MARTINIQUE/TUILES_2020
+      "974": data/SENTINEL2L2A/REUNION/TUILES_2020
+      "976": data/SENTINEL2L2A/MAYOTTE/TUILES_2020
     2021:
-      "971": data/SENTINEL2/GUADELOUPE/TUILES_2021
-      "972": data/SENTINEL2/MARTINIQUE/TUILES_2021
-      "974": data/SENTINEL2/REUNION/TUILES_2021
-      "976": data/SENTINEL2/MAYOTTE/TUILES_2021
+      "971": data/SENTINEL2L2A/GUADELOUPE/TUILES_2021
+      "972": data/SENTINEL2L2A/MARTINIQUE/TUILES_2021
+      "974": data/SENTINEL2L2A/REUNION/TUILES_2021
+      "976": data/SENTINEL2L2A/MAYOTTE/TUILES_2021
     2022:
-      "971": data/SENTINEL2/GUADELOUPE/TUILES_2022
-      "972": data/SENTINEL2/MARTINIQUE/TUILES_2022
-      "974": data/SENTINEL2/REUNION/TUILES_2022
-      "976": data/SENTINEL2/MAYOTTE/TUILES_2022
+      "971": data/SENTINEL2L2A/GUADELOUPE/TUILES_2022
+      "972": data/SENTINEL2L2A/MARTINIQUE/TUILES_2022
+      "974": data/SENTINEL2L2A/REUNION/TUILES_2022
+      "976": data/SENTINEL2L2A/MAYOTTE/TUILES_2022
 
   SENTINEL2L1C:
     2020:
@@ -412,22 +412,22 @@ local-path:
       "974": data/SENTINEL2/REUNION/LABELS_2022
       "976": data/SENTINEL2/MAYOTTE/LABELS_2022
 
-  SENTINEL1-2:
+  SENTINEL1-2L2A:
     2020:
-      "971": data/SENTINEL1-2/GUADELOUPE/TUILES_2020
-      "972": data/SENTINEL1-2/MARTINIQUE/TUILES_2020
-      "974": data/SENTINEL1-2/REUNION/TUILES_2020
-      "976": data/SENTINEL1-2/MAYOTTE/TUILES_2020
+      "971": data/SENTINEL1-2L2A/GUADELOUPE/TUILES_2020
+      "972": data/SENTINEL1-2L2A/MARTINIQUE/TUILES_2020
+      "974": data/SENTINEL1-2L2A/REUNION/TUILES_2020
+      "976": data/SENTINEL1-2L2A/MAYOTTE/TUILES_2020
     2021:
-      "971": data/SENTINEL1-2/GUADELOUPE/TUILES_2021
-      "972": data/SENTINEL1-2/MARTINIQUE/TUILES_2021
-      "974": data/SENTINEL1-2/REUNION/TUILES_2021
-      "976": data/SENTINEL1-2/MAYOTTE/TUILES_2021
+      "971": data/SENTINEL1-2L2A/GUADELOUPE/TUILES_2021
+      "972": data/SENTINEL1-2L2A/MARTINIQUE/TUILES_2021
+      "974": data/SENTINEL1-2L2A/REUNION/TUILES_2021
+      "976": data/SENTINEL1-2L2A/MAYOTTE/TUILES_2021
     2022:
-      "971": data/SENTINEL1-2/GUADELOUPE/TUILES_2022
-      "972": data/SENTINEL1-2/MARTINIQUE/TUILES_2022
-      "974": data/SENTINEL1-2/REUNION/TUILES_2022
-      "976": data/SENTINEL1-2/MAYOTTE/TUILES_2022
+      "971": data/SENTINEL1-2L2A/GUADELOUPE/TUILES_2022
+      "972": data/SENTINEL1-2L2A/MARTINIQUE/TUILES_2022
+      "974": data/SENTINEL1-2L2A/REUNION/TUILES_2022
+      "976": data/SENTINEL1-2L2A/MAYOTTE/TUILES_2022
 
   SENTINEL1-2L1C:
     2020:
@@ -446,22 +446,22 @@ local-path:
       "974": data/SENTINEL1-2L1C/REUNION/TUILES_2022
       "976": data/SENTINEL1-2L1C/MAYOTTE/TUILES_2022
 
-  SENTINEL2-RVB:
+  SENTINEL2L2A-RVB:
     2020:
-      "971": data/SENTINEL2-RVB/GUADELOUPE/TUILES_2020
-      "972": data/SENTINEL2-RVB/MARTINIQUE/TUILES_2020
-      "974": data/SENTINEL2-RVB/REUNION/TUILES_2020
-      "976": data/SENTINEL2-RVB/MAYOTTE/TUILES_2020
+      "971": data/SENTINEL2L2A-RVB/GUADELOUPE/TUILES_2020
+      "972": data/SENTINEL2L2A-RVB/MARTINIQUE/TUILES_2020
+      "974": data/SENTINEL2L2A-RVB/REUNION/TUILES_2020
+      "976": data/SENTINEL2L2A-RVB/MAYOTTE/TUILES_2020
     2021:
-      "971": data/SENTINEL2-RVB/GUADELOUPE/TUILES_2021
-      "972": data/SENTINEL2-RVB/MARTINIQUE/TUILES_2021
-      "974": data/SENTINEL2-RVB/REUNION/TUILES_2021
-      "976": data/SENTINEL2-RVB/MAYOTTE/TUILES_2021
+      "971": data/SENTINEL2L2A-RVB/GUADELOUPE/TUILES_2021
+      "972": data/SENTINEL2L2A-RVB/MARTINIQUE/TUILES_2021
+      "974": data/SENTINEL2L2A-RVB/REUNION/TUILES_2021
+      "976": data/SENTINEL2L2A-RVB/MAYOTTE/TUILES_2021
     2022:
-      "971": data/SENTINEL2-RVB/GUADELOUPE/TUILES_2022
-      "972": data/SENTINEL2-RVB/MARTINIQUE/TUILES_2022
-      "974": data/SENTINEL2-RVB/REUNION/TUILES_2022
-      "976": data/SENTINEL2-RVB/MAYOTTE/TUILES_2022
+      "971": data/SENTINEL2L2A-RVB/GUADELOUPE/TUILES_2022
+      "972": data/SENTINEL2L2A-RVB/MARTINIQUE/TUILES_2022
+      "974": data/SENTINEL2L2A-RVB/REUNION/TUILES_2022
+      "976": data/SENTINEL2L2A-RVB/MAYOTTE/TUILES_2022
 
   SENTINEL2L1C-RVB:
     2020:
@@ -480,22 +480,22 @@ local-path:
       "974": data/SENTINEL2L1C-RVB/REUNION/TUILES_2022
       "976": data/SENTINEL2L1C-RVB/MAYOTTE/TUILES_2022
 
-  SENTINEL1-2-RVB:
+  SENTINEL1-2L2A-RVB:
     2020:
-      "971": data/SENTINEL1-2-RVB/GUADELOUPE/TUILES_2020
-      "972": data/SENTINEL1-2-RVB/MARTINIQUE/TUILES_2020
-      "974": data/SENTINEL1-2-RVB/REUNION/TUILES_2020
-      "976": data/SENTINEL1-2-RVB/MAYOTTE/TUILES_2020
+      "971": data/SENTINEL1-2L2A-RVB/GUADELOUPE/TUILES_2020
+      "972": data/SENTINEL1-2L2A-RVB/MARTINIQUE/TUILES_2020
+      "974": data/SENTINEL1-2L2A-RVB/REUNION/TUILES_2020
+      "976": data/SENTINEL1-2L2A-RVB/MAYOTTE/TUILES_2020
     2021:
-      "971": data/SENTINEL1-2-RVB/GUADELOUPE/TUILES_2021
-      "972": data/SENTINEL1-2-RVB/MARTINIQUE/TUILES_2021
-      "974": data/SENTINEL1-2-RVB/REUNION/TUILES_2021
-      "976": data/SENTINEL1-2-RVB/MAYOTTE/TUILES_2021
+      "971": data/SENTINEL1-2L2A-RVB/GUADELOUPE/TUILES_2021
+      "972": data/SENTINEL1-2L2A-RVB/MARTINIQUE/TUILES_2021
+      "974": data/SENTINEL1-2L2A-RVB/REUNION/TUILES_2021
+      "976": data/SENTINEL1-2L2A-RVB/MAYOTTE/TUILES_2021
     2022:
-      "971": data/SENTINEL1-2-RVB/GUADELOUPE/TUILES_2022
-      "972": data/SENTINEL1-2-RVB/MARTINIQUE/TUILES_2022
-      "974": data/SENTINEL1-2-RVB/REUNION/TUILES_2022
-      "976": data/SENTINEL1-2-RVB/MAYOTTE/TUILES_2022
+      "971": data/SENTINEL1-2L2A-RVB/GUADELOUPE/TUILES_2022
+      "972": data/SENTINEL1-2L2A-RVB/MARTINIQUE/TUILES_2022
+      "974": data/SENTINEL1-2L2A-RVB/REUNION/TUILES_2022
+      "976": data/SENTINEL1-2L2A-RVB/MAYOTTE/TUILES_2022
 
   SENTINEL1-2L1C-RVB:
     2020:

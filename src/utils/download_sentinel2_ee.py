@@ -189,7 +189,7 @@ def export_s2_no_cloud(
         check_nbands12 = True
         check_nbands13 = False
         n_bands = 12
-        src = "SENTINEL2"
+        src = "SENTINEL2-L2A"
 
     bucket = environment["bucket"]
     path_s3 = environment["sources"][src][int(start_date[0:4])][DEPs[DOM.upper()]]
