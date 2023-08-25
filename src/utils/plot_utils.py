@@ -117,6 +117,75 @@ def plot_list_sat_images_square(
     # Show the plot
     return plt.gcf()
 
+def create_segmentation_labeled_satellite_image(
+    list_labeled_image: List,
+    bands_indices: List,
+):
+    """Plot a list of SegmentationLabeledSatelliteImage:
+    (with a subset of bands) into 2 pictures, one with the satelliteImage,
+    one with the labels. The list of SatelliteImages contained in the
+    labeled_images taken as input, when represented in the correct order,
+    has to fully cover a rectangular area.
+
+    Args:
+        list_labeled_image (List): List of SatelliteImage objects
+        bands_indices (List): List of indices of bands to plot.
+            The indices should be integers between 0 and the
+            number of bands - 1.
+    """
+    tile_size = list_labeled_image[0].satellite_image.array.shape[1]
+    stride = tile_size
+
+    list_bounding_box = np.array(
+        [iml.satellite_image.bounds for iml in list_labeled_image]
+    )
+    list_images = [iml.satellite_image for iml in list_labeled_image]
+    list_labels = [iml.label for iml in list_labeled_image]
+
+    # Correct order relative to the coordinates
+    list_images = order_list_from_bb(list_bounding_box, list_images)
+    list_labels = order_list_from_bb(list_bounding_box, list_labels)
+
+    n_col = len(np.unique(np.array([bb[0] for bb in list_bounding_box])))
+    n_row = len(np.unique(np.array([bb[3] for bb in list_bounding_box])))
+
+    mat_list_images = np.transpose(np.array(list_images).reshape(n_col, n_row))
+    mat_list_labels = np.transpose(
+        np.array(list_labels).reshape(n_col, n_row, tile_size, tile_size),
+        (1, 0, 2, 3),
+    )
+
+    mat_list_images = np.flip(np.transpose(mat_list_images), axis=0)
+    mat_list_labels = np.flip(np.transpose(mat_list_labels, (1, 0, 2, 3)), 0)
+
+    # Get input image dimensions
+    width = tile_size * n_col
+    height = tile_size * n_row
+
+    # Create empty output image
+    output_image = np.zeros((height, width, 3))
+    output_mask = np.zeros((height, width, 3))
+    compteur_ligne = 0
+    compteur_col = 0
+
+    for i in range(0, height - tile_size + 1, stride):
+        for j in range(0, width - tile_size + 1, stride):
+            output_image[i : i + tile_size, j : j + tile_size, :] = np.transpose(
+                mat_list_images[compteur_ligne, compteur_col].array,
+                (1, 2, 0),
+            )[:, :, bands_indices]
+
+            label = mat_list_labels[compteur_ligne, compteur_col, :, :]
+            show_mask = np.zeros((label.shape[0], label.shape[1], 3))
+            show_mask[label == 1, :] = [255, 255, 255]
+            output_mask[i : i + tile_size, j : j + tile_size, :] = show_mask
+            compteur_col += 1
+
+        compteur_col = 0
+        compteur_ligne += 1
+
+    return output_mask
+
 
 def plot_list_segmentation_labeled_satellite_image(
     list_labeled_image: List,

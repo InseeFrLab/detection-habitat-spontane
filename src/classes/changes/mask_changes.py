@@ -26,7 +26,8 @@ from classes.data.labeled_satellite_image import SegmentationLabeledSatelliteIma
 from classes.data.satellite_image import SatelliteImage
 from utils.plot_utils import (
     plot_list_change_pleiades_images,
-    plot_list_mask_rgb_pleiades_images
+    plot_list_mask_rgb_pleiades_images,
+    create_segmentation_labeled_satellite_image
 )
 
 
@@ -244,3 +245,270 @@ def create_doss_mask_inv(year, dep, threshold):
     return(output_masks_path)
 
 # output_directory_name = create_doss_mask_inv("2022", "MARTINIQUE", 110)
+
+import gc
+import json
+import os
+import random
+import sys
+from datetime import datetime
+import csv
+import shutil
+from osgeo import gdal
+
+import mlflow
+import numpy as np
+import pandas as pd
+import pytorch_lightning as pl
+import torch
+import yaml
+from pytorch_lightning.callbacks import (
+    EarlyStopping,
+    LearningRateMonitor,
+    ModelCheckpoint,
+)
+from rasterio.errors import RasterioIOError
+from torch.utils.data import DataLoader, WeightedRandomSampler
+from tqdm import tqdm
+from yaml.loader import SafeLoader
+
+from classes.data.labeled_satellite_image import (  # noqa: E501
+    SegmentationLabeledSatelliteImage,
+)
+from classes.data.satellite_image import SatelliteImage
+
+from classes.optim.optimizer import generate_optimization_elements
+from dico_config import (
+    labeler_dict,
+    dataset_dict,
+    loss_dict,
+    module_dict,
+    task_to_evaluation,
+    task_to_lightningmodule,
+)
+from train_pipeline_utils.download_data import (
+    load_2satellites_data,
+    load_donnees_test,
+    load_satellite_data,
+    load_s2_looking
+)
+from train_pipeline_utils.handle_dataset import (
+    generate_transform_pleiades,
+    generate_transform_sentinel,
+    select_indices_to_balance,
+    select_indices_to_split_dataset,
+)
+from train_pipeline_utils.prepare_data import (
+    check_labelled_images,
+    filter_images,
+    label_images,
+    save_images_and_masks,
+    extract_proportional_subset,
+    filter_images_by_path,
+    prepare_data_per_doss,
+)
+
+from utils.utils import remove_dot_file, split_array, update_storage_access, list_sorted_filenames
+
+
+def masques_segmentation_pleiade(
+    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+):
+    """
+    Evaluates the model on the Pleiade test dataset for image segmentation.
+
+    Args:
+        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        dataset.
+        model (torchvision.models): The segmentation model to evaluate.
+        tile_size (int): The size of each tile in pixels.
+        batch_size (int): The batch size.
+        use_mlflow (bool, optional): Whether to use MLflow for logging
+        artifacts. Defaults to False.
+
+    Returns:
+        None
+    """
+    # tile_size = 250
+    # batch_size  = 4
+    model.eval()
+    npatch = int((2000 / tile_size) ** 2)
+    nbatchforfullimage = int(npatch / batch_size)
+
+    if not npatch % nbatchforfullimage == 0:
+        print(
+            "Le nombre de patchs \
+            n'est pas divisible par la taille d'un batch"
+        )
+        return None
+
+    list_labeled_satellite_image = []
+
+    for idx, batch in enumerate(test_dl):
+        # idx, batch = 0, next(iter(test_dl))
+        print(idx)
+        images, label, dic = batch
+
+        model = model.to("cuda:0")
+        images = images.to("cuda:0")
+
+        output_model = model(images)
+        mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
+
+        for i in range(batch_size):
+            pthimg = dic["pathimage"][i]
+            si = SatelliteImage.from_raster(
+                file_path=pthimg, dep=None, date=None, n_bands=n_bands
+            )
+            si.normalize()
+
+            list_labeled_satellite_image.append(
+                SegmentationLabeledSatelliteImage(
+                    satellite_image=si,
+                    label=mask_pred[i],
+                    source="",
+                    labeling_date="",
+                )
+            )
+
+        if ((idx + 1) % nbatchforfullimage) == 0:
+            print("ecriture masque")
+            if not os.path.exists("mask/"):
+                os.makedirs("mask/")
+            
+            output_mask = create_segmentation_labeled_satellite_image(
+                            list_labeled_satellite_image, [0, 1, 2]
+                        )
+
+            filename = pthimg.split("/")[-1]
+            filename = filename.split(".")[0]
+            filename = "_".join(filename.split("_")[0:6])
+            mask_file = filename + ".npy"
+            
+            np.save(
+                    "mask/" + mask_file + ".npy",
+                    output_mask,
+                    )
+
+            list_labeled_satellite_image = []
+
+        del images, label, dic
+    
+from classes.data.satellite_image import SatelliteImage
+from utils.utils import *
+from utils.plot_utils import *
+from utils.image_utils import *
+import utils.mappings as mapps
+from train_pipeline_utils.download_data import load_satellite_data
+from classes.data.satellite_image import SatelliteImage
+import yaml
+import re
+import s3fs
+import numpy as np
+import matplotlib.pyplot as plt
+from PIL import Image as im
+import re
+from pyproj import Transformer
+from datetime import date
+from scipy.ndimage import label
+import time
+from tqdm import tqdm
+import os
+import geopandas as gpd
+from shapely.geometry import Polygon
+from rasterio.features import rasterize, shapes
+import math
+from scipy.ndimage import label
+from scipy.ndimage import uniform_filter
+
+def lissage_mask(mask, neighborhood_size = 4, threshold = 0.5):
+    mask = mask/255
+    # Taille du voisinage pour le lissage
+    
+    # Érosion suivie de dilatation (lissage)
+    eroded_array = uniform_filter(mask, size=neighborhood_size, mode='constant', origin=0)
+    smoothed_array = uniform_filter(eroded_array, size=neighborhood_size, mode='constant', origin=0)
+    
+    # Seuillage pour obtenir un masque binaire
+    binary_mask = smoothed_array >= threshold
+    binary_array = (binary_mask*255).astype(np.uint8)
+
+    return(binary_array)
+
+def mask_diff(mask1, mask2):
+    array1 = (mask1).astype(np.uint8)
+    array2 = (mask2).astype(np.uint8)
+    
+    # Perform XOR operation on the arrays
+    result = np.bitwise_xor(array1, array2)
+
+    return(result)
+
+def mask_diff_tt1(mask_t, mask_t1):
+
+    mask_liss1 = lissage_mask(mask_t, neighborhood_size = 4, threshold = 0.5)
+    mask_liss2 = lissage_mask(mask_t1, neighborhood_size = 4, threshold = 0.5)
+
+    diff_mask = mask_diff(mask_liss1, mask_liss2)/255
+
+    nchannel, height, width = (3, 2000, 2000)
+
+    # Create a list of polygons from the masked center clouds in order
+    # to obtain a GeoDataFrame from it
+    polygon_list_center = []
+    for shape in list(shapes(diff_mask)):
+        polygon = Polygon(shape[0]["coordinates"][0])
+        surface = polygon.area
+        perimetre = polygon.length
+        RP = perimetre/(2*np.pi)
+        RS = math.sqrt(surface/np.pi)
+        # if RP/RS > 2:
+        #     continue
+        if polygon.area > 0.85 * height * width:
+            continue
+        if polygon.area < 0.0007 * height * width:
+            continue
+        polygon_list_center.append(polygon)
+
+    result = gpd.GeoDataFrame(geometry=polygon_list_center)
+    
+    
+    #Rasterize the geometries into a numpy array
+    if result.empty:
+        rasterized = np.zeros((2000,2000))
+    else:
+        rasterized = rasterize(
+            result.geometry,
+            out_shape=(2000,2000),
+            fill=0,
+            out=None,
+            all_touched=True,
+            default_value=1,
+            dtype=None,
+        )
+
+    return(rasterized)
+
+mask_t = np.load("mask/mayotte-ORT_2020052526670967_0523_8591_U38S_8Bits.npy.npy")
+mask_t1 = np.load("mask/mayotte-ORT_2017_0523_8591_U38S_8Bits.npy.npy")
+
+rasterized = mask_diff_tt1(mask_t, mask_t1)
+
+# fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 20))
+# ax1.imshow(np.transpose(image_6.array, (1, 2, 0))[:, :, [0,1,2]])
+# ax1.set_title("image 2017")
+# ax1.axis('off')
+# ax2.imshow(np.transpose(image_5.array, (1, 2, 0))[:, :, [0,1,2]])
+# ax2.set_title("image 2020")
+# ax2.axis('off')
+# ax3.imshow(rasterized, cmap = "gray")
+# ax3.set_title("masque de différence filtré")
+# ax3.axis('off')
+mask_liss1 = lissage_mask(mask_t, neighborhood_size = 4, threshold = 0.5)
+mask_liss2 = lissage_mask(mask_t1, neighborhood_size = 4, threshold = 0.5)
+
+diff_mask = mask_diff(mask_liss1, mask_liss2)
+plt.imshow(mask_t, cmap = "gray")
+fig = plt.gcf()
+fig.savefig("img/essai2.png")
+plt.close()

@@ -1103,7 +1103,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             light_module = light_module.load_from_checkpoint(
                 loss=instantiate_loss(config),
                 checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
-                # checkpoint_path='',
+                # checkpoint_path='epoch=49-step=17700.ckpt',
                 model=light_module.model,
                 # model=model,
                 optimizer=light_module.optimizer,
@@ -1111,7 +1111,6 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                 scheduler=light_module.scheduler,
                 scheduler_params=light_module.scheduler_params,
                 scheduler_interval=light_module.scheduler_interval
-
             )
             torch.cuda.empty_cache()
             gc.collect()
@@ -1121,7 +1120,17 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             if src_task not in task_to_evaluation:
                 raise ValueError("Invalid task type")
             else:
-                evaluer_modele_sur_jeu_de_test = task_to_evaluation[src_task]
+                evaluer_modele_sur_jeu_de_test = task_to_evaluation[src_task]*
+            
+            # from classes.changes.mask_changes import masques_segmentation_pleiade
+            # masques_segmentation_pleiade(
+            #         test_dl,
+            #         model,
+            #         tile_size,
+            #         batch_size_test,
+            #         config["donnees"]["n bands"],
+            #         False
+            #     )
 
             evaluer_modele_sur_jeu_de_test(
                     test_dl,

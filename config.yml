@@ -2,10 +2,10 @@ donnees:
   source train: "PLEIADES"
   dataset: "PLEIADE" 
   dataset-test: "PLEIADE"
-  year: [2022, 2020, 2017]
-  dep: ["972", "976", "976"]
+  year: [2022]
+  dep: ["972"]
   type labeler: "BDTOPO"
-  mask rgb threshold: [114, 156, 161]
+  mask rgb threshold: [None]
   buffer size: 10
   n channels train: 3
   n bands entry: 3
@@ -13,7 +13,7 @@ donnees:
   tile size: 250
   augmentation: False
   task: "segmentation"
-  max size ones: 45000
+  max size ones: 30000
   prop: 0.00
 
 optim:
@@ -23,7 +23,7 @@ optim:
   module: "deeplabv3"
   batch size: 9
   batch size test: 4
-  max epochs: 100
+  max epochs: 50
   val prop: 0.2
   accumulate batch : 3
 
