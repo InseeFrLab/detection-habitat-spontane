@@ -409,7 +409,7 @@ from scipy.ndimage import label
 from scipy.ndimage import uniform_filter
 
 def lissage_mask(mask, neighborhood_size = 4, threshold = 0.5):
-    mask = mask/255
+    # mask = mask/255
     # Taille du voisinage pour le lissage
     
     # Érosion suivie de dilatation (lissage)
@@ -418,7 +418,8 @@ def lissage_mask(mask, neighborhood_size = 4, threshold = 0.5):
     
     # Seuillage pour obtenir un masque binaire
     binary_mask = smoothed_array >= threshold
-    binary_array = (binary_mask*255).astype(np.uint8)
+    binary_array = binary_mask.astype(np.uint8)
+    # binary_array = (binary_mask*255).astype(np.uint8)
 
     return(binary_array)
 

@@ -58,6 +58,14 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
     # tile_size = 250
     # batch_size  = 4
     model.eval()
+
+    mean_IOU = test_iou_change_detection(
+                        test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+                    )
+    print(mean_IOU)
+    if use_mlflow:
+        mlflow.log_metric("test mean IOU", mean_IOU)
+
     npatch = int((2000 / tile_size) ** 2)
     nbatchforfullimage = int(npatch / batch_size)
 
@@ -806,9 +814,10 @@ def evaluer_modele_sur_jeu_de_test_change_detection_S2(
     # batch_size  = 8
 
     model.eval()
-    mean_IOU = test_iou_change_detection_s2(
+    mean_IOU = test_iou_change_detection(
                         test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
                     )
+    print(mean_IOU)
     if use_mlflow:
         mlflow.log_metric("test mean IOU", mean_IOU)
 
@@ -889,7 +898,7 @@ def evaluer_modele_sur_jeu_de_test_change_detection_S2(
         del images, label, dic
 
 
-def test_iou_change_detection_s2(
+def test_iou_change_detection(
     test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
 ):
     model.eval()
