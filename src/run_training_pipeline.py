@@ -1102,8 +1102,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
             light_module = light_module.load_from_checkpoint(
                 loss=instantiate_loss(config),
-                checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
-                # checkpoint_path='epoch=14-step=13545.ckpt',
+                #checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
+                checkpoint_path='epoch=14-step=13545.ckpt',
                 model=light_module.model,
                 # model=model,
                 optimizer=light_module.optimizer,
@@ -1138,7 +1138,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
                     tile_size,
                     batch_size_test,
                     config["donnees"]["n bands"],
-                    config["mlflow"]
+                    False
+                    #config["mlflow"]
                 )
 
             # if task_type == "classification":

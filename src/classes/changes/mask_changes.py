@@ -29,6 +29,7 @@ from utils.plot_utils import (
     plot_list_mask_rgb_pleiades_images,
     create_segmentation_labeled_satellite_image
 )
+from classes.changes.data_rgb import mask_rgb
 
 
 def new_csv_labeler_pred(csv_labeler):
@@ -126,21 +127,7 @@ def plot_changes_predicted_test(
             plt.close()
 
 
-def mask_rgb(image, threshold = 156):
-    img = image.array.copy()
-    img = img[:3,:,:]
-    img = img.transpose(1,2,0)
 
-    shape = img.shape[0:2]
-
-    grayscale = np.mean(img, axis=2)
-    
-    black = np.ones(shape, dtype=float)
-    white = np.zeros(shape, dtype=float)
-
-    mask = np.where(grayscale < threshold, white, black)
-    
-    return(mask)
 
 def plot_two_masks_predicted_test(
     csv_labeler, tile_size, n_bands=3

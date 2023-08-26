@@ -11,7 +11,7 @@ from utils.filter import is_too_black, is_too_water
 from classes.data.satellite_image import SatelliteImage
 from classes.data.change_detection_triplet import ChangedetectionTripletS2Looking
 from utils.utils import list_sorted_filenames
-from classes.changes.mask_changes import mask_rgb
+from classes.changes.data_rgb import mask_rgb
 
 
 def check_labelled_images(output_directory_name):
