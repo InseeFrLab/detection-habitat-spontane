@@ -1103,7 +1103,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             light_module = light_module.load_from_checkpoint(
                 loss=instantiate_loss(config),
                 checkpoint_path=trainer.checkpoint_callback.best_model_path, #je créé un module qui charge
-                # checkpoint_path='epoch=49-step=17700.ckpt',
+                # checkpoint_path='epoch=14-step=13545.ckpt',
                 model=light_module.model,
                 # model=model,
                 optimizer=light_module.optimizer,
@@ -1120,10 +1120,10 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             if src_task not in task_to_evaluation:
                 raise ValueError("Invalid task type")
             else:
-                evaluer_modele_sur_jeu_de_test = task_to_evaluation[src_task]*
+                evaluer_modele_sur_jeu_de_test = task_to_evaluation[src_task]
             
-            # from classes.changes.mask_changes import masques_segmentation_pleiade
-            # masques_segmentation_pleiade(
+            # from classes.changes.mask_changes import csv_prob
+            # csv_prob(
             #         test_dl,
             #         model,
             #         tile_size,

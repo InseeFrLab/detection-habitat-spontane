@@ -512,3 +512,66 @@ plt.imshow(mask_t, cmap = "gray")
 fig = plt.gcf()
 fig.savefig("img/essai2.png")
 plt.close()
+
+
+
+def csv_prob(
+    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+):
+    """
+    Evaluates the model on the Pleiade test dataset for image classification.
+
+    Args:
+        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        dataset.
+        model (torchvision.models): The classification model to evaluate.
+        tile_size (int): The size of each tile in pixels.
+        batch_size (int): The batch size.
+        use_mlflow (bool, optional): Whether to use MLflow for logging
+        artifacts. Defaults to False.
+
+    Returns:
+        None
+    """
+
+    model.eval()
+    npatch = int((2000 / tile_size) ** 2)
+    count_patch = 0
+
+    list_path = []
+    list_prob = []
+
+    for idx, batch in enumerate(test_dl):
+
+        images, labels, dic = batch
+
+        model = model.to("cuda:0")
+        images = images.to("cuda:0")
+        labels = labels.to("cuda:0")
+
+        output_model = model(images)
+        output_model = output_model.to("cpu")
+        probability_class_1 = output_model[:, 1]
+
+        # Set a threshold for class prediction
+        # threshold = 0.90
+
+        # Make predictions based on the threshold
+
+        if batch_size > len(images):
+            batch_size_current = len(images)
+
+        elif batch_size <= len(images):
+            batch_size_current = batch_size
+
+        for i in range(batch_size_current):
+            pthimg = dic["pathimage"][i]
+            list_path.append(pthimg)
+
+            list_prob.append(probability_class_1[i])
+        
+
+        del images, labels, dic
+    
+    df1 = pd.DataFrame({'Path_image': [x for x in list_path], 'Prob': [x for x in list_prob]})
+    df1.to_csv('../prob.csv', index=False)

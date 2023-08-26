@@ -469,11 +469,13 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
         output_model = model(images)
         output_model = output_model.to("cpu")
         probability_class_1 = output_model[:, 1]
+        print(probability_class_1)
 
         # Set a threshold for class prediction
         # threshold = 0.90
 
         # Make predictions based on the threshold
+        
         predictions = torch.where(
             probability_class_1 > threshold,
             torch.tensor([1]),
@@ -492,16 +494,16 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
             si = SatelliteImage.from_raster(
                 file_path=pthimg, dep=None, date=None, n_bands=n_bands
             )
-            si.normalize()
+            # si.normalize()
 
             if int(predicted_classes[i]) == 0:
-                mask_pred = np.full((tile_size, tile_size, 3), 255, dtype=np.uint8)
+                mask_pred = np.full((tile_size, tile_size, 3), 0, dtype=np.uint8)
 
                 if int(predicted_classes[i]) != int(labels[i]):
                     # Contours de l'image en rouge
                     array_red_borders = si.array.copy()
                     array_red_borders = array_red_borders.transpose(1, 2, 0)
-                    red_color = [1.0, 0.0, 0.0]
+                    red_color = [255, 0, 0]
                     array_red_borders[:, :7, :] = red_color
                     array_red_borders[:, -7:-1, :] = red_color
                     array_red_borders[:7, :, :] = red_color
@@ -510,30 +512,31 @@ def evaluer_modele_sur_jeu_de_test_classification_pleiade(
                     si.array = array_red_borders
 
             elif int(predicted_classes[i]) == 1:
-                mask_pred = np.full((tile_size, tile_size, 3), 0, dtype=np.uint8)
+                mask_pred = np.full((tile_size, tile_size, 3), 255, dtype=np.uint8)
 
                 if int(predicted_classes[i]) != int(labels[i]):
                     # Contours de l'image en rouge
                     array_red_borders = si.array.copy()
                     array_red_borders = array_red_borders.transpose(1, 2, 0)
-                    red_color = [1.0, 0.0, 0.0]
+                    print(array_red_borders)
+                    red_color = [255, 0, 0]
                     array_red_borders[:, :7, :] = red_color
                     array_red_borders[:, -7:-1, :] = red_color
                     array_red_borders[:7, :, :] = red_color
                     array_red_borders[-7:-1, :, :] = red_color
-                    array_red_borders = array_red_borders.transpose(2, 0, 1)
+                    array_red_borders = array_red_borders.transpose(2, 1,0)
                     si.array = array_red_borders
 
                 elif int(predicted_classes[i]) == int(labels[i]):
                     # Contours de l'image en rouge
                     array_green_borders = si.array.copy()
                     array_green_borders = array_green_borders.transpose(1, 2, 0)
-                    green_color = [0.0, 1.0, 0.0]
+                    green_color = [0, 255, 0]
                     array_green_borders[:, :7, :] = green_color
                     array_green_borders[:, -7:-1, :] = green_color
                     array_green_borders[:7, :, :] = green_color
                     array_green_borders[-7:-1, :, :] = green_color
-                    array_green_borders = array_green_borders.transpose(2, 0, 1)
+                    array_green_borders = array_green_borders.transpose(2, 1, 0)
                     si.array = array_green_borders
 
             list_labeled_satellite_image.append(

@@ -301,7 +301,7 @@ def plot_list_labeled_sat_images(
 
     for i in range(size):
         for j in range(size):
-            axs[i, j + size].imshow(list_labels[i * size + j], cmap="gray")
+            axs[i, j + size].imshow(list_labels[i * size + j])
 
     # Remove any unused axes
     for i in range(size):
