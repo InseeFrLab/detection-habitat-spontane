@@ -47,10 +47,22 @@ def new_csv_labeler_pred(csv_labeler):
     df1 = pd.DataFrame({'Path_image_2017': [x[0] for x in list_labels_dir_2017], 'Path_image_2020': [x[0] for x in list_labels_dir_2020], 'Classification_Pred_2017': [x[1] for x in list_labels_dir_2017], 'Classification_Pred_2020': [x[1] for x in list_labels_dir_2020], 'Changes': [x for x in list_changes]})
     df1.to_csv('../fichierlabelerpredicted_new.csv', index=False)
 
+def new_csv_labeler_prob(csv_labeler, threshold):
+    df = pd.read_csv(csv_labeler)
+    list_labels_dir = df[["Path_image", "Classification_Pred"]].values.tolist()
+    middle = int(len(list_labels_dir)/2)
+    list_labels_dir_2017 = list_labels_dir[:middle]
+    list_labels_dir_2020 = list_labels_dir[middle:]
+    list_changes = []
+    for img_2017, img_2020 in zip(list_labels_dir_2017, list_labels_dir_2020):
+        if abs(img_2017[1]-img_2020[1]) > threshold:
+            list_changes.append(1)
+        else:
+            list_changes.append(0)
+    df1 = pd.DataFrame({'Path_image_2017': [x[0] for x in list_labels_dir_2017], 'Path_image_2020': [x[0] for x in list_labels_dir_2020], 'Classification_Pred_2017': [x[1] for x in list_labels_dir_2017], 'Classification_Pred_2020': [x[1] for x in list_labels_dir_2020], 'Changes': [x for x in list_changes]})
+    df1.to_csv('../fichierlabelerprob_new.csv', index=False)
 
-def plot_changes_predicted_test(
-    csv_labeler, tile_size, n_bands=3
-):  
+def plot_changes_predicted_test(csv_labeler, tile_size, n_bands):  
     npatch = int((2000 / tile_size) ** 2)
     count_patch = 0
 
@@ -76,7 +88,7 @@ def plot_changes_predicted_test(
         si2.normalize()
 
         if changes == 0:
-            mask_pred = np.full((tile_size, tile_size, 3), 255, dtype=np.uint8)
+            mask_pred = np.full((tile_size, tile_size, 3), 1, dtype=np.uint8)
 
         elif changes == 1:
             mask_pred = np.full((tile_size, tile_size, 3), 0, dtype=np.uint8)
@@ -109,8 +121,8 @@ def plot_changes_predicted_test(
 
         if ((count_patch) % npatch) == 0:
             print("ecriture image")
-            if not os.path.exists("img2/"):
-                os.makedirs("img2/")
+            if not os.path.exists("cgm/"):
+                os.makedirs("cgm/")
 
             fig1 = plot_list_change_pleiades_images(
                         list_img1, list_img2
@@ -118,15 +130,13 @@ def plot_changes_predicted_test(
             filename = img_2017.split("/")[-1]
             filename = filename.split(".")[0]
             filename = "_".join(filename.split("_")[0:6])
-            plot_file = "img2/" + filename + ".png"
+            plot_file = "cgm/" + filename + ".png"
 
             fig1.savefig(plot_file)
             list_img1 = []
             list_img2 = []
 
             plt.close()
-
-
 
 
 def plot_two_masks_predicted_test(

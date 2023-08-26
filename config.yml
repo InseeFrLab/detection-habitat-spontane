@@ -10,7 +10,7 @@ donnees:
   n channels train: 3
   n bands entry: 3
   n bands: 3
-  tile size: 125
+  tile size: 250
   augmentation: False
   task: "classification"
   max size ones: 30000

@@ -997,7 +997,7 @@ def predicted_labels_classification_pleiade(
     # threshold = metrics_classification_pleiade(
     #                 test_dl, model, tile_size, batch_size, n_bands, use_mlflow
     #             )
-    threshold = 0.4
+    threshold = 0.25
 
     for idx, batch in enumerate(test_dl):
 
@@ -1037,5 +1037,61 @@ def predicted_labels_classification_pleiade(
                 with open(csv_file_path, "a", newline="") as csvfile:
                     writer = csv.writer(csvfile)
                     writer.writerow([pthimg, int(predicted_classes[i])])
+
+        del images, labels, dic
+
+
+def proba_classification_pleiade(
+    test_dl, model, tile_size, batch_size, n_bands=3, use_mlflow=False
+):
+    """
+    Evaluates the model on the Pleiade test dataset for image classification.
+
+    Args:
+        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        dataset.
+        model (torchvision.models): The classification model to evaluate.
+        tile_size (int): The size of each tile in pixels.
+        batch_size (int): The batch size.
+        use_mlflow (bool, optional): Whether to use MLflow for logging
+        artifacts. Defaults to False.
+
+    Returns:
+        None
+    """ 
+    model.eval()
+    csv_file_path = "../fichierlabelerproba.csv"
+
+    # threshold = metrics_classification_pleiade(
+    #                 test_dl, model, tile_size, batch_size, n_bands, use_mlflow
+    #             )
+
+    for idx, batch in enumerate(test_dl):
+
+        images, labels, dic = batch
+
+        model = model.to("cuda:0")
+        images = images.to("cuda:0")
+        labels = labels.to("cuda:0")
+
+        output_model = model(images)
+        output_model = output_model.to("cpu")
+        probability_class_1 = output_model[:, 1]
+
+        for i in range(batch_size):
+            print(i)
+            pthimg = dic["pathimage"][i]
+            
+            if not os.path.isfile(csv_file_path):
+                    with open(csv_file_path, "w", newline="") as csvfile:
+                        writer = csv.writer(csvfile)
+                        writer.writerow(["Path_image", "Classification_Pred"])
+                        writer.writerow([pthimg, probability_class_1[i].item()])
+
+            # Open it if it exists
+            else:
+                with open(csv_file_path, "a", newline="") as csvfile:
+                    writer = csv.writer(csvfile)
+                    writer.writerow([pthimg, probability_class_1[i].item()])
 
         del images, labels, dic

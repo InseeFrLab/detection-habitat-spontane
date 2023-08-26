@@ -1122,8 +1122,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             else:
                 evaluer_modele_sur_jeu_de_test = task_to_evaluation[src_task]
             
-            # from classes.changes.mask_changes import csv_prob
-            # csv_prob(
+            # from classes.optim.evaluation_model import proba_classification_pleiade
+            # proba_classification_pleiade(
             #         test_dl,
             #         model,
             #         tile_size,
