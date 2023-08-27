@@ -87,32 +87,27 @@ def plot_changes_predicted_test(csv_labeler, tile_size, n_bands):
         si.normalize()
         si2.normalize()
 
-        if changes == 0:
-            mask_pred = np.full((tile_size, tile_size, 3), 1, dtype=np.uint8)
+        if changes == 1:
+            blue_color = [0.0, 0.0, 1.0]
 
-        elif changes == 1:
-            mask_pred = np.full((tile_size, tile_size, 3), 0, dtype=np.uint8)
+            array_blue_borders = si.array.copy()
+            array_blue_borders = array_blue_borders.transpose(1, 2, 0)
+            array_blue_borders[:, :7, :] = blue_color
+            array_blue_borders[:, -7:-1, :] = blue_color
+            array_blue_borders[:7, :, :] = blue_color
+            array_blue_borders[-7:-1, :, :] = blue_color
+            array_blue_borders = array_blue_borders.transpose(2, 0, 1)
+            si.array = array_blue_borders
+            del(array_blue_borders)
 
-            red_color = [1.0, 0.0, 0.0]
-
-            array_red_borders = si.array.copy()
-            array_red_borders = array_red_borders.transpose(1, 2, 0)
-            array_red_borders[:, :7, :] = red_color
-            array_red_borders[:, -7:-1, :] = red_color
-            array_red_borders[:7, :, :] = red_color
-            array_red_borders[-7:-1, :, :] = red_color
-            array_red_borders = array_red_borders.transpose(2, 0, 1)
-            si.array = array_red_borders
-            del(array_red_borders)
-
-            array_red_borders = si2.array.copy()
-            array_red_borders = array_red_borders.transpose(1, 2, 0)
-            array_red_borders[:, :7, :] = red_color
-            array_red_borders[:, -7:-1, :] = red_color
-            array_red_borders[:7, :, :] = red_color
-            array_red_borders[-7:-1, :, :] = red_color
-            array_red_borders = array_red_borders.transpose(2, 0, 1)
-            si2.array = array_red_borders
+            array_blue_borders = si2.array.copy()
+            array_blue_borders = array_blue_borders.transpose(1, 2, 0)
+            array_blue_borders[:, :7, :] = blue_color
+            array_blue_borders[:, -7:-1, :] = blue_color
+            array_blue_borders[:7, :, :] = blue_color
+            array_blue_borders[-7:-1, :, :] = blue_color
+            array_blue_borders = array_blue_borders.transpose(2, 0, 1)
+            si2.array = array_blue_borders
 
         list_img1.append(si)
     
