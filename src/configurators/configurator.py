@@ -32,6 +32,8 @@ class Configurator:
         self.dataset = config["data"]["dataset"]
         self.dataset_test = config["data"]["dataset_test"]
         self.n_bands = config["data"]["n_bands"]
+        self.percent_keep = config["data"]["percent_keep"]
+
         self.task = config["data"]["task"]
         self.prop = config["data"]["prop"]
         self.source_train = config["data"]["source_train"]

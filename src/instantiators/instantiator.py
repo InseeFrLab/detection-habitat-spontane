@@ -62,10 +62,19 @@ class Instantiator:
             dataset_select = dataset_dict[dataset_type]
 
             if list_images_2 is None:
-                full_dataset = dataset_select(list_images, list_labels, self.config.n_bands)
+                full_dataset = dataset_select(
+                    list_images,
+                    list_labels,
+                    self.config.n_bands,
+                    percent_keep=self.config.percent_keep,
+                )
             else:
                 full_dataset = dataset_select(
-                    list_images, list_images_2, list_labels, self.config.n_bands
+                    list_images,
+                    list_images_2,
+                    list_labels,
+                    self.config.n_bands,
+                    percent_keep=self.config.percent_keep,
                 )
 
         return full_dataset

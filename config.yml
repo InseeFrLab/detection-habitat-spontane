@@ -3,6 +3,7 @@ data:
   dataset: "SENTINEL"
   dataset_test: "SENTINEL"
   task: "segmentation"
+  percent_keep: 0.1
 
   millesime:
     - dep: "976"
