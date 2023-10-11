@@ -4,13 +4,17 @@ import shutil
 import ee
 import geemap
 import PIL
-import s3fs
 from osgeo import gdal
 from tqdm import tqdm
 
-import utils.mappings
 from classes.data.satellite_image import SatelliteImage
-from utils.utils import get_environment, get_root_path, update_storage_access
+from utils.mappings import name_dep_to_aoi, name_dep_to_crs, name_dep_to_num_dep
+from utils.utils import (
+    exportToMinio,
+    get_environment,
+    get_root_path,
+    update_storage_access,
+)
 
 service_account = "slums-detection-sa@ee-insee-sentinel.iam.gserviceaccount.com"
 credentials = ee.ServiceAccountCredentials(service_account, "GCP_credentials.json")
@@ -75,127 +79,7 @@ def export_s1(DOM, AOIs, EPSGs, start_date, end_date):
     if ee.Feature(image).contains(feature_aoi).getInfo():
         export_s1_grd_first(start_date, AOI, image, DOM)
     else:
-        export_s1_grd_mean(
-            start_date, AOI, ee.Image(s1_grd.mean()).clip(feature_aoi), DOM
-        )
-
-
-def export_s1_grd_first(start_date, AOI, s1_grd, DOM):
-    """
-    Calls a function that downloads the images locally and calls a function \
-        that uplaods them on MinIO.
-
-    Args:
-        DOM: name of the DOM.
-        AOIs: western, southern, eastern and northern boudaries of the DOMs.
-        EPSGs: EPSGs of the DOMs.
-        start_date: date from which the images can be downloaded.
-        end_date: date after which the images can no longer be downloaded.
-    """
-
-    print("Entre dans la fonction s1_grd_first")
-
-    update_storage_access()
-    root_path = get_root_path()
-    environment = get_environment()
-
-    bucket = environment["bucket"]
-    path_s3 = environment["sources"]["SENTINEL1"][int(start_date[0:4])][
-        DEPs[DOM.upper()]
-    ]
-    path_local = os.path.join(
-        root_path,
-        environment["local-path"]["SENTINEL1"][int(start_date[0:4])][
-            DEPs[DOM.upper()]
-        ],
-    )
-
-    fishnet = geemap.fishnet(AOI, rows=4, cols=4, delta=0.5)
-    geemap.download_ee_image_tiles(
-        image=s1_grd,
-        features=fishnet,
-        out_dir=path_local,
-        prefix="data_",
-        crs=f"EPSG:{EPSGs[DOM.upper()]}",
-        scale=10,
-        num_threads=50,
-    )
-
-    upload_satelliteImages(
-        path_local,
-        f"{bucket}/{path_s3}",
-        f"{DEPs[DOM.upper()]}",
-        int(start_date[0:4]),
-        250,
-        1,
-        False,
-    )
-
-    shutil.rmtree(path_local, ignore_errors=True)
-
-
-def export_s1_grd_mean(start_date, AOI, s1_grd, DOM):
-    print("Entre dans la fonction s1_grd_mean")
-
-    update_storage_access()
-    root_path = get_root_path()
-    environment = get_environment()
-
-    bucket = environment["bucket"]
-    path_s3 = environment["sources"]["SENTINEL1"][int(start_date[0:4])][
-        DEPs[DOM.upper()]
-    ]
-    path_local = os.path.join(
-        root_path,
-        environment["local-path"]["SENTINEL1"][int(start_date[0:4])][
-            DEPs[DOM.upper()]
-        ],
-    )
-
-    fishnet = geemap.fishnet(AOI, rows=4, cols=4, delta=0.5)
-    geemap.download_ee_image_tiles(
-        image=s1_grd,
-        features=fishnet,
-        out_dir=path_local,
-        prefix="data_",
-        crs=f"EPSG:{EPSGs[DOM.upper()]}",
-        scale=10,
-        num_threads=50,
-    )
-
-    upload_satelliteImages(
-        path_local,
-        f"{bucket}/{path_s3}",
-        f"{DEPs[DOM.upper()]}",
-        int(start_date[0:4]),
-        250,
-        1,
-        False,
-    )
-
-    shutil.rmtree(path_local, ignore_errors=True)
-
-
-def exportToMinio(image, rpath):
-    """
-    Exports S1 tiles to MinIO.
-
-    Args:
-        image: the image to uplaod on MinIO.
-        rpath: path to the MinIO repertory in which the image\
-            should be uploaded.
-
-    Returns:
-        The upload of an image on MinIO.
-    """
-
-    fs = s3fs.S3FileSystem(
-        client_kwargs={"endpoint_url": "https://" + "minio.lab.sspcloud.fr"},
-        key=os.environ["AWS_ACCESS_KEY_ID"],
-        secret=os.environ["AWS_SECRET_ACCESS_KEY"],
-    )
-
-    return fs.put(image, rpath, True)
+        export_s1_grd_mean(start_date, AOI, ee.Image(s1_grd.mean()).clip(feature_aoi), DOM)
 
 
 def upload_satelliteImages(
@@ -265,13 +149,101 @@ def upload_satelliteImages(
             os.remove(filename + ".tif")
 
 
+def export_s1_grd_first(start_date, AOI, s1_grd, DOM):
+    """
+    Calls a function that downloads the images locally and calls a function \
+        that uplaods them on MinIO.
+
+    Args:
+        DOM: name of the DOM.
+        AOIs: western, southern, eastern and northern boudaries of the DOMs.
+        EPSGs: EPSGs of the DOMs.
+        start_date: date from which the images can be downloaded.
+        end_date: date after which the images can no longer be downloaded.
+    """
+
+    print("Entre dans la fonction s1_grd_first")
+
+    update_storage_access()
+    root_path = get_root_path()
+    environment = get_environment()
+
+    bucket = environment["bucket"]
+    path_s3 = environment["sources"]["SENTINEL1"][int(start_date[0:4])][DEPs[DOM.upper()]]
+    path_local = os.path.join(
+        root_path,
+        environment["local-path"]["SENTINEL1"][int(start_date[0:4])][DEPs[DOM.upper()]],
+    )
+
+    fishnet = geemap.fishnet(AOI, rows=4, cols=4, delta=0.5)
+    geemap.download_ee_image_tiles(
+        image=s1_grd,
+        features=fishnet,
+        out_dir=path_local,
+        prefix="data_",
+        crs=f"EPSG:{EPSGs[DOM.upper()]}",
+        scale=10,
+        num_threads=50,
+    )
+
+    upload_satelliteImages(
+        path_local,
+        f"{bucket}/{path_s3}",
+        f"{DEPs[DOM.upper()]}",
+        int(start_date[0:4]),
+        250,
+        1,
+        False,
+    )
+
+    shutil.rmtree(path_local, ignore_errors=True)
+
+
+def export_s1_grd_mean(start_date, AOI, s1_grd, DOM):
+    print("Entre dans la fonction s1_grd_mean")
+
+    update_storage_access()
+    root_path = get_root_path()
+    environment = get_environment()
+
+    bucket = environment["bucket"]
+    path_s3 = environment["sources"]["SENTINEL1"][int(start_date[0:4])][DEPs[DOM.upper()]]
+    path_local = os.path.join(
+        root_path,
+        environment["local-path"]["SENTINEL1"][int(start_date[0:4])][DEPs[DOM.upper()]],
+    )
+
+    fishnet = geemap.fishnet(AOI, rows=4, cols=4, delta=0.5)
+    geemap.download_ee_image_tiles(
+        image=s1_grd,
+        features=fishnet,
+        out_dir=path_local,
+        prefix="data_",
+        crs=f"EPSG:{EPSGs[DOM.upper()]}",
+        scale=10,
+        num_threads=50,
+    )
+
+    upload_satelliteImages(
+        path_local,
+        f"{bucket}/{path_s3}",
+        f"{DEPs[DOM.upper()]}",
+        int(start_date[0:4]),
+        250,
+        1,
+        False,
+    )
+
+    shutil.rmtree(path_local, ignore_errors=True)
+
+
 if __name__ == "__main__":
     START_DATE = "2022-08-20"
     END_DATE = "2022-09-01"
 
-    EPSGs = utils.mappings.name_dep_to_crs
-    DEPs = utils.mappings.name_dep_to_num_dep
-    AOIs = utils.mappings.name_dep_to_aoi
+    EPSGs = name_dep_to_crs
+    DEPs = name_dep_to_num_dep
+    AOIs = name_dep_to_aoi
 
     export_s1("Guadeloupe", AOIs, EPSGs, START_DATE, END_DATE)
 

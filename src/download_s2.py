@@ -3,10 +3,18 @@ import shutil
 
 import ee
 import geemap
-from download_sentinel1_ee import upload_satelliteImages
+import PIL
+from osgeo import gdal
+from tqdm import tqdm
 
-import utils.mappings
-from utils.utils import get_environment, get_root_path, update_storage_access
+from classes.data.satellite_image import SatelliteImage
+from utils.mappings import name_dep_to_aoi, name_dep_to_crs, name_dep_to_num_dep
+from utils.utils import (
+    exportToMinio,
+    get_environment,
+    get_root_path,
+    update_storage_access,
+)
 
 service_account = "slums-detection-sa@ee-insee-sentinel.iam.gserviceaccount.com"
 credentials = ee.ServiceAccountCredentials(service_account, "GCP_credentials.json")
@@ -76,9 +84,7 @@ def add_shadow_bands(img):
 
     # Determine the direction to project cloud shadow from clouds
     # (assumes UTM projection).
-    shadow_azimuth = ee.Number(90).subtract(
-        ee.Number(img.get("MEAN_SOLAR_AZIMUTH_ANGLE"))
-    )
+    shadow_azimuth = ee.Number(90).subtract(ee.Number(img.get("MEAN_SOLAR_AZIMUTH_ANGLE")))
 
     # Project shadows from clouds for the distance specified
     # by the CLD_PRJ_DIST input.
@@ -106,11 +112,7 @@ def add_cld_shdw_mask(img):
     img_cloud_shadow = add_shadow_bands(img_cloud)
 
     # Combine cloud and shadow mask, set cloud and shadow as value 1, else 0.
-    is_cld_shdw = (
-        img_cloud_shadow.select("clouds")
-        .add(img_cloud_shadow.select("shadows"))
-        .gt(0)
-    )
+    is_cld_shdw = img_cloud_shadow.select("clouds").add(img_cloud_shadow.select("shadows")).gt(0)
 
     # Remove small cloud-shadow patches and
     # dilate remaining pixels by BUFFER input.
@@ -174,21 +176,15 @@ def export_s2_no_cloud(
     environment = get_environment()
 
     bucket = environment["bucket"]
-    path_s3 = environment["sources"]["SENTINEL2"][int(start_date[0:4])][
-        DEPs[DOM.upper()]
-    ]
+    path_s3 = environment["sources"]["SENTINEL2"][int(start_date[0:4])][DEPs[DOM.upper()]]
     path_local = os.path.join(
         root_path,
-        environment["local-path"]["SENTINEL2"][int(start_date[0:4])][
-            DEPs[DOM.upper()]
-        ],
+        environment["local-path"]["SENTINEL2"][int(start_date[0:4])][DEPs[DOM.upper()]],
     )
 
     AOI = ee.Geometry.BBox(**AOIs[DOM.upper()])
     s2_sr_cld_col = get_s2_sr_cld_col(AOI, START_DATE, END_DATE)
-    s2_sr_median = (
-        s2_sr_cld_col.map(add_cld_shdw_mask).map(apply_cld_shdw_mask).median()
-    )
+    s2_sr_median = s2_sr_cld_col.map(add_cld_shdw_mask).map(apply_cld_shdw_mask).median()
 
     fishnet = geemap.fishnet(AOI, rows=4, cols=4, delta=0.5)
     geemap.download_ee_image_tiles(
@@ -214,10 +210,77 @@ def export_s2_no_cloud(
     shutil.rmtree(path_local, ignore_errors=True)
 
 
+def upload_satelliteImages(
+    lpath,
+    rpath,
+    dep,
+    year,
+    dim,
+    n_bands,
+    check_nbands12=False,
+):
+    """
+    Transforms a raster in a SatelliteImage and calls a function\
+        that uploads it on MinIO and deletes it locally.
+
+    Args:
+        lpath: path to the raster to transform into SatelliteImage\
+            and to upload on MinIO.
+        rpath: path to the MinIO repertory in which the image\
+            should be uploaded.
+        dep: department number of the DOM.
+        dim: tiles' size.
+        n_bands: number of bands of the image to upload.
+        check_nbands12: boolean that, if set to True, allows to check\
+            if the image to upload is indeed 12 bands.\
+            Usefull in download_sentinel2_ee.py
+    """
+
+    images_paths = os.listdir(lpath)
+
+    for i in range(len(images_paths)):
+        images_paths[i] = lpath + "/" + images_paths[i]
+
+    list_satellite_images = [
+        SatelliteImage.from_raster(filename, dep=dep, n_bands=n_bands)
+        for filename in tqdm(images_paths)
+    ]
+
+    splitted_list_images = [
+        im for sublist in tqdm(list_satellite_images) for im in sublist.split(dim)
+    ]
+
+    for i in range(len(splitted_list_images)):
+        image = splitted_list_images[i]
+        bb = image.bounds
+        filename = str(int(bb[0])) + "_" + str(int(bb[1])) + "_" + str(i)
+        in_ds = gdal.Open(images_paths[1])
+        proj = in_ds.GetProjection()
+
+        image.to_raster("/", filename, "tif", proj)
+
+        if check_nbands12:
+            try:
+                image = SatelliteImage.from_raster(
+                    file_path=filename + ".tif",
+                    dep=dep,
+                    date=year,
+                    n_bands=12,
+                )
+                exportToMinio(filename + ".tif", rpath)
+                os.remove(filename + ".tif")
+
+            except PIL.UnidentifiedImageError:
+                print("L'image ne possède pas assez de bandes")
+        else:
+            exportToMinio(filename + ".tif", rpath)
+            os.remove(filename + ".tif")
+
+
 if __name__ == "__main__":
-    EPSGs = utils.mappings.name_dep_to_crs
-    DEPs = utils.mappings.name_dep_to_num_dep
-    AOIs = utils.mappings.name_dep_to_aoi
+    EPSGs = name_dep_to_crs
+    DEPs = name_dep_to_num_dep
+    AOIs = name_dep_to_aoi
 
     START_DATE = "2022-05-01"
     END_DATE = "2022-09-01"
@@ -228,7 +291,7 @@ if __name__ == "__main__":
     BUFFER = 50
 
     export_s2_no_cloud(
-        "Guadeloupe",
+        "Saint-Martin",
         AOIs,
         EPSGs,
         START_DATE,
