@@ -303,7 +303,7 @@ def update_storage_access():
 
     client = hvac.Client(url="https://vault.lab.sspcloud.fr", token=os.environ["VAULT_TOKEN"])
 
-    secret = f"{os.environ['VAULT_MOUNT']}{os.environ['VAULT_TOP_DIR']}/s3"
+    secret = f"{os.environ['VAULT_MOUNT']}/projet-slums-detection/s3"
     mount_point, secret_path = secret.split("/", 1)
     secret_dict = client.secrets.kv.read_secret_version(path=secret_path, mount_point=mount_point)
 
