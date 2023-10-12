@@ -1,12 +1,17 @@
 import mlflow
 import torch
-from run_training_pipeline import download_data, prepare_train_data, prepare_test_data, instantiate_dataloader
+import torchvision
+from run_training_pipeline import (
+    download_data,
+    prepare_train_data,
+    prepare_test_data,
+    instantiate_dataloader
+)
 from classes.data.satellite_image import SatelliteImage
 from classes.data.labeled_satellite_image import DetectionLabeledSatelliteImage
 from utils.utils import get_root_path
 import yaml
 from yaml.loader import SafeLoader
-import numpy as np
 
 
 def decode_predictions(
@@ -16,23 +21,23 @@ def decode_predictions(
 ):
     boxes = prediction["boxes"]
     scores = prediction["scores"]
-    labels = prediction["labels"]    # Remove any low-score predictions.
+    labels = prediction["labels"]    # Remove any low-score predictions
     if score_threshold is not None:
         want = scores > score_threshold
         boxes = boxes[want]
         scores = scores[want]
-        labels = labels[want]    # Remove any overlapping bounding boxes using NMS.
+        labels = labels[want]    # Remove any overlapping bounding boxes
     if nms_iou_threshold is not None:
         want = torchvision.ops.nms(
-            boxes = boxes,
-            scores = scores,
-            iou_threshold = nms_iou_threshold)
+            boxes=boxes,
+            scores=scores,
+            iou_threshold=nms_iou_threshold)
         boxes = boxes[want]
         scores = scores[want]
         labels = labels[want]
-    
-    return (boxes.cpu().detach().numpy(), 
-            labels.cpu().detach().numpy(), 
+
+    return (boxes.cpu().detach().numpy(),
+            labels.cpu().detach().numpy(),
             scores.cpu().detach().numpy())
 
 
@@ -46,22 +51,23 @@ def main():
     with open(get_root_path() / "config.yml") as f:
         config = yaml.load(f, Loader=SafeLoader)
 
-    tile_size = config["data"]["tile_size"]
-    batch_size_test = config["optim"]["batch_size_test"]
-    task_type = config["data"]["task"]
-    source_data = config["data"]["source_train"]
     n_bands = config["data"]["n_bands"]
-    src_task = source_data + task_type
-
     list_data_dir, list_masks_cloud_dir, test_dir = download_data(config)
 
-    list_output_dir = prepare_train_data(config, list_data_dir, list_masks_cloud_dir)
+    list_output_dir = prepare_train_data(
+        config,
+        list_data_dir,
+        list_masks_cloud_dir
+    )
     prepare_test_data(config, test_dir)
 
-    train_dl, valid_dl, test_dl = instantiate_dataloader(config, list_output_dir)
+    train_dl, valid_dl, test_dl = instantiate_dataloader(
+        config,
+        list_output_dir
+    )
 
     # Load model
-    model = mlflow.pytorch.load_model(f"models:/obj-detection/1")
+    model = mlflow.pytorch.load_model("models:/obj-detection/1")
 
     # Test Evaluation
     model.eval()
