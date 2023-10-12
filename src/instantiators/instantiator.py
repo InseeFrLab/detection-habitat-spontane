@@ -251,10 +251,7 @@ class Instantiator:
 
         batch_size_test = self.config.batch_size_test
         test_dataloader = DataLoader(
-            dataset_test,
-            batch_size=batch_size_test,
-            shuffle=False,
-            num_workers=0,
+            dataset_test, batch_size=batch_size_test, shuffle=False, num_workers=0, drop_last=True
         )
 
         return train_dataloader, valid_dataloader, test_dataloader
