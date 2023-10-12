@@ -6,7 +6,7 @@ import mlflow
 import torch
 
 from configurators.configurator import Configurator
-from dico_config import task_to_evaluation
+from evaluators.evaluator import Evaluator
 from instantiators.instantiator import Instantiator
 from preprocessors.preprocessor import Preprocessor
 from utils.utils import get_root_path
@@ -32,6 +32,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
 
     instantiator = Instantiator(configurator)
     preprocessor = Preprocessor(configurator)
+    evaluator = Evaluator(configurator)
 
     preprocessor.download_data()
     preprocessor.prepare_train_data()
@@ -66,26 +67,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             scheduler_interval=light_module.scheduler_interval,
         )
 
-        model = light_module_checkpoint.model
-        try:
-            print(model.device)
-        except Exception:
-            pass
-
-        if configurator.src_task not in task_to_evaluation:
-            raise ValueError("Invalid task type")
-        else:
-            evaluer_modele_sur_jeu_de_test = task_to_evaluation[configurator.src_task]
-
-        evaluer_modele_sur_jeu_de_test(
-            test_dl,
-            model,
-            configurator.tile_size,
-            configurator.batch_size_test,
-            configurator.n_bands,
-            configurator.mlflow,
-            device,
-        )
+        evaluator.evaluate_model(test_dl, light_module_checkpoint.model, device)
 
 
 if __name__ == "__main__":
