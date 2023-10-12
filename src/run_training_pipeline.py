@@ -484,13 +484,17 @@ def instantiate_dataloader(config, list_output_dir):
     # Creation of the dataloaders
     batch_size = config["optim"]["batch_size"]
 
+    if config_task == "detection":
+        task_collate_fn = collate_fn
+    else:
+        task_collate_fn = None
     train_dataloader, valid_dataloader = [
         DataLoader(
             ds,
             batch_size=batch_size,
             shuffle=boolean,
             num_workers=config["data"]["num_workers"],
-            collate_fn=collate_fn,
+            collate_fn=task_collate_fn,
         )
         for ds, boolean in zip([train_dataset, valid_dataset], [True, False])
     ]
