@@ -1,10 +1,10 @@
 data:
   source_train: "PLEIADES"
-  dataset: "OBJECTDETECTION"
-  dataset_test: "OBJECTDETECTION"
-  task: "detection"
+  dataset: "PLEIADE"
+  dataset_test: "PLEIADE"
+  task: "segmentation"
   year: [2022]
-  dep: ["976"]
+  dep: ["dummy"]
   type_labeler: "BDTOPO"
   buffer_size: 10
   n_channels_train: 3
@@ -18,7 +18,7 @@ optim:
   loss: "crossentropy"
   lr: 0.001
   momentum: 0.9
-  module: "fasterrcnn"
+  module: "deeplabv3"
   batch_size: 4
   batch_size_test: 4
   max_epochs: 200
