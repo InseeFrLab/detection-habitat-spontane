@@ -16,7 +16,7 @@ data:
   n_bands: 12
   tile_size: 125
   augmentation: True
-  num_workers: 5
+  num_workers: 104
   prop: 1
 
 optim:
@@ -25,7 +25,7 @@ optim:
   momentum: 0.9
   module: "deeplabv3"
   batch_size: 5
-  batch_size_test: 4
+  batch_size_test: 1
   max_epochs: 2
   val_prop: 0.2
   accumulate_batch : 8
