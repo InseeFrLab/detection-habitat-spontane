@@ -113,6 +113,76 @@ def evaluer_modele_sur_jeu_de_test_segmentation_pleiade(
         del images, label, dic
 
 
+def evaluer_modele_sur_jeu_de_test_detection_pleiade(
+    test_dl,
+    model,
+    tile_size,
+    batch_size,
+    n_bands=3,
+    use_mlflow=False,
+    device: str = "cpu",
+):
+    """
+    Evaluates the model on the Pleiade test dataset for detection.
+
+    Args:
+        test_dl (torch.utils.data.DataLoader): The data loader for the test
+        dataset.
+        model (torchvision.models): The object detection model to evaluate.
+        tile_size (int): The size of each tile in pixels.
+        batch_size (int): The batch size.
+        use_mlflow (bool, optional): Whether to use MLflow for logging
+        artifacts. Defaults to False.
+        device (str): Device.
+
+    Returns:
+        None
+    """
+    with torch.no_grad():
+        model.eval()
+
+        for idx, batch in enumerate(test_dl):
+            images, label, dic = batch
+            
+            model = model.to(device)
+            images = images.to(device)
+            output_model = model(images)
+            preds = np.array(torch.argmax(output_model, axis=1).to("cpu"))
+
+            for i in range(len(batch)):
+                pthimg = dic["pathimage"][i]
+                si = SatelliteImage.from_raster(
+                    file_path=pthimg, dep=None, date=None, n_bands=n_bands
+                )
+                si.normalize()
+
+                labeled_image = DetectionLabeledSatelliteImage(
+                    satellite_image=si,
+                    label=preds[i],
+                    source="",
+                    labeling_date="",
+                )
+
+                if not os.path.exists("img/"):
+                    os.makedirs("img/")
+
+                fig1 = labeled_image.plot(
+                    [0, 1, 2]
+                )
+
+                filename = pthimg.split("/")[-1]
+                filename = filename.split(".")[0]
+                filename = "_".join(filename.split("_")[0:6])
+                plot_file = "img/" + filename + ".png"
+
+                fig1.savefig(plot_file)
+
+                if use_mlflow:
+                    mlflow.log_artifact(plot_file, artifact_path="plots")
+
+            del images, label, dic
+
+
 def evaluer_modele_sur_jeu_de_test_segmentation_sentinel(
     test_dl,
     model,

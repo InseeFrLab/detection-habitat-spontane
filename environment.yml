@@ -6,6 +6,7 @@ sources:
       segmentation: donnees-test/segmentation
       change-detection: donnees-test/change_detection
       classification: donnees-test/classification
+      detection: donnees-test/object_detection
     SENTINEL1-2:
       segmentation: donnees-test/SENTINEL1-2/segmentation
       #change-detection: donnees-test/SENTINEL/change_detection
@@ -180,6 +181,7 @@ local-path:
       segmentation: donnees-test/segmentation
       change-detection: donnees-test/change_detection
       classification: donnees-test/classification
+      detection: donnees-test/detection
     SENTINEL1-2:
       segmentation: donnees-test/SENTINEL/segmentation
       #change-detection: donnees-test/SENTINEL/change_detection
