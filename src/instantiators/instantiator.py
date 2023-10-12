@@ -66,7 +66,7 @@ class Instantiator:
                     list_images,
                     list_labels,
                     self.config.n_bands,
-                    percent_keep=self.config.percent_keep,
+                    percent_keep=(1 if test else self.config.percent_keep),
                 )
             else:
                 full_dataset = dataset_select(
@@ -74,7 +74,7 @@ class Instantiator:
                     list_images_2,
                     list_labels,
                     self.config.n_bands,
-                    percent_keep=self.config.percent_keep,
+                    percent_keep=(1 if test else self.config.percent_keep),
                 )
 
         return full_dataset
