@@ -266,8 +266,6 @@ class Instantiator:
         Returns:
             object: Instance of the specified module.
         """
-        print("Entre dans la fonction instantiate_model")
-
         if self.config.module not in module_dict:
             raise ValueError("Invalid module type")
 
@@ -307,7 +305,6 @@ class Instantiator:
         Returns:
             A PyTorch Lightning module for segmentation.
         """
-        print("Entre dans la fonction instantiate_lighting_module")
         # TODO : gérer la fonction generate_optimization_elements avec la config
         list_params = generate_optimization_elements(self.config)
 
