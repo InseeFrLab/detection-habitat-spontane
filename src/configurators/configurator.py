@@ -61,8 +61,6 @@ class Configurator:
         self.checkpoints = config["optim"]["monitoring"]["checkpoints"]
         self.earlystop = config["optim"]["monitoring"]["earlystop"]
 
-        self.mlflow = config["mlflow"]
-
         self.src_to_download = (
             ["SENTINEL1", "SENTINEL2"] if "SENTINEL1" in self.source_train else [self.source_train]
         )
