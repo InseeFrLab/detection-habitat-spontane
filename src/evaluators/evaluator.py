@@ -4,6 +4,7 @@ Evaluator class.
 
 import os
 
+import matplotlib.pyplot as plt
 import mlflow
 import numpy as np
 import torch
@@ -34,6 +35,8 @@ class Evaluator:
             "SENTINEL2segmentation": self.evaluate_segmentation_sentinel,
             "change-detection": self.evaluate_changes_detection_pleiades,
         }
+        if not os.path.exists(f"../data/evaluation/{config.task}/{config.source_train}"):
+            os.makedirs(f"../data/evaluation/{config.task}/{config.source_train}")
 
     def evaluate_model(self, dataloader, model, device):
         if self.config.src_task not in self.task_to_evaluation:
@@ -78,16 +81,15 @@ class Evaluator:
         list_labeled_satellite_image = []
 
         for idx, batch in enumerate(test_dl):
-            print(idx)
             images, label, dic = batch
 
             model = model.to(device)
             images = images.to(device)
 
             output_model = model(images)
-            mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
+            mask_pred = np.array(torch.argmax(output_model, axis=1).to(device))
 
-            for i in range(len(batch)):
+            for i in range(self.config.batch_size_test):
                 pthimg = dic["pathimage"][i]
                 si = SatelliteImage.from_raster(
                     file_path=pthimg, dep=None, date=None, n_bands=self.config.n_bands
@@ -104,21 +106,17 @@ class Evaluator:
                 )
 
             if ((idx + 1) % nbatchforfullimage) == 0:
-                print("ecriture image")
-                if not os.path.exists("img/"):
-                    os.makedirs("img/")
+                fig = plot_list_labeled_sat_images(list_labeled_satellite_image, [0, 1, 2])
 
-                fig1 = plot_list_labeled_sat_images(list_labeled_satellite_image, [0, 1, 2])
+                filename = f"../data/evaluation/ \
+                    {self.config.task}/{self.config.source_train}/ \
+                    {os.path.splitext(os.path.basename(pthimg))[0]}"
 
-                filename = pthimg.split("/")[-1]
-                filename = filename.split(".")[0]
-                filename = "_".join(filename.split("_")[0:6])
-                plot_file = f"img/{filename}.png"
-
-                fig1.savefig(plot_file)
+                fig.savefig(f"{filename}.png")
+                plt.close(fig)
                 list_labeled_satellite_image = []
 
-                mlflow.log_artifact(plot_file, artifact_path="plots")
+                mlflow.log_artifact(f"{filename}.png", artifact_path="plots")
 
             del images, label, dic
 
@@ -136,7 +134,7 @@ class Evaluator:
                 images = images.to(device)
 
             output_model = model(images)
-            mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
+            mask_pred = np.array(torch.argmax(output_model, axis=1).to(device))
 
             for i in range(self.config.batch_size_test):
                 pthimg = dic["pathimage"][i]
@@ -152,22 +150,17 @@ class Evaluator:
                     labeling_date="",
                 )
 
-                print("ecriture image")
-                if not os.path.exists("img/"):
-                    os.makedirs("img/")
-
-                fig1 = plot_list_segmentation_labeled_satellite_image(
+                fig = plot_list_segmentation_labeled_satellite_image(
                     [labeled_satellite_image], [3, 2, 1]
                 )
 
-                filename = pthimg.split("/")[-1]
-                filename = filename.split(".")[0]
-                filename = "_".join(filename.split("_")[0:6])
-                plot_file = f"{filename}.png"
+                filename = f"../data/evaluation/ \
+                    {self.config.task}/{self.config.source_train}/ \
+                    {os.path.splitext(os.path.basename(pthimg))[0]}"
+                fig.savefig(f"{filename}.png")
+                plt.close(fig)
 
-                fig1.savefig(plot_file)
-
-                mlflow.log_artifact(plot_file, artifact_path="plots")
+                mlflow.log_artifact(f"{filename}.png", artifact_path="plots")
 
     def evaluate_classification_pleiades(
         self,
@@ -205,7 +198,6 @@ class Evaluator:
         list_labeled_satellite_image = []
 
         for idx, batch in enumerate(test_dl):
-            print(idx)
             images, label, dic = batch
 
             model = model.to(device)
@@ -251,21 +243,16 @@ class Evaluator:
                 )
 
             if ((idx + 1) % nbatchforfullimage) == 0:
-                print("ecriture image")
-                if not os.path.exists("img/"):
-                    os.makedirs("img/")
+                fig = plot_list_labeled_sat_images(list_labeled_satellite_image, [0, 1, 2])
 
-                fig1 = plot_list_labeled_sat_images(list_labeled_satellite_image, [0, 1, 2])
-
-                filename = pthimg.split("/")[-1]
-                filename = filename.split(".")[0]
-                filename = "_".join(filename.split("_")[0:6])
-                plot_file = f"img/{filename}.png"
-
-                fig1.savefig(plot_file)
+                filename = f"../data/evaluation/ \
+                    {self.config.task}/{self.config.source_train}/ \
+                    {os.path.splitext(os.path.basename(pthimg))[0]}"
+                fig.savefig(f"{filename}.png")
+                plt.close(fig)
                 list_labeled_satellite_image = []
 
-                mlflow.log_artifact(plot_file, artifact_path="plots")
+                mlflow.log_artifact(f"{filename}.png", artifact_path="plots")
 
     def evaluate_changes_detection_pleiades(
         self,
@@ -304,14 +291,12 @@ class Evaluator:
         list_labeled_satellite_image = []
 
         for idx, batch in enumerate(test_dl):
-            # idx, batch = 0, next(iter(test_dl))
-            print(idx)
             images, label, dic = batch
             model = model.to(device)
             images = images.to(device)
 
             output_model = model(images)
-            mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
+            mask_pred = np.array(torch.argmax(output_model, axis=1).to(device))
 
             for i in range(self.config.batch_size_test):
                 pthimg2 = dic["pathimage2"][i]
@@ -328,22 +313,17 @@ class Evaluator:
                 )
 
             if ((idx + 1) % nbatchforfullimage) == 0:
-                print("ecriture image")
-                if not os.path.exists("img/"):
-                    os.makedirs("img/")
-
-                fig1 = plot_list_segmentation_labeled_satellite_image(
+                fig = plot_list_segmentation_labeled_satellite_image(
                     list_labeled_satellite_image, [0, 1, 2]
                 )
 
-                filename = pthimg2.split("/")[-1]
-                filename = filename.split(".")[0]
-                filename = "_".join(filename.split("_")[0:6])
-                plot_file = f"{filename}.png"
-
-                fig1.savefig(plot_file)
+                filename = f"../data/evaluation/ \
+                    {self.config.task}/{self.config.source_train}/ \
+                    {os.path.splitext(os.path.basename(pthimg2))[0]}"
+                fig.savefig(f"{filename}.png")
+                plt.close(fig)
                 list_labeled_satellite_image = []
 
-                mlflow.log_artifact(plot_file, artifact_path="plots")
+                mlflow.log_artifact(f"{filename}.png", artifact_path="plots")
 
             del images, label, dic
