@@ -62,9 +62,7 @@ def select_indices_to_split_dataset(config_task, prop_val, list_labels):
     return train_indices, val_indices
 
 
-def select_indices_to_balance(
-    list_path_images: List, balancing_dict: Dict, prop: float
-):
+def select_indices_to_balance(list_path_images: List, balancing_dict: Dict, prop: float):
     """
     Select indices to balance Dataset according to a balancing dict
     containing info on the images that have buildings or not.
@@ -130,9 +128,7 @@ def generate_transform_pleiades(tile_size, augmentation, task):
         transforms_augmentation = album.Compose(
             [
                 # album.Resize(300, 300, always_apply=True),
-                album.RandomResizedCrop(
-                    *image_size, scale=(0.7, 1.0), ratio=(0.7, 1)
-                ),
+                album.RandomResizedCrop(*image_size, scale=(0.7, 1.0), ratio=(0.7, 1)),
                 album.HorizontalFlip(),
                 album.VerticalFlip(),
                 album.Normalize(),
@@ -162,7 +158,7 @@ def generate_transform_sentinel(src, year, dep, tile_size, augmentation, task):
     """
     # TODO: normalization functions only when 13 bands are used,
     # change to make it work for less
-    with open("utils/normalize_sentinel.yml", "r") as stream:
+    with open("./src/utils/normalize_sentinel.yml", "r") as stream:
         normalize_sentinel = yaml.safe_load(stream)
     mean = eval(normalize_sentinel[src]["mean"][year][dep])
     std = eval(normalize_sentinel[src]["std"][year][dep])
@@ -181,9 +177,7 @@ def generate_transform_sentinel(src, year, dep, tile_size, augmentation, task):
         transforms_augmentation = album.Compose(
             [
                 album.Resize(300, 300, always_apply=True),
-                album.RandomResizedCrop(
-                    *image_size, scale=(0.7, 1.0), ratio=(0.7, 1)
-                ),
+                album.RandomResizedCrop(*image_size, scale=(0.7, 1.0), ratio=(0.7, 1)),
                 album.HorizontalFlip(),
                 album.VerticalFlip(),
                 album.Normalize(mean, std),
@@ -227,9 +221,7 @@ def generate_transform(tile_size, augmentation, task: str):
         if task == "detection":
             transforms_augmentation = album.Compose(
                 transforms_list,
-                bbox_params=album.BboxParams(
-                    format="pascal_voc", label_fields=["class_labels"]
-                ),
+                bbox_params=album.BboxParams(format="pascal_voc", label_fields=["class_labels"]),
             )
         else:
             transforms_augmentation = album.Compose(transforms_list)
@@ -242,9 +234,7 @@ def generate_transform(tile_size, augmentation, task: str):
     if task == "detection":
         transforms_preprocessing = album.Compose(
             test_transforms_list,
-            bbox_params=album.BboxParams(
-                format="pascal_voc", label_fields=["class_labels"]
-            ),
+            bbox_params=album.BboxParams(format="pascal_voc", label_fields=["class_labels"]),
         )
     else:
         transforms_preprocessing = album.Compose(test_transforms_list)
