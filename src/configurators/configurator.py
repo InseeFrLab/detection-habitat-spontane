@@ -90,6 +90,7 @@ class Configurator:
         ]
 
         self.path_prepro_test_data = [f"data/preprocessed/{self.task}/{self.source_train}/test"]
+        self.path_eval_test_data = [f"data/evaluation/{self.task}/{self.source_train}"]
         self.device = device
 
     def get_cloud_local_path(self, env: dict):

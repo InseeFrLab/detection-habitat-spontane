@@ -39,7 +39,7 @@ def crs_to_gps_image(
     if satellite_image:  # is not None
         year = (satellite_image.date).year
         dep = str(satellite_image.dep)
-        folder_path = f"../{environment['local-path']['PLEIADES'][year][dep]}"
+        folder_path = f"{environment['local-path']['PLEIADES'][year][dep]}"
         filepath = f"{folder_path}/{satellite_image.filename}"
 
     delimiters = ["-", "_"]
@@ -203,7 +203,7 @@ def find_image_different_years(
     if satellite_image is not None:
         year = (satellite_image.date).year
         dep = str(satellite_image.dep)
-        folder_path = f"../{environment['local-path']['PLEIADES'][year][dep]}"
+        folder_path = f"{environment['local-path']['PLEIADES'][year][dep]}"
         filepath = f"{folder_path}/{satellite_image.filename}"
 
     # Retrieve base department
@@ -215,7 +215,7 @@ def find_image_different_years(
     dep = name_dep_to_num_dep[departement_base.upper()]
     year = different_year
 
-    folder_path = f"../{environment['local-path']['PLEIADES'][year][dep]}"
+    folder_path = f"{environment['local-path']['PLEIADES'][year][dep]}"
 
     # Retrieve left-top coordinates
     if filepath.find("_") != -1:

@@ -35,8 +35,8 @@ class Evaluator:
             "SENTINEL2segmentation": self.evaluate_segmentation_sentinel,
             "change-detection": self.evaluate_changes_detection_pleiades,
         }
-        if not os.path.exists(f"../data/evaluation/{config.task}/{config.source_train}"):
-            os.makedirs(f"../data/evaluation/{config.task}/{config.source_train}")
+        if not os.path.exists(config.path_eval_test_data[0]):
+            os.makedirs(config.path_eval_test_data[0])
 
     def evaluate_model(self, dataloader, model):
         if self.config.src_task not in self.task_to_evaluation:
@@ -81,11 +81,11 @@ class Evaluator:
         for idx, batch in enumerate(test_dl):
             images, label, dic = batch
 
-            model = model.to(self.device)
-            images = images.to(self.device)
+            model = model.to(self.config.device)
+            images = images.to(self.config.device)
 
             output_model = model(images)
-            mask_pred = np.array(torch.argmax(output_model, axis=1).to(self.device))
+            mask_pred = np.array(torch.argmax(output_model, axis=1).to(self.config.device))
 
             for i in range(self.config.batch_size_test):
                 pthimg = dic["pathimage"][i]
@@ -106,8 +106,7 @@ class Evaluator:
             if ((idx + 1) % nbatchforfullimage) == 0:
                 fig = plot_list_labeled_sat_images(list_labeled_satellite_image, [0, 1, 2])
 
-                filename = f"../data/evaluation/ \
-                    {self.config.task}/{self.config.source_train}/ \
+                filename = f"{self.config.path_eval_test_data[0]}/ \
                     {os.path.splitext(os.path.basename(pthimg))[0]}"
 
                 fig.savefig(f"{filename}.png")
@@ -127,11 +126,11 @@ class Evaluator:
             images, label, dic = batch
 
             if torch.cuda.is_available():
-                model = model.to(self.device)
-                images = images.to(self.device)
+                model = model.to(self.config.device)
+                images = images.to(self.config.device)
 
             output_model = model(images)
-            mask_pred = np.array(torch.argmax(output_model, axis=1).to(self.device))
+            mask_pred = np.array(torch.argmax(output_model, axis=1).to(self.config.device))
 
             for i in range(self.config.batch_size_test):
                 pthimg = dic["pathimage"][i]
@@ -151,8 +150,7 @@ class Evaluator:
                     [labeled_satellite_image], [3, 2, 1]
                 )
 
-                filename = f"../data/evaluation/ \
-                    {self.config.task}/{self.config.source_train}/ \
+                filename = f"{self.config.path_eval_test_data[0]}/ \
                     {os.path.splitext(os.path.basename(pthimg))[0]}"
                 fig.savefig(f"{filename}.png")
                 plt.close(fig)
@@ -195,11 +193,11 @@ class Evaluator:
         for idx, batch in enumerate(test_dl):
             images, label, dic = batch
 
-            model = model.to(self.device)
-            images = images.to(self.device)
+            model = model.to(self.config.device)
+            images = images.to(self.config.device)
 
             output_model = model(images)
-            output_model = output_model.to(self.device)
+            output_model = output_model.to(self.config.device)
             probability_class_1 = output_model[:, 1]
 
             # Set a threshold for class prediction
@@ -240,8 +238,7 @@ class Evaluator:
             if ((idx + 1) % nbatchforfullimage) == 0:
                 fig = plot_list_labeled_sat_images(list_labeled_satellite_image, [0, 1, 2])
 
-                filename = f"../data/evaluation/ \
-                    {self.config.task}/{self.config.source_train}/ \
+                filename = f"{self.config.path_eval_test_data[0]}/ \
                     {os.path.splitext(os.path.basename(pthimg))[0]}"
                 fig.savefig(f"{filename}.png")
                 plt.close(fig)
@@ -285,11 +282,11 @@ class Evaluator:
 
         for idx, batch in enumerate(test_dl):
             images, label, dic = batch
-            model = model.to(self.device)
-            images = images.to(self.device)
+            model = model.to(self.config.device)
+            images = images.to(self.config.device)
 
             output_model = model(images)
-            mask_pred = np.array(torch.argmax(output_model, axis=1).to(self.device))
+            mask_pred = np.array(torch.argmax(output_model, axis=1).to(self.config.device))
 
             for i in range(self.config.batch_size_test):
                 pthimg2 = dic["pathimage2"][i]
@@ -310,8 +307,7 @@ class Evaluator:
                     list_labeled_satellite_image, [0, 1, 2]
                 )
 
-                filename = f"../data/evaluation/ \
-                    {self.config.task}/{self.config.source_train}/ \
+                filename = f"{self.config.path_eval_test_data[0]}/ \
                     {os.path.splitext(os.path.basename(pthimg2))[0]}"
                 fig.savefig(f"{filename}.png")
                 plt.close(fig)

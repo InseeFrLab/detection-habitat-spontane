@@ -27,8 +27,6 @@ from train_pipeline_utils.prepare_data import (
 )
 from utils.utils import get_path_by_millesime, split_array
 
-# from tqdm import tqdm
-
 
 class Preprocessor:
     """
@@ -56,7 +54,7 @@ class Preprocessor:
         print("\n*** 1- Téléchargement des données...\n")
 
         all_exist = all(
-            os.path.exists(f"../{directory}")
+            os.path.exists(f"{directory}")
             for directory in self.config.path_local_test
             + self.config.path_local
             + self.config.path_local_cloud
@@ -68,7 +66,7 @@ class Preprocessor:
             fs = s3fs.S3FileSystem(client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"})
 
             [
-                fs.download(rpath=path_s3, lpath=f"../{path_local}", recursive=True)
+                fs.download(rpath=path_s3, lpath=f"{path_local}", recursive=True)
                 for path_local, path_s3 in zip(
                     self.config.path_local_test
                     + self.config.path_local
@@ -107,7 +105,7 @@ class Preprocessor:
             if not self.check_labelled_images(millesime):
                 full_balancing_dict = {}
 
-                for root, dirs, files in os.walk(f"../{self.config.path_local[i]}"):
+                for root, dirs, files in os.walk(f"{self.config.path_local[i]}"):
                     for filename in files:
                         try:
                             si = SatelliteImage.from_raster(
@@ -135,10 +133,10 @@ class Preprocessor:
                         elif np.sum(mask) == 0 and not keep:
                             continue
 
-                with open(f"../{self.config.path_prepro_data[i]}/balancing_dict.json", "w") as fp:
+                with open(f"{self.config.path_prepro_data[i]}/balancing_dict.json", "w") as fp:
                     json.dump(full_balancing_dict, fp)
 
-                nb = len(os.listdir(f"../{self.config.path_prepro_data[i]}/images"))
+                nb = len(os.listdir(f"{self.config.path_prepro_data[i]}/images"))
                 print(f"\t** {nb} couples images/masques ont été retenus")
 
         print("\n*** Données d'entrainement prêtes !\n")
@@ -147,14 +145,14 @@ class Preprocessor:
     def prepare_test_data(self):
         print("\n*** 3- Préparation des données de test...\n")
 
-        mask_folder = f"../{self.config.path_prepro_test_data[0]}/masks/"
+        mask_folder = f"{self.config.path_prepro_test_data[0]}/masks/"
         if not os.path.exists(mask_folder):
             os.makedirs(mask_folder)
 
         match self.config.task:
             case "change-detection":
                 # Cas change-detection : On a 2 images et 1 masque
-                for root, dirs, files in os.walk(f"../{self.config.path_local_test[0]}/masks"):
+                for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/masks"):
                     for filename in files:
                         mask = np.load(os.path.join(root, filename))
                         # Les fichiers d'images n'ont pas de suffix
@@ -193,7 +191,7 @@ class Preprocessor:
 
             case _:
                 # Autres cas : On a 1 image et 1 masque
-                for root, dirs, files in os.walk(f"../{self.config.path_local_test[0]}/masks"):
+                for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/masks"):
                     for filename in files:
                         filename_im = filename.replace("_0000", "")
                         root_im = root.replace("/masks", "/images")
@@ -240,15 +238,15 @@ class Preprocessor:
 
         path_prepro = get_path_by_millesime(self.config.path_prepro_data, millesime)
 
-        if (os.path.exists(f"../{path_prepro}")) and (len(os.listdir(f"../{path_prepro}")) != 0):
+        if (os.path.exists(f"{path_prepro}")) and (len(os.listdir(f"{path_prepro}")) != 0):
             print("\t** The directory already exists and is not empty.")
             return True
-        elif (os.path.exists(f"../{path_prepro}")) and (len(os.listdir(f"../{path_prepro}")) == 0):
+        elif (os.path.exists(f"{path_prepro}")) and (len(os.listdir(f"{path_prepro}")) == 0):
             print("\t** The directory exists but is empty.")
             return False
         else:
-            os.makedirs(f"../{path_prepro}/images")
-            os.makedirs(f"../{path_prepro}/labels")
+            os.makedirs(f"{path_prepro}/images")
+            os.makedirs(f"{path_prepro}/labels")
             print("\t** Directory created !")
             return False
 
@@ -363,8 +361,8 @@ class Preprocessor:
             str: The name of the output directory.
         """
         path_prepro = get_path_by_millesime(self.config.path_prepro_data, millesime)
-        output_images_path = f"../{path_prepro}/images"
-        output_masks_path = f"../{path_prepro}/labels"
+        output_images_path = f"{path_prepro}/images"
+        output_masks_path = f"{path_prepro}/labels"
 
         for i, (image, mask) in enumerate(zip(list_images, list_masks)):
             # TODO : Make it more readable
@@ -422,13 +420,13 @@ class Preprocessor:
     def prepare_yearly_data(self, satellite_image, labeler, filename, millesime):
         path_clouds = get_path_by_millesime(self.config.path_local_cloud, millesime)
         list_clouds = (
-            [os.path.splitext(filename)[0] for filename in os.listdir(f"../{path_clouds}")]
+            [os.path.splitext(filename)[0] for filename in os.listdir(f"{path_clouds}")]
             if path_clouds
             else []
         )
 
         if os.path.splitext(filename)[0] in list_clouds:
-            mask_full_cloud = np.load(f"../{path_clouds}/{os.path.splitext(filename)[0]}.npy")
+            mask_full_cloud = np.load(f"{path_clouds}/{os.path.splitext(filename)[0]}.npy")
             list_splitted_mask_cloud = split_array(mask_full_cloud, self.config.tile_size)
         else:
             list_splitted_mask_cloud = None
