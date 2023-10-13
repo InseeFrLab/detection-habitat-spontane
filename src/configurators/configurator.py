@@ -1,6 +1,7 @@
 """
 Configurator class.
 """
+import torch
 import yaml
 
 
@@ -18,6 +19,11 @@ class Configurator:
 
         with open(environment_path) as f:
             env = yaml.load(f, Loader=yaml.SafeLoader)
+
+        if torch.cuda.is_available():
+            device = "cuda:0"
+        else:
+            device = "cpu"
 
         dep_dict = {
             "971": "GUADELOUPE",
@@ -84,6 +90,7 @@ class Configurator:
         ]
 
         self.path_prepro_test_data = [f"data/preprocessed/{self.task}/{self.source_train}/test"]
+        self.device = device
 
     def get_cloud_local_path(self, env: dict):
         if self.source_train == "PLEIADES":

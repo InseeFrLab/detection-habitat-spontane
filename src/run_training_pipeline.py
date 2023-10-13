@@ -28,11 +28,6 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         mlflow.autolog()
         mlflow.log_artifact(get_root_path() / "config.yml", artifact_path="config.yml")
 
-        if torch.cuda.is_available():
-            device = "cuda:0"
-        else:
-            device = "cpu"
-
         # Open the file and load the file
         configurator = Configurator(
             get_root_path() / "config.yml", get_root_path() / "environment.yml"
@@ -67,7 +62,7 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
             scheduler_interval=light_module.scheduler_interval,
         )
 
-        evaluator.evaluate_model(test_dl, light_module_checkpoint.model, device)
+        evaluator.evaluate_model(test_dl, light_module_checkpoint.model)
 
 
 if __name__ == "__main__":

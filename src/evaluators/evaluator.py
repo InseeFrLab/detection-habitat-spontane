@@ -38,17 +38,16 @@ class Evaluator:
         if not os.path.exists(f"../data/evaluation/{config.task}/{config.source_train}"):
             os.makedirs(f"../data/evaluation/{config.task}/{config.source_train}")
 
-    def evaluate_model(self, dataloader, model, device):
+    def evaluate_model(self, dataloader, model):
         if self.config.src_task not in self.task_to_evaluation:
             raise ValueError("Invalid task type")
         else:
-            self.task_to_evaluation[self.config.src_task](dataloader, model, device)
+            self.task_to_evaluation[self.config.src_task](dataloader, model)
 
     def evaluate_segmentation_pleiades(
         self,
         test_dl,
         model,
-        device: str = "cpu",
     ):
         """
         Evaluates the model on the Pleiade test dataset for image segmentation.
@@ -61,7 +60,6 @@ class Evaluator:
             batch_size (int): The batch size.
             use_mlflow (bool, optional): Whether to use MLflow for logging
             artifacts. Defaults to False.
-            device (str): Device.
 
         Returns:
             None
@@ -83,11 +81,11 @@ class Evaluator:
         for idx, batch in enumerate(test_dl):
             images, label, dic = batch
 
-            model = model.to(device)
-            images = images.to(device)
+            model = model.to(self.device)
+            images = images.to(self.device)
 
             output_model = model(images)
-            mask_pred = np.array(torch.argmax(output_model, axis=1).to(device))
+            mask_pred = np.array(torch.argmax(output_model, axis=1).to(self.device))
 
             for i in range(self.config.batch_size_test):
                 pthimg = dic["pathimage"][i]
@@ -124,17 +122,16 @@ class Evaluator:
         self,
         test_dl,
         model,
-        device: str = "cpu",
     ):
         for idx, batch in enumerate(test_dl):
             images, label, dic = batch
 
             if torch.cuda.is_available():
-                model = model.to(device)
-                images = images.to(device)
+                model = model.to(self.device)
+                images = images.to(self.device)
 
             output_model = model(images)
-            mask_pred = np.array(torch.argmax(output_model, axis=1).to(device))
+            mask_pred = np.array(torch.argmax(output_model, axis=1).to(self.device))
 
             for i in range(self.config.batch_size_test):
                 pthimg = dic["pathimage"][i]
@@ -166,7 +163,6 @@ class Evaluator:
         self,
         test_dl,
         model,
-        device: str = "cpu",
     ):
         """
         Evaluates the model on the Pleiade test dataset for image classification.
@@ -179,7 +175,6 @@ class Evaluator:
             batch_size (int): The batch size.
             use_mlflow (bool, optional): Whether to use MLflow for logging
             artifacts. Defaults to False.
-            device (str): Device.
 
         Returns:
             None
@@ -200,11 +195,11 @@ class Evaluator:
         for idx, batch in enumerate(test_dl):
             images, label, dic = batch
 
-            model = model.to(device)
-            images = images.to(device)
+            model = model.to(self.device)
+            images = images.to(self.device)
 
             output_model = model(images)
-            output_model = output_model.to(device)
+            output_model = output_model.to(self.device)
             probability_class_1 = output_model[:, 1]
 
             # Set a threshold for class prediction
@@ -258,7 +253,6 @@ class Evaluator:
         self,
         test_dl,
         model,
-        device: str = "cpu",
     ):
         """
         Evaluates the model on the Pleiade test dataset for image segmentation.
@@ -271,7 +265,6 @@ class Evaluator:
             batch_size (int): The batch size.
             use_mlflow (bool, optional): Whether to use MLflow for logging
             artifacts. Defaults to False.
-            device (str): Device.
 
         Returns:
             None
@@ -292,11 +285,11 @@ class Evaluator:
 
         for idx, batch in enumerate(test_dl):
             images, label, dic = batch
-            model = model.to(device)
-            images = images.to(device)
+            model = model.to(self.device)
+            images = images.to(self.device)
 
             output_model = model(images)
-            mask_pred = np.array(torch.argmax(output_model, axis=1).to(device))
+            mask_pred = np.array(torch.argmax(output_model, axis=1).to(self.device))
 
             for i in range(self.config.batch_size_test):
                 pthimg2 = dic["pathimage2"][i]
