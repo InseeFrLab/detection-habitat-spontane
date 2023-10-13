@@ -66,7 +66,7 @@ class Evaluator:
 
         model.eval()
         npatch = int((2000 / self.config.tile_size) ** 2)
-        nbatchforfullimage = int(npatch / self.config.batch_size)
+        nbatchforfullimage = int(npatch / self.config.batch_size_test)
 
         if not npatch % nbatchforfullimage == 0:
             print(
@@ -129,7 +129,6 @@ class Evaluator:
         device: str = "cpu",
     ):
         for idx, batch in enumerate(test_dl):
-            # idx, batch = 0, next(iter(test_dl))
             images, label, dic = batch
 
             if torch.cuda.is_available():
@@ -139,7 +138,7 @@ class Evaluator:
             output_model = model(images)
             mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
 
-            for i in range(self.config.batch_size):
+            for i in range(self.config.batch_size_test):
                 pthimg = dic["pathimage"][i]
                 si = SatelliteImage.from_raster(
                     file_path=pthimg, dep=None, date=None, n_bands=self.config.n_bands
@@ -194,7 +193,7 @@ class Evaluator:
         """
         model.eval()
         npatch = int((2000 / self.config.tile_size) ** 2)
-        nbatchforfullimage = int(npatch / self.config.batch_size)
+        nbatchforfullimage = int(npatch / self.config.batch_size_test)
 
         if not npatch % nbatchforfullimage == 0:
             print(
@@ -227,7 +226,7 @@ class Evaluator:
             )
             predicted_classes = predictions.type(torch.float)
 
-            for i in range(self.config.batch_size):
+            for i in range(self.config.batch_size_test):
                 pthimg = dic["pathimage"][i]
                 si = SatelliteImage.from_raster(file_path=pthimg, dep=None, date=None, n_bands=3)
                 si.normalize()
@@ -293,7 +292,7 @@ class Evaluator:
 
         model.eval()
         npatch = int((2000 / self.config.tile_size) ** 2)
-        nbatchforfullimage = int(npatch / self.config.batch_size)
+        nbatchforfullimage = int(npatch / self.config.batch_size_test)
 
         if not npatch % nbatchforfullimage == 0:
             print(
@@ -314,7 +313,7 @@ class Evaluator:
             output_model = model(images)
             mask_pred = np.array(torch.argmax(output_model, axis=1).to("cpu"))
 
-            for i in range(self.config.batch_size):
+            for i in range(self.config.batch_size_test):
                 pthimg2 = dic["pathimage2"][i]
                 si2 = SatelliteImage.from_raster(file_path=pthimg2, dep=None, date=None, n_bands=3)
                 si2.normalize()
