@@ -45,6 +45,7 @@ from train_pipeline_utils.handle_dataset import (
     generate_transform_sentinel,
     select_indices_to_balance,
     select_indices_to_split_dataset,
+    select_indices_within_borders
 )
 from train_pipeline_utils.prepare_data import (
     check_labelled_images,
@@ -440,6 +441,15 @@ def instantiate_dataloader(config, list_output_dir):
                     np.sort([directory + "/images/" + name for name in images]),
                 )
             )
+
+    # Remove images that fall outside of the region border if possible
+    print(f"{len(list_images)} images before filtering images within region borders.")
+    list_images_copy = list_images.copy()
+    list_labels_copy = list_labels.copy()
+    indices_within_border = select_indices_within_borders(list_images)
+    list_images = list_images_copy[indices_within_border]
+    list_labels = list_labels_copy[indices_within_border]
+    print(f"{len(list_images)} images after filtering images within region borders.")
 
     if config_task == "segmentation":
         unbalanced_images = list_images.copy()

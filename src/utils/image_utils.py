@@ -5,8 +5,9 @@ from typing import List
 from pyproj import Transformer
 
 from classes.data.satellite_image import SatelliteImage
-from utils.mappings import dep_to_crs, name_dep_to_num_dep
+from utils.mappings import dep_to_crs, name_dep_to_num_dep, region_borders
 from utils.utils import get_environment
+from shapely.geometry import box
 
 
 def crs_to_gps_image(
@@ -250,3 +251,27 @@ def find_image_different_years(
             "There is no image of this place in the requested year "
             "in the database Pléiades."
         )
+
+
+def is_within_borders(satellite_image: SatelliteImage, area_rate: float = 0.2) -> bool:
+    """
+    Return True if satellite_image is within region borders and False otherwise.
+
+    Args:
+        satellite_image (SatelliteImage): Satellite image.
+        area_rate (float, optional): Proportion of image area that must fall
+            within region borders. Defaults to 0.2.
+
+    Returns:
+        bool: True if satellite_image is within region borders and False otherwise. 
+    """
+    dep = satellite_image.dep
+    try:
+        border = region_borders[dep]
+    except ValueError:
+        raise ValueError(f"Département {dep} does not have registered borders.")
+    bounds = satellite_image.bounds
+    geom = box(*bounds)
+
+    intersection_area = geom.intersection(border.geometry).area[0]
+    return intersection_area / geom.area > area_rate

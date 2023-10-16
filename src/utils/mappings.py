@@ -1,6 +1,21 @@
 """
 Mappings.
 """
+import geopandas as gpd
+
+
+guadeloupe_border = gpd.read_file("s3://projet-slums-detection/Donnees/ADMINEXPRESS/guadeloupe/1_DONNEES_LIVRAISON_2023-09-21/ADE_3-2_SHP_RGAF09UTM20_GLP/REGION.shp")
+martinique_border = gpd.read_file("s3://projet-slums-detection/Donnees/ADMINEXPRESS/martinique/1_DONNEES_LIVRAISON_2023-09-21/ADE_3-2_SHP_RGAF09UTM20_MTQ/REGION.shp")
+guyane_border = gpd.read_file("s3://projet-slums-detection/Donnees/ADMINEXPRESS/guyane/1_DONNEES_LIVRAISON_2023-09-21/ADE_3-2_SHP_UTM22RGFG95_GUF/REGION.shp")
+mayotte_border = gpd.read_file("s3://projet-slums-detection/Donnees/ADMINEXPRESS/mayotte/1_DONNEES_LIVRAISON_2023-09-21/ADE_3-2_SHP_RGM04UTM38S_MYT/REGION.shp")
+
+
+region_borders = {
+    "971": guadeloupe_border,
+    "972": martinique_border,
+    "973": guyane_border,
+    "976": mayotte_border
+}
 
 
 dep_to_crs = {

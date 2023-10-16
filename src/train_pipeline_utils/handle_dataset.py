@@ -5,7 +5,11 @@ from typing import Dict, List
 import albumentations as album
 import torch
 import yaml
+from tqdm import tqdm
 from albumentations.pytorch.transforms import ToTensorV2
+from utils.utils import dep_from_train_path
+from utils.image_utils import is_within_borders
+from classes.data.satellite_image import SatelliteImage
 
 
 def select_indices_to_split_dataset(config_task, prop_val, list_labels):
@@ -218,3 +222,28 @@ def collate_fn(batch):
         metadatas.append(m)
     images = torch.stack(images, dim=0)
     return images, targets, metadatas
+
+
+def select_indices_within_borders(list_images: List[SatelliteImage]) -> List[int]:
+    """
+    From a list of satellite images, return indices of images
+    that fall within region borders.
+
+    Args:
+        list_images (List[SatelliteImage]): List of satellite images.
+
+    Returns:
+        List[int]: List of selected indices.
+    """
+    indices_within_border = []
+    for idx, file_path in tqdm(enumerate(list_images)):
+        dep = dep_from_train_path(file_path)
+        satellite_image = SatelliteImage.from_raster(
+            file_path=file_path,
+            dep=dep,
+            date=None,
+            n_bands=3
+        )
+        if is_within_borders(satellite_image):
+            indices_within_border.append(idx)
+    return indices_within_border

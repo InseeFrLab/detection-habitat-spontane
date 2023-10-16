@@ -1,6 +1,7 @@
 """
 Utils.
 """
+import re
 import os
 from pathlib import Path
 from typing import Dict, List, Literal, Tuple
@@ -340,3 +341,35 @@ def exportToMinio(image, rpath):
     )
 
     return fs.put(image, rpath, True)
+
+
+def dep_from_train_path(path: str):
+    """
+    Get and return dep from train image path.
+
+    Args:
+        path (str): Path of train image.
+    Return:
+        str: Département.
+    """
+    file_name = Path(path).parent.parent.name
+    pattern = r"^.*-(97[0-9]{1})"
+
+    # Use re.match to find the match at the beginning of the string
+    match = re.match(pattern, file_name)
+
+    if match:
+        dep = match.group(1)
+        if dep not in [
+            "971",
+            "973",
+            "972",
+            "976",
+            "974",
+            "977",
+            "978",
+        ]:
+            raise ValueError(f"Département {dep} not valid.")
+    else:
+        raise ValueError("Département not found in path.")
+    return dep
