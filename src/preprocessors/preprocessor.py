@@ -3,8 +3,6 @@ Preprocessor class.
 """
 import csv
 import json
-
-# import json
 import os
 import random
 from datetime import datetime
@@ -14,6 +12,7 @@ import numpy as np
 import rasterio
 import s3fs
 from rasterio.errors import RasterioIOError
+from tqdm import tqdm
 
 from classes.data.labeled_satellite_image import (  # noqa: E501
     SegmentationLabeledSatelliteImage,
@@ -77,8 +76,6 @@ class Preprocessor:
             ]
 
         print("\n*** Téléchargement terminé !\n")
-
-        return None
 
     def prepare_train_data(self):
         """
@@ -145,96 +142,105 @@ class Preprocessor:
     def prepare_test_data(self):
         print("\n*** 3- Préparation des données de test...\n")
 
-        mask_folder = f"{self.config.path_prepro_test_data[0]}/masks/"
-        if not os.path.exists(mask_folder):
-            os.makedirs(mask_folder)
+        nb_test_img = self.get_nb_test_images()
+        nb_test_img_prepo = (
+            len(os.listdir(f"{self.config.path_prepro_test_data[0]}/images/"))
+            if os.path.exists(f"{self.config.path_prepro_test_data[0]}/images/")
+            else None
+        )
 
-        # Get extension of images
-        ext = list(
-            set(
-                [
-                    os.path.splitext(file)[1]
-                    for file in os.listdir(f"{self.config.path_local_test[0]}/images")
-                    if os.path.splitext(file)[1] != ""
-                ]
-            )
-        )[0]
+        if nb_test_img == nb_test_img_prepo:
+            print("\n\t** Données de test déjà créées!\n")
+        else:
+            mask_folder = f"{self.config.path_prepro_test_data[0]}/masks/"
+            os.makedirs(mask_folder, exist_ok=True)
 
-        match self.config.task:
-            case "change-detection":
-                # Cas change-detection : On a 2 images et 1 masque
-                for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/masks"):
-                    for filename in files:
-                        mask = np.load(os.path.join(root, filename))
-                        # Les fichiers d'images n'ont pas de suffix
-                        filename_im = filename.replace("_0000", "")
+            # Get extension of images
+            ext = list(
+                set(
+                    [
+                        os.path.splitext(file)[1]
+                        for file in os.listdir(f"{self.config.path_local_test[0]}/images")
+                        if os.path.splitext(file)[1] != ""
+                    ]
+                )
+            )[0]
 
-                        # On loop sur les 2 images
-                        dict_lsi = {}
-                        for i in range(1, 3):
-                            root_im = root.replace("/masks", f"/images_{i}")
+            match self.config.task:
+                case "change-detection":
+                    # Cas change-detection : On a 2 images et 1 masque
+                    for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/masks"):
+                        for filename in files:
+                            mask = np.load(os.path.join(root, filename))
+                            # Les fichiers d'images n'ont pas de suffix
+                            filename_im = filename.replace("_0000", "")
+
+                            # On loop sur les 2 images
+                            dict_lsi = {}
+                            for i in range(1, 3):
+                                root_im = root.replace("/masks", f"/images_{i}")
+
+                                si = SatelliteImage.from_raster(
+                                    file_path=Path(os.path.join(root_im, filename_im)).with_suffix(
+                                        ".tif"
+                                    ),
+                                    dep=None,
+                                    date=None,
+                                    n_bands=self.config.n_bands,
+                                )
+
+                                dict_lsi[i] = SegmentationLabeledSatelliteImage(
+                                    si, mask, "", ""
+                                ).split(self.config.tile_size)
+
+                            # On loop sur toutes les images et masques divisés pour les sauvegarder
+                            for j in range(len(dict_lsi[1])):
+                                mask_path = f"{mask_folder}{filename.replace('_0000', f'_{j:04d}')}"
+                                np.save(mask_path, dict_lsi[1].label)
+
+                                for i in range(1, len(dict_lsi) + 1):
+                                    im_path = Path(
+                                        mask_path.replace("/masks", f"/images_{i}")
+                                    ).with_suffix(".jp2")
+                                    dict_lsi[i].satellite_image.to_raster(
+                                        os.path.dirname(im_path), os.path.basename(im_path)
+                                    )
+
+                case _:
+                    # Autres cas : On a 1 image et 1 masque
+                    for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/masks"):
+                        for filename in files:
+                            if filename.startswith("."):
+                                continue
+
+                            filename_im = filename.replace("_0000", "")
+                            root_im = root.replace("/masks", "/images")
+
+                            mask = np.load(os.path.join(root, filename))
 
                             si = SatelliteImage.from_raster(
-                                file_path=Path(os.path.join(root_im, filename_im)).with_suffix(
-                                    ".tif"
-                                ),
+                                file_path=Path(os.path.join(root_im, filename_im)).with_suffix(ext),
                                 dep=None,
                                 date=None,
                                 n_bands=self.config.n_bands,
                             )
 
-                            dict_lsi[i] = SegmentationLabeledSatelliteImage(si, mask, "", "").split(
-                                self.config.tile_size
-                            )
+                            lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
+                            list_lsi = lsi.split(self.config.tile_size)
 
-                        # On loop sur toutes les images et masques divisés pour les sauvegarder
-                        for j in range(len(dict_lsi[1])):
-                            mask_path = f"{mask_folder}{filename.replace('_0000', f'_{j:04d}')}"
-                            np.save(mask_path, dict_lsi[1].label)
+                            # On loop sur toutes les images et masques divisés pour les sauvegarder
 
-                            for i in range(1, len(dict_lsi) + 1):
-                                im_path = Path(
-                                    mask_path.replace("/masks", f"/images_{i}")
-                                ).with_suffix(".jp2")
-                                dict_lsi[i].satellite_image.to_raster(
+                            for i, splitted_image in tqdm(enumerate(list_lsi)):
+                                mask_path = f"{mask_folder}{filename.replace('_0000', f'_{i:04d}')}"
+                                im_path = Path(mask_path.replace("/masks", "/images")).with_suffix(
+                                    ".jp2"
+                                )
+
+                                splitted_image.satellite_image.to_raster(
                                     os.path.dirname(im_path), os.path.basename(im_path)
                                 )
 
-            case _:
-                # Autres cas : On a 1 image et 1 masque
-                for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/masks"):
-                    for filename in files:
-                        if filename.startswith("."):
-                            continue
-
-                        filename_im = filename.replace("_0000", "")
-                        root_im = root.replace("/masks", "/images")
-
-                        mask = np.load(os.path.join(root, filename))
-
-                        si = SatelliteImage.from_raster(
-                            file_path=Path(os.path.join(root_im, filename_im)).with_suffix(ext),
-                            dep=None,
-                            date=None,
-                            n_bands=self.config.n_bands,
-                        )
-
-                        lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
-                        list_lsi = lsi.split(self.config.tile_size)
-
-                        # On loop sur toutes les images et masques divisés pour les sauvegarder
-                        for i, splitted_image in enumerate(list_lsi):
-                            mask_path = f"{mask_folder}{filename.replace('_0000', f'_{i:04d}')}"
-                            im_path = Path(mask_path.replace("/masks", "/images")).with_suffix(
-                                ".jp2"
-                            )
-                            print(im_path)
-
-                            splitted_image.satellite_image.to_raster(
-                                os.path.dirname(im_path), os.path.basename(im_path)
-                            )
-
-                            np.save(mask_path, splitted_image.label)
+                                np.save(mask_path, splitted_image.label)
 
         print("\n*** Données de test prêtes !\n")
 
@@ -459,3 +465,17 @@ class Preprocessor:
         self.save_images_and_masks(list_filtered_splitted_images, labels, millesime)
 
         return balancing_dict
+
+    def get_nb_test_images(self):
+        test_images = [
+            img
+            for img in os.listdir(f"{self.config.path_local_test[0]}/images")
+            if not img.startswith(".")
+        ]
+        si = SatelliteImage.from_raster(
+            file_path=f"{self.config.path_local_test[0]}/images/{test_images[0]}",
+            dep=None,
+            date=None,
+            n_bands=self.config.n_bands,
+        )
+        return (si.array.shape[1] / self.config.tile_size) ** 2 * len(test_images)

@@ -188,19 +188,19 @@ sources:
 local-path:
   TEST:
     PLEIADES:
-      segmentation: donnees-test/segmentation/PLEIADES
-      change-detection: donnees-test/change_detection/PLEIADES
-      classification: donnees-test/classification/PLEIADES
+      segmentation: data/donnees-test/segmentation/PLEIADES
+      change-detection: data/donnees-test/change_detection/PLEIADES
+      classification: data/donnees-test/classification/PLEIADES
     SENTINEL2:
-      segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2
-      #change-detection: donnees-test/SENTINEL/change_detection
-      #classification: donnees-test/SENTINEL/classification
+      segmentation: data/donnees-test/segmentation/SENTINEL/SENTINEL2
+      #change-detection: data/donnees-test/SENTINEL/change_detection
+      #classification: data/donnees-test/SENTINEL/classification
     SENTINEL1-2:
-      segmentation: donnees-test/SENTINEL1-2/segmentation
-      #change-detection: donnees-test/SENTINEL/change_detection
-      #classification: donnees-test/SENTINEL/classification
+      segmentation: data/donnees-test/SENTINEL1-2/segmentation
+      #change-detection: data/donnees-test/SENTINEL/change_detection
+      #classification: data/donnees-test/SENTINEL/classification
     SENTINEL2-RVB:
-      segmentation: donnees-test/SENTINEL2-RVB/segmentation
+      segmentation: data/donnees-test/SENTINEL2-RVB/segmentation
 
   PAPERS: data/paper_dataset
   PLEIADES:
