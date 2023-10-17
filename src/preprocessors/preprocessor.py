@@ -261,15 +261,13 @@ class Preprocessor:
         path_prepro = get_path_by_millesime(self.config.path_prepro_data, millesime)
 
         if (os.path.exists(f"{path_prepro}")) and (len(os.listdir(f"{path_prepro}")) != 0):
-            print("\t** The directory already exists and is not empty.")
             return True
         elif (os.path.exists(f"{path_prepro}")) and (len(os.listdir(f"{path_prepro}")) == 0):
-            print("\t** The directory exists but is empty.")
             return False
         else:
             os.makedirs(f"{path_prepro}/images")
             os.makedirs(f"{path_prepro}/labels")
-            print("\t** Directory created !")
+            print("\t** Dossiers créés !")
             return False
 
     def filter_images(self, list_images, list_array_cloud=None):
