@@ -40,6 +40,7 @@ name_dep_to_crs = {
     "MAYOTTE": "4471",
     "GUYANE": "2972",
     "REUNION": "2975",
+    "SAINT-MARTIN": "4559",
 }
 
 name_dep_to_aoi = {
@@ -73,4 +74,5 @@ name_dep_to_aoi = {
         "east": 55.861,
         "north": -20.852,
     },
+    "SAINT-MARTIN": {"west": -63.163, "south": 18.000, "east": -62.986614, "north": 18.129},
 }

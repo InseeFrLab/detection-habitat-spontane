@@ -4,13 +4,17 @@ import shutil
 import ee
 import geemap
 import PIL
-import s3fs
 from osgeo import gdal
 from tqdm import tqdm
 
-import utils.mappings
 from classes.data.satellite_image import SatelliteImage
-from utils.utils import get_environment, get_root_path, update_storage_access
+from utils.mappings import name_dep_to_aoi, name_dep_to_crs, name_dep_to_num_dep
+from utils.utils import (
+    exportToMinio,
+    get_environment,
+    get_root_path,
+    update_storage_access,
+)
 
 service_account = "slums-detection-sa@ee-insee-sentinel.iam.gserviceaccount.com"
 credentials = ee.ServiceAccountCredentials(service_account, "GCP_credentials.json")
@@ -76,6 +80,73 @@ def export_s1(DOM, AOIs, EPSGs, start_date, end_date):
         export_s1_grd_first(start_date, AOI, image, DOM)
     else:
         export_s1_grd_mean(start_date, AOI, ee.Image(s1_grd.mean()).clip(feature_aoi), DOM)
+
+
+def upload_satelliteImages(
+    lpath,
+    rpath,
+    dep,
+    year,
+    dim,
+    n_bands,
+    check_nbands12=False,
+):
+    """
+    Transforms a raster in a SatelliteImage and calls a function\
+        that uploads it on MinIO and deletes it locally.
+
+    Args:
+        lpath: path to the raster to transform into SatelliteImage\
+            and to upload on MinIO.
+        rpath: path to the MinIO repertory in which the image\
+            should be uploaded.
+        dep: department number of the DOM.
+        dim: tiles' size.
+        n_bands: number of bands of the image to upload.
+        check_nbands12: boolean that, if set to True, allows to check\
+            if the image to upload is indeed 12 bands.\
+            Usefull in download_sentinel2_ee.py
+    """
+
+    images_paths = os.listdir(lpath)
+
+    for i in range(len(images_paths)):
+        images_paths[i] = lpath + "/" + images_paths[i]
+
+    list_satellite_images = [
+        SatelliteImage.from_raster(filename, dep=dep, n_bands=n_bands)
+        for filename in tqdm(images_paths)
+    ]
+
+    splitted_list_images = [
+        im for sublist in tqdm(list_satellite_images) for im in sublist.split(dim)
+    ]
+
+    for i in range(len(splitted_list_images)):
+        image = splitted_list_images[i]
+        bb = image.bounds
+        filename = str(int(bb[0])) + "_" + str(int(bb[1])) + "_" + str(i)
+        in_ds = gdal.Open(images_paths[1])
+        proj = in_ds.GetProjection()
+
+        image.to_raster("/", filename, "tif", proj)
+
+        if check_nbands12:
+            try:
+                image = SatelliteImage.from_raster(
+                    file_path=filename + ".tif",
+                    dep=dep,
+                    date=year,
+                    n_bands=12,
+                )
+                exportToMinio(filename + ".tif", rpath)
+                os.remove(filename + ".tif")
+
+            except PIL.UnidentifiedImageError:
+                print("L'image ne possède pas assez de bandes")
+        else:
+            exportToMinio(filename + ".tif", rpath)
+            os.remove(filename + ".tif")
 
 
 def export_s1_grd_first(start_date, AOI, s1_grd, DOM):
@@ -254,8 +325,8 @@ if __name__ == "__main__":
     START_DATE = "2022-08-20"
     END_DATE = "2022-09-01"
 
-    EPSGs = utils.mappings.name_dep_to_crs
-    DEPs = utils.mappings.name_dep_to_num_dep
-    AOIs = utils.mappings.name_dep_to_aoi
+    EPSGs = name_dep_to_crs
+    DEPs = name_dep_to_num_dep
+    AOIs = name_dep_to_aoi
 
     export_s1("Guadeloupe", AOIs, EPSGs, START_DATE, END_DATE)

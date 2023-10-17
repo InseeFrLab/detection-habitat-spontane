@@ -119,27 +119,31 @@ def label_images(list_images, labeler, task: str):
 
     Returns:
         list[SatelliteImage] : the list containing the splitted and \
-            filtered data with a not-empty mask and the associated masks.
+            filtered data with the associated labels.
         Dict: Dictionary indicating if images contain a building or not.
     """
     prop = 1
     labels = []
     balancing_dict = {}
     for i, satellite_image in enumerate(list_images):
-        mask = labeler.create_segmentation_label(satellite_image)
-        if task != "classification":
-            if np.sum(mask) != 0:
+        # label = labeler.create_label(satellite_image, task=task) 
+        label = labeler.create_segmentation_label(satellite_image)
+        if task in ["segmentation", "change_detection"]:
+            if np.sum(label) != 0:
                 balancing_dict[f"{satellite_image.filename.split('.')[0]}_{i:04d}"] = 1
             else:
                 balancing_dict[f"{satellite_image.filename.split('.')[0]}_{i:04d}"] = 0
-            labels.append(mask)
+            labels.append(label)
         elif task == "classification":
-            if np.sum(mask) != 0:
+            if np.sum(label) != 0:
                 balancing_dict[f"{satellite_image.filename.split('.')[0]}_{i:04d}"] = 1
                 labels.append(1)
             else:
                 balancing_dict[f"{satellite_image.filename.split('.')[0]}_{i:04d}"] = 0
                 labels.append(0)
+        elif task == "detection":
+            labels.append(label)
+            # TODO : balance data
 
     balancing_dict_copy = balancing_dict.copy()
     nb_ones = sum(1 for value in balancing_dict_copy.values() if value == 1)
@@ -243,9 +247,9 @@ def filter_buildingless_detection(images: List, labels: List):
     return filtered_images, filtered_labels
 
 
-def save_images_and_masks(list_images, list_masks, output_directory_name, task="segmentation"):
+def save_images_and_labels(list_images, list_labels, output_directory_name, task: str):
     """
-    write the couple images/masks into a specific folder.
+    write the couple images/labels into a specific folder.
 
     Args:
         list_images : the list containing the splitted and filtered data \
@@ -253,6 +257,7 @@ def save_images_and_masks(list_images, list_masks, output_directory_name, task="
         list_masks : the list containing the masks to be saved.
         a string representing the name of the output \
             directory where the split images and their masks should be saved.
+        task (str): Task considered.
 
     Returns:
         str: The name of the output directory.
@@ -260,10 +265,10 @@ def save_images_and_masks(list_images, list_masks, output_directory_name, task="
     output_images_path = f"{output_directory_name}/images"
     output_masks_path = f"{output_directory_name}/labels"
 
-    for i, (image, mask) in enumerate(zip(list_images, list_masks)):
+    for i, (image, mask) in enumerate(zip(list_images, list_labels)):
         filename = f"{image.filename.split('.')[0]}_{i:04d}"
 
-        i = i + 1
+        i += 1
 
         try:
             if task != "classification":

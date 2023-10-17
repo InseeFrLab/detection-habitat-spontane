@@ -6,6 +6,7 @@ sources:
       segmentation: donnees-test/segmentation/PLEIADES
       change-detection: donnees-test/change_detection/PLEIADES
       classification: donnees-test/classification/PLEIADES
+      detection: donnees-test/object_detection/PLEIADES
     SENTINEL2:
       segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2
       #change-detection: donnees-test/SENTINEL/change_detection
@@ -102,12 +103,14 @@ sources:
       "972": Donnees/SENTINEL/SENTINEL2/MARTINIQUE/TUILES_2021
       "974": Donnees/SENTINEL/SENTINEL2/REUNION/TUILES_2021
       "976": Donnees/SENTINEL/SENTINEL2/MAYOTTE/TUILES_2021
+      "978": Donnees/SENTINEL2/SAINT-MARTIN/TUILES_2021
     "2022":
       "971": Donnees/SENTINEL/SENTINEL2/GUADELOUPE/TUILES_2022
       "972": Donnees/SENTINEL/SENTINEL2/MARTINIQUE/TUILES_2022
       "974": Donnees/SENTINEL/SENTINEL2/REUNION/TUILES_2022
       "973": Donnees/SENTINEL/SENTINEL2/GUYANE/TUILES_2022
       "976": Donnees/SENTINEL/SENTINEL2/MAYOTTE/TUILES_2022
+      "978": Donnees/SENTINEL2/SAINT-MARTIN/TUILES_2022
 
   SENTINEL2-RVB:
     "2021":
@@ -191,6 +194,7 @@ local-path:
       segmentation: data/donnees-test/segmentation/PLEIADES
       change-detection: data/donnees-test/change_detection/PLEIADES
       classification: data/donnees-test/classification/PLEIADES
+      detection: data/donnees-test/detection/PLEIADES
     SENTINEL2:
       segmentation: data/donnees-test/segmentation/SENTINEL/SENTINEL2
       #change-detection: data/donnees-test/SENTINEL/change_detection
@@ -288,12 +292,15 @@ local-path:
       "972": data/SENTINEL2/MARTINIQUE/TUILES_2021
       "974": data/SENTINEL2/REUNION/TUILES_2021
       "976": data/SENTINEL2/MAYOTTE/TUILES_2021
+      "978": data/SENTINEL2/SAINT-MARTIN/TUILES_2021
+
     "2022":
       "971": data/SENTINEL2/GUADELOUPE/TUILES_2022
       "972": data/SENTINEL2/MARTINIQUE/TUILES_2022
       "974": data/SENTINEL2/REUNION/TUILES_2022
       "973": data/SENTINEL2/GUYANE/TUILES_2022
       "976": data/SENTINEL2/MAYOTTE/TUILES_2022
+      "978": data/SENTINEL2/SAINT-MARTIN/TUILES_2022
 
   SENTINEL2-LABELS:
     "2021":

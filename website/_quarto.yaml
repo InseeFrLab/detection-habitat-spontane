@@ -39,12 +39,12 @@ format:
     reference-location: margin
     fig-align: center
 
-  pdf:
-    keep-tex: true
-    toc: true
-    toc-title: Contents
-    fig-pos: 'H'
-    fig-align: center
+  # pdf:
+  #   keep-tex: false
+  #   toc: true
+  #   toc-title: Contents
+  #   fig-pos: 'H'
+  #   fig-align: center
 
 
 editor: visual

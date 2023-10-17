@@ -20,7 +20,7 @@
   \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
 \fi
 \usepackage{lmodern}
-\ifPDFTeX\else
+\ifPDFTeX\else  
     % xetex/luatex font selection
 \fi
 % Use upquote if available, for straight quotes in verbatim environments
@@ -164,7 +164,7 @@
 \urlstyle{same} % disable monospaced font for URLs
 \hypersetup{
   pdftitle={Slum detection like a boss},
-  pdfauthor={Thomas Faria},
+  pdfauthor={Shiraz Adamaly; Raya Berova; Thomas Faria; Clément Guillo; Judith Nabec; Tom Seimandi},
   colorlinks=true,
   linkcolor={blue},
   filecolor={Maroon},
@@ -173,12 +173,13 @@
   pdfcreator={LaTeX via pandoc}}
 
 \title{Slum detection like a boss}
-\author{Thomas Faria}
-\date{2023-03-16}
+\author{Shiraz Adamaly \and Raya Berova \and Thomas Faria \and Clément
+Guillo \and Judith Nabec \and Tom Seimandi}
+\date{2023-08-04}
 
 \begin{document}
 \maketitle
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, enhanced, sharp corners, frame hidden, borderline west={3pt}{0pt}{shadecolor}, breakable, boxrule=0pt]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, boxrule=0pt, sharp corners, enhanced, frame hidden, borderline west={3pt}{0pt}{shadecolor}, breakable]}{\end{tcolorbox}}\fi
 
 \renewcommand*\contentsname{Contents}
 {
@@ -199,7 +200,232 @@
 \hypertarget{introduction}{%
 \chapter{Introduction}\label{introduction}}
 
-Je cite Dirac (1953)
+Je peux citer comme cela quelques articles que j'ai lu : Mboga et al.
+(2017), Duque, Patino, and Betancourt (2017)\ldots{}
+
+\begin{itemize}
+\tightlist
+\item
+  Enquête cartographique réalisée chaque année dans les antilles
+\item
+  Coûteuse en termes de moyens humains
+\item
+  Apparition de zones d'habitations précaires possibles, dur de bien
+  calibrer la charge d'enquête
+\item
+  On voudrait connaître chaque année les apparitions et disparition de
+  logements même de courte durée !
+\end{itemize}
+
+\hypertarget{un-bidonville-le-mont-baduel}{%
+\section{Un bidonville, le mont
+Baduel}\label{un-bidonville-le-mont-baduel}}
+
+\begin{figure}[H]
+
+{\centering \includegraphics{figures/MontBaduel_2.png}
+
+}
+
+\caption{\label{fig-mont-baduel}Mont Baduel}
+
+\end{figure}
+
+\begin{figure}[H]
+
+{\centering \includegraphics{figures/Detection_mont_baduel.png}
+
+}
+
+\caption{\label{fig-detec-mont-baduel}Détection du Mont Baduel}
+
+\end{figure}
+
+\begin{itemize}
+\tightlist
+\item
+  On peut détecter la présence de bidonvilles !
+\end{itemize}
+
+\hypertarget{les-attendus-techniques-du-projet-sont-il-bien-duxe9finis}{%
+\section{Les attendus techniques du projet sont-il bien définis
+?}\label{les-attendus-techniques-du-projet-sont-il-bien-duxe9finis}}
+
+\begin{itemize}
+\tightlist
+\item
+  On voudrait ici être en mesure pour une zone donnée de détecter des
+  apparitions ou disparitions de logement
+\item
+  A-t'on des données annotées qui nous permettent réellement de le faire
+  ?
+\end{itemize}
+
+\bookmarksetup{startatroot}
+
+\hypertarget{les-images-en-entruxe9es}{%
+\chapter{Les images en entrées}\label{les-images-en-entruxe9es}}
+
+\hypertarget{une-image-satellite}{%
+\section{Une image satellite}\label{une-image-satellite}}
+
+Plusieurs caractéristiques possibles pour une image satellite :
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{La résolution :} équivalence entre un pixel et le nombre de
+  mètre couvert par ce dernier
+\item
+  \textbf{La fréquence d'acquisition :} fréquence des prises de vue pour
+  un même endroit
+\item
+  \textbf{source de l'émission :} optique, radar, laser
+\item
+  \textbf{une fauchée :} Largeur de la zone enregistrée sur un passage
+\item
+  \textbf{Une couverture géographique donnée}
+\end{itemize}
+
+\hypertarget{images-faibles-ruxe9solution}{%
+\section{Images Faibles résolution}\label{images-faibles-ruxe9solution}}
+
+\begin{figure}[H]
+
+{\centering \includegraphics{figures/image_sentinel.png}
+
+}
+
+\caption{\label{fig-im-sentinel2}Images Sentinel 2, résolution : 10 m,
+fréquence : tous les 5 jours, gratuites}
+
+\end{figure}
+
+\begin{figure}[H]
+
+{\centering \includegraphics{figures/Exemple_1.png}
+
+}
+
+\caption{\label{fig-ex-sentinel2}Exemple masques Sentinel 2}
+
+\end{figure}
+
+\begin{itemize}
+\tightlist
+\item
+  On ne peut espérer obtenir plus précis de ces images que ne peut
+  permettre la résolution
+\end{itemize}
+
+\hypertarget{images-haute-ruxe9solution-les-donnuxe9es-pleiades}{%
+\section{Images haute résolution : les données
+pleiades}\label{images-haute-ruxe9solution-les-donnuxe9es-pleiades}}
+
+\begin{figure}[H]
+
+{\centering \includegraphics{figures/pleiade.png}
+
+}
+
+\caption{\label{fig-im-pleiade}Image Pléiades}
+
+\end{figure}
+
+\begin{itemize}
+\tightlist
+\item
+  Résolution 50/70 cm, acquisitions fraîches mais coûteuses sur demandes
+  \(\approx 1.5 \text{~~euros}/ km^{2}\)
+\item
+  En réalité résolution 1 bande 50 cm et réanchantillonnage des couleurs
+  par dessus
+\end{itemize}
+
+\begin{figure}[H]
+
+{\centering \includegraphics{figures/Grille_images.png}
+
+}
+
+\caption{\label{fig-pleiade-grid}Grille Pléiades Cayenne}
+
+\end{figure}
+
+\begin{itemize}
+\tightlist
+\item
+  Les acquisitions peuvent être de plus ou moins bonnes qualité
+  dépendant du moment de la prise de vue, on peut être amené à les
+  refaire (nuage, ensoleillement), ça double les coûts.
+\end{itemize}
+
+Caractéristiques de la prise de vue pouvant nuire à la qualité de
+l'image récupérée :
+
+\begin{itemize}
+\tightlist
+\item
+  La couverture nuageuse : trop de nuages \(\longrightarrow\) images non
+  exploitables
+\item
+  Angle d'incidence : angle entre le satellite et la localisation
+  considérée, si l'angle est trop élevé, trop de déformations dans la
+  prise de vue
+\end{itemize}
+
+\begin{figure}[H]
+
+{\centering \includegraphics{figures/couts_pleiades.png}
+
+}
+
+\caption{\label{fig-pleiade-cost}Coûts Pléiades}
+
+\end{figure}
+
+\begin{figure}[H]
+
+{\centering \includegraphics{figures/ElCatalogue.png}
+
+}
+
+\caption{\label{fig-catalogue}Catalogue Dinamis}
+
+\end{figure}
+
+\begin{longtable}[]{@{}ccc@{}}
+\caption{Facturation des images hautes résolution
+\(\approx 1.50 / km^2\).}\tabularnewline
+\toprule\noalign{}
+\textbf{Territoire} & \textbf{Superficie (\(km^2\))} & \textbf{Prix (en
+euros)} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\textbf{Territoire} & \textbf{Superficie (\(km^2\))} & \textbf{Prix (en
+euros)} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Martinique & 1128 & 1692 \\
+Guadeloupe & 1628 & 2442 \\
+Réunion & 2512 & 3768 \\
+Mayotte & 374 & 561 \\
+Guyane & 83900 & 125850 \\
+\end{longtable}
+
+\begin{itemize}
+\tightlist
+\item
+  Nécessite une approche en deux temps où on sélectionnerait au
+  préalable grossièrement les zones que l'on veut vérifier (notamment en
+  Guyane)
+\item
+  Quotas de gratuité pour les acteurs publics 4000 \(km^2\)
+  monoscopiques.
+\end{itemize}
 
 \bookmarksetup{startatroot}
 
@@ -211,9 +437,17 @@ Je cite Dirac (1953)
 
 \hypertarget{refs}{}
 \begin{CSLReferences}{1}{0}
-\leavevmode\vadjust pre{\hypertarget{ref-Dirac1953888}{}}%
-Dirac, P. A. M. 1953. {``The {Lorentz} Transformation and Absolute
-Time.''} \emph{Physica} 19 (1-\/--12): 888--96.
+\leavevmode\vadjust pre{\hypertarget{ref-duque_exploring_2017}{}}%
+Duque, Juan, Jorge Patino, and Alejandro Betancourt. 2017. {``Exploring
+the {Potential} of {Machine} {Learning} for {Automatic} {Slum}
+{Identification} from {VHR} {Imagery}.''} \emph{Remote Sensing} 9 (9):
+895. \url{https://doi.org/10.3390/rs9090895}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-mboga_detection_2017}{}}%
+Mboga, Nicholus, Claudio Persello, John Bergado, and Alfred Stein. 2017.
+{``Detection of {Informal} {Settlements} from {VHR} {Images} {Using}
+{Convolutional} {Neural} {Networks}.''} \emph{Remote Sensing} 9 (11):
+1106. \url{https://doi.org/10.3390/rs9111106}.
 
 \end{CSLReferences}
 

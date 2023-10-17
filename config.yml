@@ -20,7 +20,7 @@ data:
 
 optim:
   loss: "crossentropy"
-  lr: 0.0001
+  lr: 0.001
   momentum: 0.9
   module: "deeplabv3"
   batch_size: 5
@@ -42,3 +42,5 @@ optim:
       monitor: validation_loss
       patience: 5
       mode: min
+  scheduler_patience: 10
+  num_sanity_val_steps: 2

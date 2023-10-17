@@ -9,11 +9,12 @@ import geopandas as gpd
 import hvac
 import pyarrow.parquet as pq
 import rasterio
+import s3fs
 import yaml
 from affine import Affine
 from s3fs import S3FileSystem
 
-from .mappings import dep_to_crs
+from utils.mappings import dep_to_crs
 
 
 def remove_dot_file(list_name):

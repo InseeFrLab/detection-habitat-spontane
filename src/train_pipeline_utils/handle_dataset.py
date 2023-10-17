@@ -116,12 +116,19 @@ def generate_transform_pleiades(tile_size, augmentation, task):
     """
     image_size = (tile_size, tile_size)
 
+    bbox_params = None
+    if task == "detection":
+        bbox_params = album.BboxParams(
+            format="pascal_voc", label_fields=["class_labels"]
+        )
+
     transforms_preprocessing = album.Compose(
         [
             # album.Resize(*image_size, always_apply=True),
             album.Normalize(),
             ToTensorV2(),
-        ]
+        ],
+        bbox_params=bbox_params
     )
 
     if augmentation:
@@ -133,7 +140,8 @@ def generate_transform_pleiades(tile_size, augmentation, task):
                 album.VerticalFlip(),
                 album.Normalize(),
                 ToTensorV2(),
-            ]
+            ],
+            bbox_params=bbox_params
         )
     else:
         transforms_augmentation = transforms_preprocessing
@@ -177,7 +185,9 @@ def generate_transform_sentinel(src, year, dep, tile_size, augmentation, task):
         transforms_augmentation = album.Compose(
             [
                 album.Resize(300, 300, always_apply=True),
-                album.RandomResizedCrop(*image_size, scale=(0.7, 1.0), ratio=(0.7, 1)),
+                album.RandomResizedCrop(
+                    *image_size, scale=(0.7, 1.0), ratio=(0.7, 1)
+                ),
                 album.HorizontalFlip(),
                 album.VerticalFlip(),
                 album.Normalize(mean, std),

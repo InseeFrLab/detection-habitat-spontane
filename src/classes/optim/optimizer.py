@@ -34,3 +34,9 @@ def generate_optimization_elements(config):
         scheduler_params,
         scheduler_interval,
     )
+
+
+# TODO: detection 
+# optimizer = torch.optim.Adam
+# "patience": config["optim"]["scheduler_patience"]}
+
