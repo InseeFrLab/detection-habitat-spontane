@@ -212,19 +212,12 @@ class Preprocessor:
 
                         mask = np.load(os.path.join(root, filename))
 
-                        try:
-                            si = SatelliteImage.from_raster(
-                                file_path=Path(os.path.join(root_im, filename_im)).with_suffix(ext),
-                                dep=None,
-                                date=None,
-                                n_bands=self.config.n_bands,
-                            )
-                        except RasterioIOError:
-                            print(
-                                f"\n\t !!! Erreur de lecture du fichier \
-                                {Path(os.path.join(root_im, filename_im)).with_suffix(ext)} !!!\n"
-                            )
-                            continue
+                        si = SatelliteImage.from_raster(
+                            file_path=Path(os.path.join(root_im, filename_im)).with_suffix(ext),
+                            dep=None,
+                            date=None,
+                            n_bands=self.config.n_bands,
+                        )
 
                         lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
                         list_lsi = lsi.split(self.config.tile_size)
