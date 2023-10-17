@@ -48,7 +48,7 @@ class Configurator:
         self.augmentation = config["data"]["augmentation"]
         self.tile_size = config["data"]["tile_size"]
         self.n_channels_train = config["data"]["n_channels_train"]
-        self.num_workers = int(os.cpu_count() * 0.7)
+        self.num_workers = os.cpu_count()
         self.src_task = f"{self.source_train}{self.task}"
 
         self.loss = config["optim"]["loss"]
