@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # Set MLFLOW_EXPERIMENT_NAME environment variable
-export MLFLOW_EXPERIMENT_NAME="segmentation"
+export MLFLOW_EXPERIMENT_NAME="test-dev"
 
 # Set MLFLOW_EXPERIMENT_NAME environment variable
 export MLFLOW_S3_ENDPOINT_URL='https://minio.lab.sspcloud.fr'

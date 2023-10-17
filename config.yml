@@ -3,7 +3,7 @@ data:
   dataset: "PLEIADE"
   dataset_test: "PLEIADE"
   task: "segmentation"
-  percent_keep: 0.001
+  percent_keep: 0.01
 
   millesime:
     - dep: "976"

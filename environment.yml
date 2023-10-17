@@ -188,9 +188,9 @@ sources:
 local-path:
   TEST:
     PLEIADES:
-      segmentation: donnees-test/segmentation
-      change-detection: donnees-test/change_detection
-      classification: donnees-test/classification
+      segmentation: donnees-test/segmentation/PLEIADES
+      change-detection: donnees-test/change_detection/PLEIADES
+      classification: donnees-test/classification/PLEIADES
     SENTINEL2:
       segmentation: donnees-test/segmentation/SENTINEL/SENTINEL2
       #change-detection: donnees-test/SENTINEL/change_detection
