@@ -224,7 +224,6 @@ class Preprocessor:
 
                         # On loop sur toutes les images et masques divisés pour les sauvegarder
                         for i, splitted_image in enumerate(list_lsi):
-                            print(mask_path)
                             mask_path = f"{mask_folder}{filename.replace('_0000', f'_{i:04d}')}"
                             im_path = Path(mask_path.replace("/masks", "/images")).with_suffix(
                                 ".jp2"
