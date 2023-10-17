@@ -209,7 +209,13 @@ class Instantiator:
         batch_size = self.config.batch_size
 
         train_dataloader, valid_dataloader = [
-            DataLoader(ds, batch_size=batch_size, shuffle=boolean, num_workers=0, drop_last=True)
+            DataLoader(
+                ds,
+                batch_size=batch_size,
+                shuffle=boolean,
+                num_workers=self.config.num_workers,
+                drop_last=True,
+            )
             for ds, boolean in zip([train_dataset, valid_dataset], [True, False])
         ]
 
@@ -251,7 +257,11 @@ class Instantiator:
 
         batch_size_test = self.config.batch_size_test
         test_dataloader = DataLoader(
-            dataset_test, batch_size=batch_size_test, shuffle=False, num_workers=0, drop_last=True
+            dataset_test,
+            batch_size=batch_size_test,
+            shuffle=False,
+            num_workers=self.config.num_workers,
+            drop_last=True,
         )
 
         return train_dataloader, valid_dataloader, test_dataloader
