@@ -226,7 +226,7 @@ class Instantiator:
             for ds, boolean in zip([train_dataset, valid_dataset], [True, False])
         ]
 
-        output_labels_path = f"{self.config.path_prepro_test_data[0]}/masks/"
+        output_labels_path = f"{self.config.path_prepro_test_data[0]}/labels/"
         list_name_label_test = os.listdir(output_labels_path)
         list_path_labels_test = np.sort(
             [f"{output_labels_path}{name_label}" for name_label in list_name_label_test]

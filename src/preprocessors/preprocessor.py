@@ -80,7 +80,7 @@ class Preprocessor:
     def prepare_train_data(self):
         """
         Preprocesses and splits the raw input images
-        into tiles and corresponding masks,
+        into tiles and corresponding labels,
         and saves them in the specified output directories.
 
         Args:
@@ -91,7 +91,7 @@ class Preprocessor:
         Returns:
             A list of strings representing the paths to
             the output directories containing the
-            preprocessed tile and mask image files.
+            preprocessed tile and label image files.
         """
 
         print("\n*** 2- Préparation des données d'entrainement...\n")
@@ -115,11 +115,11 @@ class Preprocessor:
                             print(f"Erreur de lecture du fichier {os.path.join(root, filename)}")
                             continue
 
-                        mask = labeler.create_segmentation_label(si)
+                        label = labeler.create_segmentation_label(si)
                         # TODO: Mettre dans config la proba
                         keep = np.random.binomial(size=1, n=1, p=0.1)[0]
 
-                        if (np.sum(mask) == 0 and keep) or np.sum(mask) != 0:
+                        if (np.sum(label) == 0 and keep) or np.sum(label) != 0:
                             balancing_dict = self.prepare_yearly_data(
                                 si, labeler, filename, millesime
                             )
@@ -127,7 +127,7 @@ class Preprocessor:
                             for k, v in balancing_dict.items():
                                 full_balancing_dict[k] = v
 
-                        elif np.sum(mask) == 0 and not keep:
+                        elif np.sum(label) == 0 and not keep:
                             continue
 
                 with open(f"{self.config.path_prepro_data[i]}/balancing_dict.json", "w") as fp:
@@ -154,8 +154,8 @@ class Preprocessor:
             if nb_test_img == nb_test_img_prepo:
                 print("\n\t** Données de test déjà créées!\n")
             else:
-                mask_folder = f"{self.config.path_prepro_test_data[0]}/masks/"
-                os.makedirs(mask_folder, exist_ok=True)
+                label_folder = f"{self.config.path_prepro_test_data[0]}/labels/"
+                os.makedirs(label_folder, exist_ok=True)
 
                 # Get extension of images
                 ext = list(
@@ -171,16 +171,16 @@ class Preprocessor:
             match self.config.task:
                 case "change-detection":
                     # Cas change-detection : On a 2 images et 1 masque
-                    for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/masks"):
+                    for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/labels"):
                         for filename in files:
-                            mask = np.load(os.path.join(root, filename))
+                            label = np.load(os.path.join(root, filename))
                             # Les fichiers d'images n'ont pas de suffix
                             filename_im = filename.replace("_0000", "")
 
                             # On loop sur les 2 images
                             dict_lsi = {}
                             for i in range(1, 3):
-                                root_im = root.replace("/masks", f"/images_{i}")
+                                root_im = root.replace("/labels", f"/images_{i}")
 
                                 si = SatelliteImage.from_raster(
                                     file_path=Path(os.path.join(root_im, filename_im)).with_suffix(
@@ -192,17 +192,19 @@ class Preprocessor:
                                 )
 
                                 dict_lsi[i] = SegmentationLabeledSatelliteImage(
-                                    si, mask, "", ""
+                                    si, label, "", ""
                                 ).split(self.config.tile_size)
 
                             # On loop sur toutes les images et masques divisés pour les sauvegarder
                             for j in range(len(dict_lsi[1])):
-                                mask_path = f"{mask_folder}{filename.replace('_0000', f'_{j:04d}')}"
-                                np.save(mask_path, dict_lsi[1].label)
+                                label_path = (
+                                    f"{label_folder}{filename.replace('_0000', f'_{j:04d}')}"
+                                )
+                                np.save(label_path, dict_lsi[1].label)
 
                                 for i in range(1, len(dict_lsi) + 1):
                                     im_path = Path(
-                                        mask_path.replace("/masks", f"/images_{i}")
+                                        label_path.replace("/labels", f"/images_{i}")
                                     ).with_suffix(".jp2")
                                     dict_lsi[i].satellite_image.to_raster(
                                         os.path.dirname(im_path), os.path.basename(im_path)
@@ -213,15 +215,15 @@ class Preprocessor:
 
                 case _:
                     # Autres cas : On a 1 image et 1 masque
-                    for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/masks"):
+                    for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/labels"):
                         for filename in files:
                             if filename.startswith("."):
                                 continue
 
                             filename_im = filename.replace("_0000", "")
-                            root_im = root.replace("/masks", "/images")
+                            root_im = root.replace("/labels", "/images")
 
-                            mask = np.load(os.path.join(root, filename))
+                            label = np.load(os.path.join(root, filename))
 
                             si = SatelliteImage.from_raster(
                                 file_path=Path(os.path.join(root_im, filename_im)).with_suffix(ext),
@@ -230,33 +232,35 @@ class Preprocessor:
                                 n_bands=self.config.n_bands,
                             )
 
-                            lsi = SegmentationLabeledSatelliteImage(si, mask, "", "")
+                            lsi = SegmentationLabeledSatelliteImage(si, label, "", "")
                             list_lsi = lsi.split(self.config.tile_size)
 
                             # On loop sur toutes les images et masques divisés pour les sauvegarder
 
                             for i, splitted_image in tqdm(enumerate(list_lsi)):
-                                mask_path = f"{mask_folder}{filename.replace('_0000', f'_{i:04d}')}"
-                                im_path = Path(mask_path.replace("/masks", "/images")).with_suffix(
-                                    ".jp2"
+                                label_path = (
+                                    f"{label_folder}{filename.replace('_0000', f'_{i:04d}')}"
                                 )
+                                im_path = Path(
+                                    label_path.replace("/labels", "/images")
+                                ).with_suffix(".jp2")
 
                                 splitted_image.satellite_image.to_raster(
                                     os.path.dirname(im_path), os.path.basename(im_path)
                                 )
 
-                                np.save(mask_path, splitted_image.label)
+                                np.save(label_path, splitted_image.label)
 
         print("\n*** Données de test prêtes !\n")
 
     def check_labelled_images(self, millesime):
         """
-        checks that there is not already a directory with images and their mask.
+        checks that there is not already a directory with images and their label.
         if it doesn't exist, it is created.
 
         Args:
             output_directory_name: a string representing the path to \
-                the directory that may already contain data and masks.
+                the directory that may already contain data and labels.
 
         Returns:
             boolean: True if the directory exists and is not empty. \
@@ -306,22 +310,22 @@ class Preprocessor:
 
         Returns:
             list[SatelliteImage] : the list containing the splitted and \
-                filtered data with a not-empty mask and the associated masks.
+                filtered data with a not-empty label and the associated labels.
             Dict: Dictionary indicating if images contain a building or not.
         """
         prop = 1
         labels = []
         balancing_dict = {}
         for i, satellite_image in enumerate(list_images):
-            mask = labeler.create_segmentation_label(satellite_image)
+            label = labeler.create_segmentation_label(satellite_image)
             if self.config.source_train != "classification":
-                if np.sum(mask) != 0:
+                if np.sum(label) != 0:
                     balancing_dict[f"{satellite_image.filename.split('.')[0]}_{i:04d}"] = 1
                 else:
                     balancing_dict[f"{satellite_image.filename.split('.')[0]}_{i:04d}"] = 0
-                labels.append(mask)
+                labels.append(label)
             elif self.config.source_train == "classification":
-                if np.sum(mask) != 0:
+                if np.sum(label) != 0:
                     balancing_dict[f"{satellite_image.filename.split('.')[0]}_{i:04d}"] = 1
                     labels.append(1)
                 else:
@@ -371,25 +375,25 @@ class Preprocessor:
 
         return labels, balancing_dict
 
-    def save_images_and_masks(self, list_images, list_masks, millesime):
+    def save_images_and_labels(self, list_images, list_labels, millesime):
         """
-        write the couple images/masks into a specific folder.
+        write the couple images/labels into a specific folder.
 
         Args:
             list_images : the list containing the splitted and filtered data \
                 to be saved.
-            list_masks : the list containing the masks to be saved.
+            list_labels : the list containing the labels to be saved.
             a string representing the name of the output \
-                directory where the split images and their masks should be saved.
+                directory where the split images and their labels should be saved.
 
         Returns:
             str: The name of the output directory.
         """
         path_prepro = get_path_by_millesime(self.config.path_prepro_data, millesime)
         output_images_path = f"{path_prepro}/images"
-        output_masks_path = f"{path_prepro}/labels"
+        output_labels_path = f"{path_prepro}/labels"
 
-        for i, (image, mask) in enumerate(zip(list_images, list_masks)):
+        for i, (image, label) in enumerate(zip(list_images, list_labels)):
             # TODO : Make it more readable
             filename = f"{image.filename.split('.')[0]}_{i:04d}"
 
@@ -399,26 +403,26 @@ class Preprocessor:
                 if self.config.source_train != "classification":
                     image.to_raster(output_images_path, f"{filename}.jp2", "jp2", None)
                     np.save(
-                        f"{output_masks_path}/{filename}.npy",
-                        mask,
+                        f"{output_labels_path}/{filename}.npy",
+                        label,
                     )
                 if self.config.source_train == "classification":
                     # if i in selected_indices:
                     image.to_raster(output_images_path, f"{filename}.jp2", "jp2", None)
-                    csv_file_path = f"{output_masks_path}/fichierlabeler.csv"
+                    csv_file_path = f"{output_labels_path}/fichierlabeler.csv"
 
                     # Create the csv file if it does not exist
                     if not os.path.isfile(csv_file_path):
                         with open(csv_file_path, "w", newline="") as csvfile:
                             writer = csv.writer(csvfile)
                             writer.writerow(["Path_image", "Classification"])
-                            writer.writerow([filename, mask])
+                            writer.writerow([filename, label])
 
                     # Open it if it exists
                     else:
                         with open(csv_file_path, "a", newline="") as csvfile:
                             writer = csv.writer(csvfile)
-                            writer.writerow([filename, mask])
+                            writer.writerow([filename, label])
 
             except rasterio._err.CPLE_AppDefinedError:
                 # except:
@@ -451,21 +455,21 @@ class Preprocessor:
         )
 
         if os.path.splitext(filename)[0] in list_clouds:
-            mask_full_cloud = np.load(f"{path_clouds}/{os.path.splitext(filename)[0]}.npy")
-            list_splitted_mask_cloud = split_array(mask_full_cloud, self.config.tile_size)
+            label_full_cloud = np.load(f"{path_clouds}/{os.path.splitext(filename)[0]}.npy")
+            list_splitted_label_cloud = split_array(label_full_cloud, self.config.tile_size)
         else:
-            list_splitted_mask_cloud = None
+            list_splitted_label_cloud = None
 
         list_splitted_images = satellite_image.split(self.config.tile_size)
 
         list_filtered_splitted_images = self.filter_images(
             list_splitted_images,
-            list_splitted_mask_cloud,
+            list_splitted_label_cloud,
         )
 
         labels, balancing_dict = self.label_images(list_filtered_splitted_images, labeler)
 
-        self.save_images_and_masks(list_filtered_splitted_images, labels, millesime)
+        self.save_images_and_labels(list_filtered_splitted_images, labels, millesime)
 
         return balancing_dict
 
