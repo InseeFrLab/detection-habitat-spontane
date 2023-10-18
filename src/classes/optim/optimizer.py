@@ -16,10 +16,12 @@ def generate_optimization_elements(config):
     """
 
     optimizer = torch.optim.Adam if config.task == "detection" else torch.optim.SGD
-    optimizer_params = {
-        "lr": config.lr,
-        "momentum": config.momentum,
-    }
+    optimizer_params = (
+        {"lr": config.lr, "momentum": config.momentum}
+        if config.task != "detection"
+        else {"lr": config.lr}
+    )
+
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
     scheduler_params = {
         "monitor": config.earlystop["monitor"],

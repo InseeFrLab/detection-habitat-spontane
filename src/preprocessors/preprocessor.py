@@ -143,113 +143,109 @@ class Preprocessor:
         print("\n*** 3- Préparation des données de test...\n")
 
         # TODO: Temporaire à supprimer quand on aura des données de test pour la détection
-        if self.config.task != "detection":
-            nb_test_img = self.get_nb_test_images()
-            nb_test_img_prepo = (
-                len(os.listdir(f"{self.config.path_prepro_test_data[0]}/images/"))
-                if os.path.exists(f"{self.config.path_prepro_test_data[0]}/images/")
-                else None
-            )
+        if self.config.task == "detection":
+            print("\n*** 3- Préparation des données de test skipped...\n")
+            return None
 
-            if nb_test_img == nb_test_img_prepo:
-                print("\n\t** Données de test déjà créées!\n")
-            else:
-                label_folder = f"{self.config.path_prepro_test_data[0]}/labels/"
-                os.makedirs(label_folder, exist_ok=True)
+        nb_test_img = self.get_nb_test_images()
+        nb_test_img_prepo = (
+            len(os.listdir(f"{self.config.path_prepro_test_data[0]}/images/"))
+            if os.path.exists(f"{self.config.path_prepro_test_data[0]}/images/")
+            else None
+        )
 
-                # Get extension of images
-                ext = list(
-                    set(
-                        [
-                            os.path.splitext(file)[1]
-                            for file in os.listdir(f"{self.config.path_local_test[0]}/images")
-                            if os.path.splitext(file)[1] != ""
-                        ]
-                    )
-                )[0]
+        if nb_test_img == nb_test_img_prepo:
+            print("\n\t** Données de test déjà créées!\n")
+        else:
+            label_folder = f"{self.config.path_prepro_test_data[0]}/labels/"
+            os.makedirs(label_folder, exist_ok=True)
 
-            match self.config.task:
-                case "change-detection":
-                    # Cas change-detection : On a 2 images et 1 label
-                    for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/labels"):
-                        for filename in files:
-                            label = np.load(os.path.join(root, filename))
-                            # Les fichiers d'images n'ont pas de suffix
-                            filename_im = filename.replace("_0000", "")
+            # Get extension of images
+            ext = list(
+                set(
+                    [
+                        os.path.splitext(file)[1]
+                        for file in os.listdir(f"{self.config.path_local_test[0]}/images")
+                        if os.path.splitext(file)[1] != ""
+                    ]
+                )
+            )[0]
 
-                            # On loop sur les 2 images
-                            dict_lsi = {}
-                            for i in range(1, 3):
-                                root_im = root.replace("/labels", f"/images_{i}")
+        match self.config.task:
+            case "change-detection":
+                # Cas change-detection : On a 2 images et 1 label
+                for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/labels"):
+                    for filename in files:
+                        label = np.load(os.path.join(root, filename))
+                        # Les fichiers d'images n'ont pas de suffix
+                        filename_im = filename.replace("_0000", "")
 
-                                si = SatelliteImage.from_raster(
-                                    file_path=Path(os.path.join(root_im, filename_im)).with_suffix(
-                                        ".tif"
-                                    ),
-                                    dep=None,
-                                    date=None,
-                                    n_bands=self.config.n_bands,
-                                )
-
-                                dict_lsi[i] = SegmentationLabeledSatelliteImage(
-                                    si, label, "", ""
-                                ).split(self.config.tile_size)
-
-                            # On loop sur toutes les images et labels divisés pour les sauvegarder
-                            for j in range(len(dict_lsi[1])):
-                                label_path = (
-                                    f"{label_folder}{filename.replace('_0000', f'_{j:04d}')}"
-                                )
-                                np.save(label_path, dict_lsi[1].label)
-
-                                for i in range(1, len(dict_lsi) + 1):
-                                    im_path = Path(
-                                        label_path.replace("/labels", f"/images_{i}")
-                                    ).with_suffix(".jp2")
-                                    dict_lsi[i].satellite_image.to_raster(
-                                        os.path.dirname(im_path), os.path.basename(im_path)
-                                    )
-
-                case "detection":
-                    pass
-
-                case _:
-                    # Autres cas : On a 1 image et 1 label
-                    for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/labels"):
-                        for filename in files:
-                            if filename.startswith("."):
-                                continue
-
-                            filename_im = filename.replace("_0000", "")
-                            root_im = root.replace("/labels", "/images")
-
-                            label = np.load(os.path.join(root, filename))
+                        # On loop sur les 2 images
+                        dict_lsi = {}
+                        for i in range(1, 3):
+                            root_im = root.replace("/labels", f"/images_{i}")
 
                             si = SatelliteImage.from_raster(
-                                file_path=Path(os.path.join(root_im, filename_im)).with_suffix(ext),
+                                file_path=Path(os.path.join(root_im, filename_im)).with_suffix(
+                                    ".tif"
+                                ),
                                 dep=None,
                                 date=None,
                                 n_bands=self.config.n_bands,
                             )
 
-                            lsi = SegmentationLabeledSatelliteImage(si, label, "", "")
-                            list_lsi = lsi.split(self.config.tile_size)
+                            dict_lsi[i] = SegmentationLabeledSatelliteImage(
+                                si, label, "", ""
+                            ).split(self.config.tile_size)
 
-                            # On loop sur toutes les images et labels divisés pour les sauvegarder
+                        # On loop sur toutes les images et labels divisés pour les sauvegarder
+                        for j in range(len(dict_lsi[1])):
+                            label_path = f"{label_folder}{filename.replace('_0000', f'_{j:04d}')}"
+                            np.save(label_path, dict_lsi[1].label)
 
-                            for i, splitted_image in tqdm(enumerate(list_lsi)):
-                                label_path = (
-                                    f"{label_folder}{filename.replace('_0000', f'_{i:04d}')}"
-                                )
+                            for i in range(1, len(dict_lsi) + 1):
                                 im_path = Path(
-                                    label_path.replace("/labels", "/images")
+                                    label_path.replace("/labels", f"/images_{i}")
                                 ).with_suffix(".jp2")
-
-                                splitted_image.satellite_image.to_raster(
+                                dict_lsi[i].satellite_image.to_raster(
                                     os.path.dirname(im_path), os.path.basename(im_path)
                                 )
 
-                                np.save(label_path, splitted_image.label)
+            case _:
+                # Autres cas : On a 1 image et 1 label
+                for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/labels"):
+                    for filename in files:
+                        if filename.startswith("."):
+                            continue
+
+                        filename_im = filename.replace("_0000", "")
+                        root_im = root.replace("/labels", "/images")
+
+                        label = np.load(os.path.join(root, filename))
+
+                        si = SatelliteImage.from_raster(
+                            file_path=Path(os.path.join(root_im, filename_im)).with_suffix(ext),
+                            dep=None,
+                            date=None,
+                            n_bands=self.config.n_bands,
+                        )
+
+                        lsi = SegmentationLabeledSatelliteImage(si, label, "", "")
+                        list_lsi = lsi.split(self.config.tile_size)
+
+                        # On loop sur toutes les images et labels divisés pour les sauvegarder
+
+                        for i, splitted_image in tqdm(enumerate(list_lsi)):
+                            label_path = f"{label_folder}{filename.replace('_0000', f'_{i:04d}')}"
+                            im_path = Path(label_path.replace("/labels", "/images")).with_suffix(
+                                ".jp2"
+                            )
+
+                            splitted_image.satellite_image.to_raster(
+                                os.path.dirname(im_path), os.path.basename(im_path)
+                            )
+
+                            np.save(label_path, splitted_image.label)
 
         print("\n*** Données de test prêtes !\n")
 

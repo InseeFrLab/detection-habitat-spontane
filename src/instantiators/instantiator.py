@@ -226,6 +226,11 @@ class Instantiator:
             for ds, boolean in zip([train_dataset, valid_dataset], [True, False])
         ]
 
+        # TODO: Temporaire à supprimer quand on aura des données de test pour la détection
+        if self.config.task == "detection":
+            test_dataloader = None
+            return train_dataloader, valid_dataloader, test_dataloader
+
         output_labels_path = f"{self.config.path_prepro_test_data[0]}/labels/"
         list_name_label_test = os.listdir(output_labels_path)
         list_path_labels_test = np.sort(
