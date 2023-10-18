@@ -62,6 +62,8 @@ class Configurator:
         self.accumulate_batch = config["optim"]["accumulate_batch"]
         self.checkpoints = config["optim"]["monitoring"]["checkpoints"]
         self.earlystop = config["optim"]["monitoring"]["earlystop"]
+        self.num_sanity_val_steps = config["optim"]["num_sanity_val_steps"]
+        self.scheduler_patience = config["optim"]["scheduler_patience"]
 
         self.src_to_download = (
             ["SENTINEL1", "SENTINEL2"] if "SENTINEL1" in self.source_train else [self.source_train]

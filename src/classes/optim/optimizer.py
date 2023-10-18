@@ -15,7 +15,7 @@ def generate_optimization_elements(config):
 
     """
 
-    optimizer = torch.optim.SGD
+    optimizer = torch.optim.Adam if config.task == "detection" else torch.optim.SGD
     optimizer_params = {
         "lr": config.lr,
         "momentum": config.momentum,
@@ -24,7 +24,9 @@ def generate_optimization_elements(config):
     scheduler_params = {
         "monitor": config.earlystop["monitor"],
         "mode": config.earlystop["mode"],
-    }  # TODO: vérifiersi ok d'utilise config d'early stop ici
+        "patience": config.scheduler_patience,
+    }  # TODO: vérifier si ok d'utilise config d'early stop ici.
+    # IMPORTANT CAR PEUT ETRE CONFIG A REVOIR
     scheduler_interval = "epoch"
 
     return (
@@ -34,9 +36,3 @@ def generate_optimization_elements(config):
         scheduler_params,
         scheduler_interval,
     )
-
-
-# TODO: detection 
-# optimizer = torch.optim.Adam
-# "patience": config["optim"]["scheduler_patience"]}
-

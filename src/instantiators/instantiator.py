@@ -7,6 +7,7 @@ import os
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
+import torch
 from pytorch_lightning.callbacks import (
     EarlyStopping,
     LearningRateMonitor,
@@ -66,7 +67,7 @@ class Instantiator:
                     list_images,
                     list_labels,
                     self.config.n_bands,
-                    percent_keep=(1 if test else self.config.percent_keep),
+                    percent_keep=(0.1 if test else self.config.percent_keep),
                 )
             else:
                 full_dataset = dataset_select(
@@ -74,7 +75,7 @@ class Instantiator:
                     list_images_2,
                     list_labels,
                     self.config.n_bands,
-                    percent_keep=(1 if test else self.config.percent_keep),
+                    percent_keep=(0.1 if test else self.config.percent_keep),
                 )
 
         return full_dataset
@@ -208,6 +209,11 @@ class Instantiator:
         # Creation of the dataloaders
         batch_size = self.config.batch_size
 
+        if self.config.task == "detection":
+            task_collate_fn = self.collate_fn
+        else:
+            task_collate_fn = None
+
         train_dataloader, valid_dataloader = [
             DataLoader(
                 ds,
@@ -215,6 +221,7 @@ class Instantiator:
                 shuffle=boolean,
                 num_workers=self.config.num_workers,
                 drop_last=True,
+                collate_fn=task_collate_fn,
             )
             for ds, boolean in zip([train_dataset, valid_dataset], [True, False])
         ]
@@ -361,10 +368,25 @@ class Instantiator:
         trainer = pl.Trainer(
             callbacks=list_callbacks,
             max_epochs=self.config.max_epochs,
-            num_sanity_val_steps=2,
+            num_sanity_val_steps=self.config.num_sanity_val_steps,
             strategy=strategy,
             log_every_n_steps=2,
             accumulate_grad_batches=self.config.accumulate_batch,
         )
 
         return trainer
+
+    def collate_fn(self, batch):
+        """
+        Collate function for object detection Dataloader.
+        """
+        images = []
+        targets = []
+        metadatas = []
+
+        for i, t, m in batch:
+            images.append(i)
+            targets.append(t)
+            metadatas.append(m)
+        images = torch.stack(images, dim=0)
+        return images, targets, metadatas

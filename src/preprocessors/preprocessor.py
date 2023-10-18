@@ -206,6 +206,9 @@ class Preprocessor:
                                         os.path.dirname(im_path), os.path.basename(im_path)
                                     )
 
+                case "detection":
+                    pass
+
                 case _:
                     # Autres cas : On a 1 image et 1 masque
                     for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/masks"):

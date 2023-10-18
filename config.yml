@@ -1,19 +1,17 @@
 data:
-  source_train: "SENTINEL2"
-  dataset: "SENTINEL"
-  dataset_test: "SENTINEL"
+  source_train: "PLEIADES"
+  dataset: "PLEIADE"
+  dataset_test: "PLEIADE"
   task: "segmentation"
   percent_keep: 0.1
 
   millesime:
     - dep: "976"
       year: "2022"
-    - dep: "976"
-      year: "2021"
   type_labeler: "BDTOPO"
   buffer_size: 10
-  n_channels_train: 12
-  n_bands: 12
+  n_channels_train: 3
+  n_bands: 3
   tile_size: 125
   augmentation: True
   prop: 1
@@ -23,24 +21,20 @@ optim:
   lr: 0.0001
   momentum: 0.9
   module: "deeplabv3"
-  batch_size: 5
+  batch_size: 4
   batch_size_test: 4
   max_epochs: 2
   val_prop: 0.2
   accumulate_batch : 8
+  num_sanity_val_steps: 2
+  scheduler_patience: 10
   monitoring:
     checkpoints:
-    - monitor: validation_loss
+    - monitor:
       save_top_k: 1
       save_last: True
-      mode: min
-    - monitor: validation_IOU
-      save_top_k: 1
-      save_last: True
-      mode: max
+      mode:
     earlystop:
-      monitor: validation_loss
-      patience: 5
-      mode: min
-  scheduler_patience: 10
-  num_sanity_val_steps: 2
+      monitor: validation_accuracy
+      patience: 35
+      mode: max

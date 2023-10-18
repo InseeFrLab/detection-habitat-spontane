@@ -3,7 +3,6 @@ import random
 from typing import Dict, List
 
 import albumentations as album
-import torch
 import yaml
 from albumentations.pytorch.transforms import ToTensorV2
 
@@ -118,9 +117,7 @@ def generate_transform_pleiades(tile_size, augmentation, task):
 
     bbox_params = None
     if task == "detection":
-        bbox_params = album.BboxParams(
-            format="pascal_voc", label_fields=["class_labels"]
-        )
+        bbox_params = album.BboxParams(format="pascal_voc", label_fields=["class_labels"])
 
     transforms_preprocessing = album.Compose(
         [
@@ -128,7 +125,7 @@ def generate_transform_pleiades(tile_size, augmentation, task):
             album.Normalize(),
             ToTensorV2(),
         ],
-        bbox_params=bbox_params
+        bbox_params=bbox_params,
     )
 
     if augmentation:
@@ -141,7 +138,7 @@ def generate_transform_pleiades(tile_size, augmentation, task):
                 album.Normalize(),
                 ToTensorV2(),
             ],
-            bbox_params=bbox_params
+            bbox_params=bbox_params,
         )
     else:
         transforms_augmentation = transforms_preprocessing
@@ -185,9 +182,7 @@ def generate_transform_sentinel(src, year, dep, tile_size, augmentation, task):
         transforms_augmentation = album.Compose(
             [
                 album.Resize(300, 300, always_apply=True),
-                album.RandomResizedCrop(
-                    *image_size, scale=(0.7, 1.0), ratio=(0.7, 1)
-                ),
+                album.RandomResizedCrop(*image_size, scale=(0.7, 1.0), ratio=(0.7, 1)),
                 album.HorizontalFlip(),
                 album.VerticalFlip(),
                 album.Normalize(mean, std),
@@ -250,19 +245,3 @@ def generate_transform(tile_size, augmentation, task: str):
         transforms_preprocessing = album.Compose(test_transforms_list)
 
     return transforms_augmentation, transforms_preprocessing
-
-
-def collate_fn(batch):
-    """
-    Collate function for object detection Dataloader.
-    """
-    images = []
-    targets = []
-    metadatas = []
-
-    for i, t, m in batch:
-        images.append(i)
-        targets.append(t)
-        metadatas.append(m)
-    images = torch.stack(images, dim=0)
-    return images, targets, metadatas

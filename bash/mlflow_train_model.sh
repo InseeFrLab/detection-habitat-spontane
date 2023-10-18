@@ -4,7 +4,7 @@
 export MLFLOW_EXPERIMENT_NAME="test-dev"
 
 # Set ENTRY_POINT as environment variable
-export ENTRY_POINT="segmentation"
+export ENTRY_POINT="detection"
 
 # Set MLFLOW_EXPERIMENT_NAME environment variable
 export MLFLOW_S3_ENDPOINT_URL='https://minio.lab.sspcloud.fr'

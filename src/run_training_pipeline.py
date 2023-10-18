@@ -40,19 +40,8 @@ def run_pipeline(remote_server_uri, experiment_name, run_name):
         preprocessor.download_data()
         preprocessor.prepare_train_data()
         preprocessor.prepare_test_data()
-# TODO : detection
-#   if config_task == "detection":
-#        task_collate_fn = collate_fn
-#   else:
-#        task_collate_fn = None
         train_dl, valid_dl, test_dl = instantiator.dataloader()
-# TODO : detection
 
-#                list_callbacks = [
-#            lr_monitor,
-#            checkpoint_callback,
-#            early_stop_callback
-#        ]
         trainer = instantiator.trainer()
 
         light_module = instantiator.lightning_module()
