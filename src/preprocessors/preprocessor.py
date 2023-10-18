@@ -134,7 +134,7 @@ class Preprocessor:
                     json.dump(full_balancing_dict, fp)
 
                 nb = len(os.listdir(f"{self.config.path_prepro_data[i]}/images"))
-                print(f"\t** {nb} couples images/masques ont été retenus")
+                print(f"\t** {nb} couples images/labels ont été retenus")
 
         print("\n*** Données d'entrainement prêtes !\n")
         return None
@@ -170,7 +170,7 @@ class Preprocessor:
 
             match self.config.task:
                 case "change-detection":
-                    # Cas change-detection : On a 2 images et 1 masque
+                    # Cas change-detection : On a 2 images et 1 label
                     for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/labels"):
                         for filename in files:
                             label = np.load(os.path.join(root, filename))
@@ -195,7 +195,7 @@ class Preprocessor:
                                     si, label, "", ""
                                 ).split(self.config.tile_size)
 
-                            # On loop sur toutes les images et masques divisés pour les sauvegarder
+                            # On loop sur toutes les images et labels divisés pour les sauvegarder
                             for j in range(len(dict_lsi[1])):
                                 label_path = (
                                     f"{label_folder}{filename.replace('_0000', f'_{j:04d}')}"
@@ -214,7 +214,7 @@ class Preprocessor:
                     pass
 
                 case _:
-                    # Autres cas : On a 1 image et 1 masque
+                    # Autres cas : On a 1 image et 1 label
                     for root, dirs, files in os.walk(f"{self.config.path_local_test[0]}/labels"):
                         for filename in files:
                             if filename.startswith("."):
@@ -235,7 +235,7 @@ class Preprocessor:
                             lsi = SegmentationLabeledSatelliteImage(si, label, "", "")
                             list_lsi = lsi.split(self.config.tile_size)
 
-                            # On loop sur toutes les images et masques divisés pour les sauvegarder
+                            # On loop sur toutes les images et labels divisés pour les sauvegarder
 
                             for i, splitted_image in tqdm(enumerate(list_lsi)):
                                 label_path = (

@@ -51,7 +51,7 @@ class SegmentationLabeledSatelliteImage:
         # 1) on split la liste de satellite image avec la fonction déjà codée
         list_sat = self.satellite_image.split(tile_length=tile_length)
 
-        # 2) on split le masque
+        # 2) on split le label
 
         m = self.satellite_image.array.shape[1]
         n = self.satellite_image.array.shape[2]
@@ -170,9 +170,7 @@ class DetectionLabeledSatelliteImage:
         # Normalisation ?
         image = np.uint8(image * 255)
 
-        image = Image.fromarray(
-            np.transpose(image, (1, 2, 0))[:, :, bands_indices], mode="RGB"
-        )
+        image = Image.fromarray(np.transpose(image, (1, 2, 0))[:, :, bands_indices], mode="RGB")
         # Drawing bounding boxes
         for x, y, xx, yy in self.label:
             c1 = (int(x.item()), int(y.item()))

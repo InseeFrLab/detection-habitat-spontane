@@ -179,7 +179,7 @@ class ChangeIsEverywhereDataset(Dataset):
         label2 = torch.tensor(np.load(pathlabel2))
 
         # ici on transforme les images et les labels , peut être qu'il ne faut
-        # pas faire de transformation trop violente pour que les masques
+        # pas faire de transformation trop violente pour que les labels
         # de type change detection aient du sens
 
         if self.transforms:

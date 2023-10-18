@@ -126,7 +126,7 @@ def label_images(list_images, labeler, task: str):
     labels = []
     balancing_dict = {}
     for i, satellite_image in enumerate(list_images):
-        # label = labeler.create_label(satellite_image, task=task) 
+        # label = labeler.create_label(satellite_image, task=task)
         label = labeler.create_segmentation_label(satellite_image)
         if task in ["segmentation", "change_detection"]:
             if np.sum(label) != 0:
@@ -180,12 +180,6 @@ def label_images(list_images, labeler, task: str):
         labels = [labels[index] for index in indices_sampled]
         balancing_dict_copy = balancing_dict_sampled
 
-    # print(
-    #     "Nombre d'images labelisées : ",
-    #     len(list_filtered_splitted_labeled_images),
-    #     ", Nombre de masques : ",
-    #     len(list_masks),
-    # )
     return labels, balancing_dict
 
 
