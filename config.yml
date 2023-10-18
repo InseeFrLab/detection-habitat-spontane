@@ -1,8 +1,8 @@
 data:
   source_train: "PLEIADES"
-  dataset: "PLEIADE"
-  dataset_test: "PLEIADE"
-  task: "segmentation"
+  dataset: "OBJECTDETECTION"
+  dataset_test: "OBJECTDETECTION"
+  task: "detection"
   percent_keep: 0.1
 
   millesime:
@@ -20,7 +20,7 @@ optim:
   loss: "crossentropy"
   lr: 0.0001
   momentum: 0.9
-  module: "deeplabv3"
+  module: "fasterrcnn"
   batch_size: 4
   batch_size_test: 4
   max_epochs: 2
@@ -30,10 +30,10 @@ optim:
   scheduler_patience: 10
   monitoring:
     checkpoints:
-    - monitor:
+    - monitor: validation_accuracy
       save_top_k: 1
       save_last: True
-      mode:
+      mode: max
     earlystop:
       monitor: validation_accuracy
       patience: 35

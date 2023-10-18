@@ -7,8 +7,11 @@ from data.components.change_detection_dataset import (
     ChangeIsEverywhereDataset,
 )
 from data.components.classification_patch import PatchClassification
-from data.components.dataset import PleiadeDataset, SentinelDataset
-from data.components.object_detection_dataset import ObjectDetectionDataset
+from data.components.dataset import (
+    ObjectDetectionPleiadeDataset,
+    SegmentationPleiadeDataset,
+    SegmentationSentinelDataset,
+)
 from models.classification_module import ClassificationModule
 from models.components.classification_models import ResNet50Module
 from models.components.detection_models import FasterRCNNModule
@@ -17,12 +20,12 @@ from models.detection_module import DetectionModule
 from models.segmentation_module import SegmentationModule
 
 dataset_dict = {
-    "PLEIADE": PleiadeDataset,
+    "PLEIADE": SegmentationPleiadeDataset,
     "CLASSIFICATION": PatchClassification,
-    "SENTINEL": SentinelDataset,
+    "SENTINEL": SegmentationSentinelDataset,
     "CHANGEISEVERYWHERE": ChangeIsEverywhereDataset,
     "CHANGEDETECTIONDATASET": ChangeDetectionDataset,
-    "OBJECTDETECTION": ObjectDetectionDataset,
+    "OBJECTDETECTION": ObjectDetectionPleiadeDataset,
 }
 
 module_dict = {

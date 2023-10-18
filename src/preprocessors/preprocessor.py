@@ -142,29 +142,31 @@ class Preprocessor:
     def prepare_test_data(self):
         print("\n*** 3- Préparation des données de test...\n")
 
-        nb_test_img = self.get_nb_test_images()
-        nb_test_img_prepo = (
-            len(os.listdir(f"{self.config.path_prepro_test_data[0]}/images/"))
-            if os.path.exists(f"{self.config.path_prepro_test_data[0]}/images/")
-            else None
-        )
+        # TODO: Temporaire à supprimer quand on aura des données de test pour la détection
+        if self.config.task != "detection":
+            nb_test_img = self.get_nb_test_images()
+            nb_test_img_prepo = (
+                len(os.listdir(f"{self.config.path_prepro_test_data[0]}/images/"))
+                if os.path.exists(f"{self.config.path_prepro_test_data[0]}/images/")
+                else None
+            )
 
-        if nb_test_img == nb_test_img_prepo:
-            print("\n\t** Données de test déjà créées!\n")
-        else:
-            mask_folder = f"{self.config.path_prepro_test_data[0]}/masks/"
-            os.makedirs(mask_folder, exist_ok=True)
+            if nb_test_img == nb_test_img_prepo:
+                print("\n\t** Données de test déjà créées!\n")
+            else:
+                mask_folder = f"{self.config.path_prepro_test_data[0]}/masks/"
+                os.makedirs(mask_folder, exist_ok=True)
 
-            # Get extension of images
-            ext = list(
-                set(
-                    [
-                        os.path.splitext(file)[1]
-                        for file in os.listdir(f"{self.config.path_local_test[0]}/images")
-                        if os.path.splitext(file)[1] != ""
-                    ]
-                )
-            )[0]
+                # Get extension of images
+                ext = list(
+                    set(
+                        [
+                            os.path.splitext(file)[1]
+                            for file in os.listdir(f"{self.config.path_local_test[0]}/images")
+                            if os.path.splitext(file)[1] != ""
+                        ]
+                    )
+                )[0]
 
             match self.config.task:
                 case "change-detection":
