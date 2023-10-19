@@ -34,6 +34,7 @@ class Evaluator:
             "SENTINEL1-2segmentation": self.evaluate_segmentation_sentinel,
             "SENTINEL2segmentation": self.evaluate_segmentation_sentinel,
             "change-detection": self.evaluate_changes_detection_pleiades,
+            "PLEIADESdetection": self.evaluate_detection_pleiades,
         }
         if not os.path.exists(config.path_eval_test_data[0]):
             os.makedirs(config.path_eval_test_data[0])
@@ -316,3 +317,21 @@ class Evaluator:
                 mlflow.log_artifact(f"{filename}.png", artifact_path="plots")
 
             del images, label, dic
+
+    def evaluate_detection_pleiades(
+        self,
+        test_dl,
+        model,
+    ):
+        """
+        Evaluates the model on the Pleiade test dataset for image segmentation.
+
+        Args:
+            test_dl (torch.utils.data.DataLoader): The data loader for the test
+            dataset.
+            model (torchvision.models): The detection model to evaluate.
+
+        Returns:
+            None
+        """
+        return None

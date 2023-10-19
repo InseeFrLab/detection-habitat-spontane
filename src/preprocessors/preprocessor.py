@@ -97,7 +97,7 @@ class Preprocessor:
         print("\n*** 2- Préparation des données d'entrainement...\n")
 
         for i, millesime in enumerate(self.config.millesime):
-            labeler = self.get_labeller(millesime)
+            labeler = self.get_labeler(millesime)
 
             if not self.check_labelled_images(millesime):
                 full_balancing_dict = {}
@@ -115,7 +115,7 @@ class Preprocessor:
                             print(f"Erreur de lecture du fichier {os.path.join(root, filename)}")
                             continue
 
-                        label = labeler.create_segmentation_label(si)
+                        label = labeler.create_label(si)
                         # TODO: Mettre dans config la proba
                         keep = np.random.binomial(size=1, n=1, p=0.1)[0]
 
@@ -313,7 +313,7 @@ class Preprocessor:
         labels = []
         balancing_dict = {}
         for i, satellite_image in enumerate(list_images):
-            label = labeler.create_segmentation_label(satellite_image)
+            label = labeler.create_label(satellite_image)
             if self.config.source_train != "classification":
                 if np.sum(label) != 0:
                     balancing_dict[f"{satellite_image.filename.split('.')[0]}_{i:04d}"] = 1
@@ -427,17 +427,20 @@ class Preprocessor:
 
         return None
 
-    def get_labeller(self, millesime):
+    def get_labeler(self, millesime):
         date = datetime.strptime(f"{millesime['year']}0101", "%Y%m%d")
 
         labeler = None
         match self.config.type_labeler:
             case "RIL":
                 labeler = RILLabeler(
-                    date, dep=millesime["dep"], buffer_size=self.config.buffer_size
+                    date,
+                    dep=millesime["dep"],
+                    task=self.config.task,
+                    buffer_size=self.config.buffer_size,
                 )
             case "BDTOPO":
-                labeler = BDTOPOLabeler(date, dep=millesime["dep"])
+                labeler = BDTOPOLabeler(date, dep=millesime["dep"], task=self.config.task)
             case _:
                 pass
         return labeler
