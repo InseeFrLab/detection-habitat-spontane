@@ -71,7 +71,7 @@ def get_file_system() -> S3FileSystem:
     Return the s3 file system.
     """
     return S3FileSystem(
-        client_kwargs={"endpoint_url": "https://" + os.environ["AWS_S3_ENDPOINT"]},
+        client_kwargs={"endpoint_url": f"https://{os.environ['AWS_S3_ENDPOINT']}"},
         key=os.environ["AWS_ACCESS_KEY_ID"],
         secret=os.environ["AWS_SECRET_ACCESS_KEY"],
     )
@@ -206,8 +206,8 @@ def load_ril(
         os.path.join(
             environment["bucket"],
             environment["sources"]["RIL"],
-            "dep=" + dep,
-            "millesime=" + millesime,
+            f"dep={dep}",
+            f"millesime={millesime}",
         ),
         filesystem=fs,
     )
@@ -215,7 +215,7 @@ def load_ril(
     df = dataset.read().to_pandas()
     gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.x, df.y))
     crs = dep_to_crs[dep]
-    gdf = gdf.set_crs("epsg:" + crs)
+    gdf = gdf.set_crs(f"epsg:{crs}")
 
     return gdf
 
@@ -243,24 +243,20 @@ def load_bdtopo(
         couche = "BATI_INDIFFERENCIE.shp"
 
     bucket = environment["bucket"]
-    path_s3 = environment["sources"]["BDTOPO"][int(millesime)][dep]
+    path_s3 = environment["sources"]["BDTOPO"][millesime][dep]
     dir_path = os.path.join(
         root_path,
-        environment["local-path"]["BDTOPO"][int(millesime)][dep],
+        environment["local-path"]["BDTOPO"][millesime][dep],
     )
 
     if os.path.exists(dir_path):
-        print(
-            "Le téléchargement de cette version de la \
-            BDTOPO a déjà été effectué"
-        )
+        print("\t** Le téléchargement de cette version de la BDTOPO a déjà été effectué")
 
     else:
         os.makedirs(dir_path)
 
         update_storage_access()
         fs = S3FileSystem(client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"})
-        print("download " + dep + " " + str(millesime) + " in " + dir_path)
         extensions = ["cpg", "dbf", "prj", "shp", "shx"]
         couche_split = couche.split(".")[0]
         for ext in extensions:
@@ -308,7 +304,7 @@ def update_storage_access():
 
     client = hvac.Client(url="https://vault.lab.sspcloud.fr", token=os.environ["VAULT_TOKEN"])
 
-    secret = os.environ["VAULT_MOUNT"] + "/projet-slums-detection/s3"
+    secret = f"{os.environ['VAULT_MOUNT']}/projet-slums-detection/s3"
     mount_point, secret_path = secret.split("/", 1)
     secret_dict = client.secrets.kv.read_secret_version(path=secret_path, mount_point=mount_point)
 
@@ -320,23 +316,16 @@ def update_storage_access():
         pass
 
 
-def exportToMinio(image, rpath):
-    """
-    Exports S1 tiles to MinIO.
+def get_path_by_millesime(paths, millesime):
+    dep_dict = {
+        "971": "GUADELOUPE",
+        "972": "MARTINIQUE",
+        "973": "GUYANE",
+        "974": "REUNION",
+        "976": "MAYOTTE",
+    }
 
-    Args:
-        image: the image to uplaod on MinIO.
-        rpath: path to the MinIO repertory in which the image\
-            should be uploaded.
+    idx = [path.endswith(f"{millesime['year']}/{dep_dict[millesime['dep']]}") for path in paths]
 
-    Returns:
-        The upload of an image on MinIO.
-    """
-
-    fs = s3fs.S3FileSystem(
-        client_kwargs={"endpoint_url": "https://" + "minio.lab.sspcloud.fr"},
-        key=os.environ["AWS_ACCESS_KEY_ID"],
-        secret=os.environ["AWS_SECRET_ACCESS_KEY"],
-    )
-
-    return fs.put(image, rpath, True)
+    path = paths[idx.index(True)] if any(idx) and True in idx else []
+    return path

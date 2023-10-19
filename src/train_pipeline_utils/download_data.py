@@ -26,8 +26,6 @@ def load_satellite_data(year: int, dep: str, src: str):
     Returns:
         str: The local path where the data is downloaded.
     """
-    print("Entre dans la fonction load_satellite_data")
-
     update_storage_access()
     root_path = get_root_path()
     environment = get_environment()
@@ -40,10 +38,8 @@ def load_satellite_data(year: int, dep: str, src: str):
         print("Le dossier existe déjà")
         return path_local
 
-    fs = s3fs.S3FileSystem(
-        client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"}
-    )
-    print("download " + src + " " + dep + " " + str(year) + " in " + path_local)
+    fs = s3fs.S3FileSystem(client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"})
+    print(f"download {src} {dep} {str(year)} in {path_local}")
     fs.download(rpath=f"{bucket}/{path_s3}", lpath=f"{path_local}", recursive=True)
 
     return path_local
@@ -77,9 +73,7 @@ def load_donnees_test(type="segmentation", src="PLEIADES"):
         print("le jeu de données test existe déjà")
         return path_local
 
-    fs = s3fs.S3FileSystem(
-        client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"}
-    )
+    fs = s3fs.S3FileSystem(client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"})
     fs.download(rpath=f"{bucket}/{path_s3}", lpath=f"{path_local}", recursive=True)
 
     return path_local
@@ -132,11 +126,11 @@ def load_2satellites_data(year: int, dep: str, src: str):
             path_s2 = list_paths_s2[list_paths_s2_rac.index(path)]
 
             image_s1 = SatelliteImage.from_raster(
-                output_dir_s1 + "/" + path_s1, dep=dep, date=year, n_bands=1
+                f"{output_dir_s1}/{path_s1}", dep=dep, date=year, n_bands=1
             )
 
             image_s2 = SatelliteImage.from_raster(
-                output_dir_s2 + "/" + path_s2, dep=dep, date=year, n_bands=12
+                f"{output_dir_s2}/{path_s2}", dep=dep, date=year, n_bands=12
             )
 
             matrice = np.concatenate((image_s2.array, image_s1.array))
@@ -144,7 +138,7 @@ def load_2satellites_data(year: int, dep: str, src: str):
             transf = image_s1.transform
             driver = gdal.GetDriverByName("GTiff")
             out_ds = driver.Create(
-                path_local + "/" + path + ".tif",
+                f"{path_local}/{path}.tif",
                 matrice.shape[2],
                 matrice.shape[1],
                 matrice.shape[0],
@@ -160,7 +154,7 @@ def load_2satellites_data(year: int, dep: str, src: str):
                     transf[4],
                 ]
             )
-            in_ds = gdal.Open(output_dir_s1 + "/" + path_s1)
+            in_ds = gdal.Open(f"{output_dir_s1}/{path_s1}")
             proj = in_ds.GetProjection()
             out_ds.SetProjection(proj)
 

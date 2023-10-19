@@ -8,8 +8,7 @@ from typing import List, Literal, Tuple
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from rasterio.features import rasterize, shapes
-from shapely import Polygon
+from rasterio.features import rasterize
 
 from classes.data.satellite_image import SatelliteImage
 from utils.utils import load_bdtopo, load_ril
@@ -24,6 +23,7 @@ class Labeler(ABC):
         self,
         labeling_date: datetime,
         dep: Literal["971", "972", "973", "974", "976", "977", "978"],
+        task: str,
     ):
         """
         Constructor.
@@ -34,6 +34,9 @@ class Labeler(ABC):
         """
         self.labeling_date = labeling_date
         self.dep = dep
+        self.task = task
+        if task not in ["segmentation", "detection"]:
+            raise NotImplementedError("Task must be 'segmentation'" "or 'detection'.")
 
     @abstractmethod
     def create_segmentation_label(self, satellite_image: SatelliteImage) -> np.array:
@@ -48,7 +51,7 @@ class Labeler(ABC):
         """
         raise NotImplementedError()
 
-    def create_label(self, satellite_image: SatelliteImage, task: str):
+    def create_label(self, satellite_image: SatelliteImage):
         """
         Create a label for a SatelliteImage.
 
@@ -56,12 +59,10 @@ class Labeler(ABC):
             satellite_image (SatelliteImage): Satellite image.
             task (str): Task.
         """
-        if task == "segmentation":
+        if self.task == "segmentation":
             return self.create_segmentation_label(satellite_image)
-        elif task == "detection":
+        elif self.task == "detection":
             return self.create_detection_label(satellite_image)
-        else:
-            raise NotImplementedError("Task must be 'segmentation'" "or 'detection'.")
 
 
 class RILLabeler(Labeler):
@@ -73,6 +74,7 @@ class RILLabeler(Labeler):
         self,
         labeling_date: datetime,
         dep: Literal["971", "972", "973", "974", "976", "977", "978"],
+        task: str,
         buffer_size: int = 6,
         cap_style: int = 3,
     ):
@@ -86,7 +88,7 @@ class RILLabeler(Labeler):
             cap_style (int): Buffer style. 1 for round buffers,
                 2 for flat buffers and 3 for square buffers.
         """
-        super(RILLabeler, self).__init__(labeling_date, dep)
+        super(RILLabeler, self).__init__(labeling_date, dep, task)
         self.labeling_data = load_ril(millesime=str(self.labeling_date.year), dep=self.dep)
 
         self.buffer_size = buffer_size
@@ -135,6 +137,7 @@ class BDTOPOLabeler(Labeler):
         self,
         labeling_date: datetime,
         dep: Literal["971", "972", "973", "974", "976", "977", "978"],
+        task: str,
     ):
         """
         Constructor.
@@ -143,9 +146,9 @@ class BDTOPOLabeler(Labeler):
             labeling_date (datetime): Date of labeling data.
             dep (Literal): Departement.
         """
-        super(BDTOPOLabeler, self).__init__(labeling_date, dep)
+        super(BDTOPOLabeler, self).__init__(labeling_date, dep, task)
         self.labeling_data = load_bdtopo(millesime=str(self.labeling_date.year), dep=self.dep)
-        self.labeling_data['bbox'] = self.labeling_data.geometry.apply(lambda geom: geom.bounds)
+        self.labeling_data["bbox"] = self.labeling_data.geometry.apply(lambda geom: geom.bounds)
 
     def create_segmentation_label(self, satellite_image: SatelliteImage) -> np.array:
         """
@@ -226,7 +229,7 @@ class BDTOPOLabeler(Labeler):
 
     @staticmethod
     def get_object_coordinates_in_image(row, bounds, image_width, image_height):
-        xmin, ymin, xmax, ymax = row['bbox']
+        xmin, ymin, xmax, ymax = row["bbox"]
 
         xmin_in_image = (xmin - bounds[0]) * (image_width) / (bounds[2] - bounds[0])
         xmin_in_image = np.maximum(xmin_in_image, 0)
@@ -263,29 +266,11 @@ class BDTOPOLabeler(Labeler):
         Returns:
             List[Tuple[int]]: Object detection label.
         """
-        # LEGACY FUNCTION ---
-        # image_height = satellite_image.array.shape[1]
-        # image_width = satellite_image.array.shape[2]
-        # segmentation_mask = self.create_segmentation_label(satellite_image)
-
-        # polygon_list = []
-        # for shape in list(shapes(segmentation_mask)):
-        #     polygon = Polygon(shape[0]["coordinates"][0])
-        #     if polygon.area > 0.85 * image_height * image_width:
-        #         continue
-        #     polygon_list.append(polygon)
-
-        # g = gpd.GeoSeries(polygon_list)
-        # clipped_g = gpd.clip(g, (0, 0, image_height, image_width))
-
-        # return [polygon.bounds for polygon in clipped_g]
-        # -------------------
 
         if self.labeling_data.crs != satellite_image.crs:
             self.labeling_data.geometry = self.labeling_data.geometry.to_crs(satellite_image.crs)
 
         image_height = satellite_image.array.shape[1]
-        image_width = satellite_image.array.shape[2]
 
         # Filtering geometries from BDTOPO
         xmin, ymin, xmax, ymax = satellite_image.bounds
@@ -294,17 +279,12 @@ class BDTOPOLabeler(Labeler):
         if patch.empty:
             label = np.array([], dtype=np.uint8)
         else:
-            # label = patch.apply(
-            #     lambda row: self.get_object_coordinates_in_image(
-            #         row,
-            #         satellite_image.bounds,
-            #         image_width,
-            #         image_height
-            #     ),
-            #     axis=1
-            # )
-            label = patch.geometry.apply(self.geometry_to_pixel_bounds, transform=satellite_image.transform).tolist()
-            label = [tuple(max(min(round(coord), image_height), 0) for coord in bbox) for bbox in label]
+            label = patch.geometry.apply(
+                self.geometry_to_pixel_bounds, transform=satellite_image.transform
+            ).tolist()
+            label = [
+                tuple(max(min(round(coord), image_height), 0) for coord in bbox) for bbox in label
+            ]
             label = [bbox for bbox in label if ((bbox[0] != bbox[2]) and (bbox[1] != bbox[3]))]
         return label
 

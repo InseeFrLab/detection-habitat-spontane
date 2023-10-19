@@ -143,3 +143,9 @@ GCP_credentials.json
 *.shp
 *.shx
 *.keep
+*.csv
+
+# Checkpoints and logs
+*.ckpt
+*/lightning_logs/*
+balancing_dict.json

@@ -19,9 +19,7 @@ class ClassificationModule(pl.LightningModule):
         loss: Union[nn.Module],
         optimizer: Union[optim.SGD, optim.Adam],
         optimizer_params: Dict,
-        scheduler: Union[
-            optim.lr_scheduler.OneCycleLR, optim.lr_scheduler.ReduceLROnPlateau
-        ],
+        scheduler: Union[optim.lr_scheduler.OneCycleLR, optim.lr_scheduler.ReduceLROnPlateau],
         scheduler_params: Dict,
         scheduler_interval: str,
     ):
@@ -55,7 +53,7 @@ class ClassificationModule(pl.LightningModule):
         """
         return self.model(batch)
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, batch_idx, device="cpu"):
         """
         Training step.
         Args:
@@ -66,8 +64,8 @@ class ClassificationModule(pl.LightningModule):
         images, labels, dic = batch
         output = self.forward(images)
 
-        output = output.to("cpu")
-        labels = labels.to("cpu")
+        output = output.to(device)
+        labels = labels.to(device)
 
         target = labels.long()
 
@@ -83,7 +81,7 @@ class ClassificationModule(pl.LightningModule):
 
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx, device="cpu"):
         """
         Validation step.
         Args:
@@ -91,11 +89,13 @@ class ClassificationModule(pl.LightningModule):
             batch_idx (int): batch index.
         Returns: Tensor
         """
+
+        # TODO 99% Identique à training step, à optim
         images, labels, dic = batch
         output = self.forward(images)
 
-        output = output.to("cpu")
-        labels = labels.to("cpu")
+        output = output.to(device)
+        labels = labels.to(device)
 
         target = labels.long()
 
@@ -113,7 +113,7 @@ class ClassificationModule(pl.LightningModule):
 
         return loss
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch, batch_idx, device="cpu"):
         """
         Test step.
         Args:
@@ -121,11 +121,12 @@ class ClassificationModule(pl.LightningModule):
             batch_idx (int): batch index.
         Returns: Tensor
         """
+        # TODO 99% Identique à training step, à optim
         images, labels, dic = batch
         output = self.forward(images)
 
-        output = output.to("cpu")
-        labels = labels.to("cpu")
+        output = output.to(device)
+        labels = labels.to(device)
 
         target = labels.long()
 
@@ -133,7 +134,6 @@ class ClassificationModule(pl.LightningModule):
         targets_one_hot = targets_one_hot.scatter_(1, target.unsqueeze(1), 1)
 
         loss = self.loss(output, targets_one_hot)
-        self.log("test_loss", loss, on_epoch=True)
 
         return loss
 
@@ -146,7 +146,7 @@ class ClassificationModule(pl.LightningModule):
         scheduler = self.scheduler(optimizer, **self.scheduler_params)
         scheduler = {
             "scheduler": scheduler,
-            "monitor": "validation_loss",
+            "monitor": self.scheduler_params["monitor"],
             "interval": self.scheduler_interval,
         }
 

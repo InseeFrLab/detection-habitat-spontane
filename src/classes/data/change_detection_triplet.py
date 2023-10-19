@@ -105,7 +105,7 @@ class ChangeDetectionTriplet:
         list_sat1 = self.satellite_image1.split(tile_length=tile_length)
         list_sat2 = self.satellite_image2.split(tile_length=tile_length)
 
-        # 2) on split le masque
+        # 2) on split le label
         if tile_length % 2:
             raise ValueError("Tile length has to be an even number.")
 
@@ -145,12 +145,8 @@ class ChangeDetectionTriplet:
             self.satellite_image2.normalize()
 
         fig, (ax1, ax2, ax3) = plt.subplots(ncols=3, figsize=(10, 20))
-        ax1.imshow(
-            np.transpose(self.satellite_image1.array, (1, 2, 0))[:, :, bands_indices]
-        )
-        ax2.imshow(
-            np.transpose(self.satellite_image2.array, (1, 2, 0))[:, :, bands_indices]
-        )
+        ax1.imshow(np.transpose(self.satellite_image1.array, (1, 2, 0))[:, :, bands_indices])
+        ax2.imshow(np.transpose(self.satellite_image2.array, (1, 2, 0))[:, :, bands_indices])
         ax3.imshow(self.label, alpha=alpha)
         plt.xticks([])
         plt.yticks([])

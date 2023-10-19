@@ -161,9 +161,6 @@ def export_s1_grd_first(start_date, AOI, s1_grd, DOM):
         start_date: date from which the images can be downloaded.
         end_date: date after which the images can no longer be downloaded.
     """
-
-    print("Entre dans la fonction s1_grd_first")
-
     update_storage_access()
     root_path = get_root_path()
     environment = get_environment()
@@ -200,8 +197,6 @@ def export_s1_grd_first(start_date, AOI, s1_grd, DOM):
 
 
 def export_s1_grd_mean(start_date, AOI, s1_grd, DOM):
-    print("Entre dans la fonction s1_grd_mean")
-
     update_storage_access()
     root_path = get_root_path()
     environment = get_environment()
@@ -237,6 +232,95 @@ def export_s1_grd_mean(start_date, AOI, s1_grd, DOM):
     shutil.rmtree(path_local, ignore_errors=True)
 
 
+def exportToMinio(image, rpath):
+    """
+    Exports S1 tiles to MinIO.
+
+    Args:
+        image: the image to uplaod on MinIO.
+        rpath: path to the MinIO repertory in which the image\
+            should be uploaded.
+
+    Returns:
+        The upload of an image on MinIO.
+    """
+
+    fs = s3fs.S3FileSystem(
+        client_kwargs={"endpoint_url": "https://minio.lab.sspcloud.fr"},
+        key=os.environ["AWS_ACCESS_KEY_ID"],
+        secret=os.environ["AWS_SECRET_ACCESS_KEY"],
+    )
+
+    return fs.put(image, rpath, True)
+
+
+def upload_satelliteImages(
+    lpath,
+    rpath,
+    dep,
+    year,
+    dim,
+    n_bands,
+    check_nbands12=False,
+):
+    """
+    Transforms a raster in a SatelliteImage and calls a function\
+        that uploads it on MinIO and deletes it locally.
+
+    Args:
+        lpath: path to the raster to transform into SatelliteImage\
+            and to upload on MinIO.
+        rpath: path to the MinIO repertory in which the image\
+            should be uploaded.
+        dep: department number of the DOM.
+        dim: tiles' size.
+        n_bands: number of bands of the image to upload.
+        check_nbands12: boolean that, if set to True, allows to check\
+            if the image to upload is indeed 12 bands.\
+            Usefull in download_sentinel2_ee.py
+    """
+
+    images_paths = os.listdir(lpath)
+
+    for i in range(len(images_paths)):
+        images_paths[i] = f"{lpath}/{images_paths[i]}"
+
+    list_satellite_images = [
+        SatelliteImage.from_raster(filename, dep=dep, n_bands=n_bands)
+        for filename in tqdm(images_paths)
+    ]
+
+    splitted_list_images = [
+        im for sublist in tqdm(list_satellite_images) for im in sublist.split(dim)
+    ]
+
+    for i in range(len(splitted_list_images)):
+        image = splitted_list_images[i]
+        bb = image.bounds
+        filename = f"{str(int(bb[0]))}_{str(int(bb[1]))}_{str(i)}"
+        in_ds = gdal.Open(images_paths[1])
+        proj = in_ds.GetProjection()
+
+        image.to_raster("/", filename, "tif", proj)
+
+        if check_nbands12:
+            try:
+                image = SatelliteImage.from_raster(
+                    file_path=f"{filename}.tif",
+                    dep=dep,
+                    date=year,
+                    n_bands=12,
+                )
+                exportToMinio(f"{filename}.tif", rpath)
+                os.remove(f"{filename}.tif")
+
+            except PIL.UnidentifiedImageError:
+                print("L'image ne possède pas assez de bandes")
+        else:
+            exportToMinio(f"{filename}.tif", rpath)
+            os.remove(f"{filename}.tif")
+
+
 if __name__ == "__main__":
     START_DATE = "2022-08-20"
     END_DATE = "2022-09-01"
@@ -246,35 +330,3 @@ if __name__ == "__main__":
     AOIs = name_dep_to_aoi
 
     export_s1("Guadeloupe", AOIs, EPSGs, START_DATE, END_DATE)
-
-    # export_s1(
-    #     "Martinique",
-    #     AOIs,
-    #     EPSGs,
-    #     START_DATE,
-    #     END_DATE
-    # )
-
-    # export_s1(
-    #     "Mayotte",
-    #     AOIs,
-    #     EPSGs,
-    #     START_DATE,
-    #     END_DATE
-    # )
-
-    # export_s1(
-    #     "Reunion",
-    #     AOIs,
-    #     EPSGs,
-    #     START_DATE,
-    #     END_DATE
-    # )
-
-    # export_s1(
-    #     "Guyane",
-    #     AOIs,
-    #     EPSGs,
-    #     START_DATE,
-    #     END_DATE
-    # )
