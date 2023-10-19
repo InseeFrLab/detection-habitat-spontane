@@ -18,4 +18,4 @@ geemap
 geedim
 ee
 satellite_image
-gdal==$(gdal-config --version | awk -F'[.]' '{print $1"."$2}')
+gdal==3.4.1
