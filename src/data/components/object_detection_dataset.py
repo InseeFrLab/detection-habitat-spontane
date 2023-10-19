@@ -63,6 +63,8 @@ class ObjectDetectionDataset(Dataset):
         if len(boxes) == 0:
             boxes = torch.zeros((0, 4), dtype=torch.int64)
 
+        print(img)
+        print(boxes)
         if self.transforms:
             sample = self.transforms(
                 image=img, bboxes=boxes, class_labels=["building"] * len(boxes)

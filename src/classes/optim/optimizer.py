@@ -54,12 +54,20 @@ def generate_optimization_elements(config):
                 "lr": config["optim"]["lr"],
                 # "momentum": config["optim"]["momentum"],
             }
-            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
+            scheduler = torch.optim.lr_scheduler.OneCycleLR
+            scheduler_interval = "step"
             scheduler_params = {
-                "monitor": config["optim"]["monitor"],
-                "mode": config["optim"]["mode"],
-                "patience": config["optim"]["scheduler_patience"]}
-            scheduler_interval = "epoch"
+                "max_lr": 0.0003,
+                "steps_per_epoch": 607,
+                "epochs": 200,
+                "pct_start": 0.1
+            }
+            # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
+            # scheduler_params = {
+            #     "monitor": config["optim"]["monitor"],
+            #     "mode": config["optim"]["mode"],
+            #     "patience": config["optim"]["scheduler_patience"]}
+            # scheduler_interval = "epoch"
 
         return (
             optimizer,

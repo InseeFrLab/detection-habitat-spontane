@@ -1,10 +1,10 @@
 data:
   source_train: "PLEIADES"
-  dataset: "PLEIADE"
-  dataset_test: "PLEIADE"
-  task: "segmentation"
+  dataset: "OBJECTDETECTION"
+  dataset_test: "OBJECTDETECTION"
+  task: "detection"
   year: [2022]
-  dep: ["dummy"]
+  dep: ["976"]
   type_labeler: "BDTOPO"
   buffer_size: 10
   n_channels_train: 3
@@ -16,17 +16,17 @@ data:
 
 optim:
   loss: "crossentropy"
-  lr: 0.001
-  momentum: 0.9
-  module: "deeplabv3"
-  batch_size: 4
-  batch_size_test: 4
+  lr: 0.00003
+  momentum: 0.7
+  module: "fasterrcnn"
+  batch_size: 8
+  batch_size_test: 8
   max_epochs: 200
   val_prop: 0.2
   accumulate_batch : 8
   monitor: "validation_accuracy"
   mode: "max"
-  patience: 35
+  patience: 200
   scheduler_patience: 10
   num_sanity_val_steps: 2
 
