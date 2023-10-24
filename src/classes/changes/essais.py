@@ -4,15 +4,22 @@ import numpy as np
 from PIL import Image
 from scipy.ndimage import gaussian_filter1d
 from scipy.ndimage import uniform_filter
+import imageio
+
 
 # sudo apt-get update
 # sudo apt-get install libgl1-mesa-glx
 # pip install numpy opencv-python-headless scipy
+# pip install imageio
+# pip install imageio[ffmpeg] 
 
 
 def apply_otsu_thresholding(image_path):
+    image_io = imageio.imread(image_path)
+
     # Read the image in grayscale
-    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    image_cv = cv2.cvtColor(image_io, cv2.COLOR_RGB2BGR)
+    image = cv2.cvtColor(image_cv, cv2.COLOR_BGR2GRAY)
 
     # Apply Otsu's thresholding
     ret, thresh = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -34,13 +41,14 @@ def apply_otsu_thresholding(image_path):
     plt.title('Filtered Image'), plt.xticks([]), plt.yticks([])
     fig = plt.gcf()
 
-    fig.savefig(image_path.split('.')[0] + '_otsu.' + image_path.split('.')[1])
+    fig.savefig(image_path.split('/')[5] + '/thresholding/' + image_path.split('/')[-1].split('.')[0] + '_otsu.png')
+    fig.savefig('data/thresholding/ORT_2017_0500_8601_U38S_8Bits_otsu.png')
     plt.close()
 
     print(f"Computed Threshold: {ret}")
 
 # Replace 'path_to_image' with the actual file path of your image
-apply_otsu_thresholding('data/image1.png')
+apply_otsu_thresholding('/home/onyxia/work/detection-habitat-spontane/data/2017/MOSA/ORT_2017_0515_8592_U38S_8Bits.jp2')
 
 def iterative_threshold(image_path):
     # Load image

@@ -62,8 +62,8 @@ from train_pipeline_utils.prepare_data import (
 
 from utils.utils import remove_dot_file, split_array, update_storage_access, list_sorted_filenames
 
-# with open("../config.yml") as f:
-#     config = yaml.load(f, Loader=SafeLoader)
+with open("../config.yml") as f:
+    config = yaml.load(f, Loader=SafeLoader)
 
 
 def download_data(config):
