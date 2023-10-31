@@ -329,3 +329,27 @@ def get_path_by_millesime(paths, millesime):
 
     path = paths[idx.index(True)] if any(idx) and True in idx else []
     return path
+
+
+def exportToMinio(image, rpath):
+    client = hvac.Client(url="https://vault.lab.sspcloud.fr", token=os.environ["VAULT_TOKEN"])
+
+    secret = os.environ["VAULT_MOUNT"] + "/projet-slums-detection/s3"
+    mount_point, secret_path = secret.split("/", 1)
+    secret_dict = client.secrets.kv.read_secret_version(path=secret_path, mount_point=mount_point)
+
+    os.environ["AWS_ACCESS_KEY_ID"] = secret_dict["data"]["data"]["ACCESS_KEY_ID"]
+    os.environ["AWS_SECRET_ACCESS_KEY"] = secret_dict["data"]["data"]["SECRET_ACCESS_KEY"]
+
+    try:
+        del os.environ["AWS_SESSION_TOKEN"]
+    except KeyError:
+        pass
+
+    fs = s3fs.S3FileSystem(
+        client_kwargs={"endpoint_url": "https://" + "minio.lab.sspcloud.fr"},
+        key=os.environ["AWS_ACCESS_KEY_ID"],
+        secret=os.environ["AWS_SECRET_ACCESS_KEY"],
+    )
+
+    return fs.put(image, rpath, True)

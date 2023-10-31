@@ -176,10 +176,10 @@ def export_s2_no_cloud(
     environment = get_environment()
 
     bucket = environment["bucket"]
-    path_s3 = environment["sources"]["SENTINEL2"][int(start_date[0:4])][DEPs[DOM.upper()]]
+    path_s3 = environment["sources"]["SENTINEL2"][start_date[0:4]][DEPs[DOM.upper()]]
     path_local = os.path.join(
         root_path,
-        environment["local-path"]["SENTINEL2"][int(start_date[0:4])][DEPs[DOM.upper()]],
+        environment["local-path"]["SENTINEL2"][start_date[0:4]][DEPs[DOM.upper()]],
     )
 
     AOI = ee.Geometry.BBox(**AOIs[DOM.upper()])

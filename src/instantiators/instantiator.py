@@ -80,42 +80,7 @@ class Instantiator:
 
         return full_dataset
 
-    def dataloader(self):
-        """
-        Instantiates and returns the data loaders for
-        training, validation, and testing datasets.
-
-        Args:
-        - config (dict): A dictionary containing the configuration parameters
-        for data loading and processing.
-        - list_output_dir (list): A list of strings containing the paths to
-        the directories that contain the training data.
-
-        Returns:
-        - train_dataloader (torch.utils.data.DataLoader):
-        The data loader for the training dataset.
-        - valid_dataloader (torch.utils.data.DataLoader):
-        The data loader for the validation dataset.
-        - test_dataloader (torch.utils.data.DataLoader):
-        The data loader for the testing dataset.
-
-        The function first generates the paths for the image and label data
-        based on the data source (Sentinel, PLEIADES) vs pre-annotated datasets.
-        It then instantiates the required dataset class
-        (using the `intantiate_dataset` function) and splits the full dataset
-        into training and validation datasets based on the validation proportion
-        specified in the configuration parameters.
-
-        Next, the appropriate transformations are applied to the training
-        and validation datasets using the `generate_transform` function.
-
-        Finally, the data loaders for the training and validation datasets
-        are created using the `DataLoader` class from the PyTorch library,
-        and the data loader for the testing dataset is set to `None`.
-        """
-        # génération des paths en fonction du type de Données
-        # (Sentinel, PLEIADES) VS Dataset préannotés
-
+    def train_val_dataloader(self):
         if self.config.source_train in [
             "PLEIADES",
             "SENTINEL2",
@@ -180,7 +145,6 @@ class Instantiator:
 
         # Retrieving the desired Dataset class
         train_dataset = self.dataset(list_images[train_idx], list_labels[train_idx])
-
         valid_dataset = self.dataset(list_images[val_idx], list_labels[val_idx])
 
         # Applying the respective transforms
@@ -225,11 +189,28 @@ class Instantiator:
             )
             for ds, boolean in zip([train_dataset, valid_dataset], [True, False])
         ]
+        return train_dataloader, valid_dataloader
 
+    def test_dataloader(self):
         # TODO: Temporaire à supprimer quand on aura des données de test pour la détection
         if self.config.task == "detection":
-            test_dataloader = None
-            return train_dataloader, valid_dataloader, test_dataloader
+            return None
+
+        if self.config.source_train == "PLEIADES":
+            _, t_preproc = generate_transform_pleiades(
+                self.config.tile_size,
+                self.config.augmentation,
+                self.config.task,
+            )
+        else:
+            _, t_preproc = generate_transform_sentinel(
+                self.config.source_train,
+                self.config.millesime[0]["year"],
+                self.config.millesime[0]["dep"],
+                self.config.tile_size,
+                self.config.augmentation,
+                self.config.task,
+            )
 
         output_labels_path = f"{self.config.path_prepro_test_data[0]}/labels/"
         list_name_label_test = os.listdir(output_labels_path)
@@ -276,6 +257,43 @@ class Instantiator:
             drop_last=True,
         )
 
+        return test_dataloader
+
+    def dataloader(self):
+        """
+        Instantiates and returns the data loaders for
+        training, validation, and testing datasets.
+
+        Args:
+        - config (dict): A dictionary containing the configuration parameters
+        for data loading and processing.
+        - list_output_dir (list): A list of strings containing the paths to
+        the directories that contain the training data.
+
+        Returns:
+        - train_dataloader (torch.utils.data.DataLoader):
+        The data loader for the training dataset.
+        - valid_dataloader (torch.utils.data.DataLoader):
+        The data loader for the validation dataset.
+        - test_dataloader (torch.utils.data.DataLoader):
+        The data loader for the testing dataset.
+
+        The function first generates the paths for the image and label data
+        based on the data source (Sentinel, PLEIADES) vs pre-annotated datasets.
+        It then instantiates the required dataset class
+        (using the `intantiate_dataset` function) and splits the full dataset
+        into training and validation datasets based on the validation proportion
+        specified in the configuration parameters.
+
+        Next, the appropriate transformations are applied to the training
+        and validation datasets using the `generate_transform` function.
+
+        Finally, the data loaders for the training and validation datasets
+        are created using the `DataLoader` class from the PyTorch library,
+        and the data loader for the testing dataset is set to `None`.
+        """
+        train_dataloader, valid_dataloader = self.train_val_dataloader
+        test_dataloader = self.test_dataloader
         return train_dataloader, valid_dataloader, test_dataloader
 
     def model(self):
